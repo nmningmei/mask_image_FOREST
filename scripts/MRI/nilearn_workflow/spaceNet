@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "spaceNet.py" as a batch job.
+
+
+#$ -cwd
+#$ -o cachedir/out.txt
+#$ -e cachedir/err.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "SN"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "spaceNet.py"

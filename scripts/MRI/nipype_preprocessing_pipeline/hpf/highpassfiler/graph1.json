@@ -1,0 +1,155 @@
+{
+    "groups": [
+        {
+            "name": "Group_00001",
+            "procs": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9
+            ],
+            "total": 10
+        }
+    ],
+    "links": [
+        {
+            "source": 0,
+            "target": 1,
+            "value": 1
+        },
+        {
+            "source": 0,
+            "target": 2,
+            "value": 1
+        },
+        {
+            "source": 1,
+            "target": 2,
+            "value": 1
+        },
+        {
+            "source": 2,
+            "target": 4,
+            "value": 1
+        },
+        {
+            "source": 0,
+            "target": 5,
+            "value": 1
+        },
+        {
+            "source": 4,
+            "target": 5,
+            "value": 1
+        },
+        {
+            "source": 0,
+            "target": 3,
+            "value": 1
+        },
+        {
+            "source": 2,
+            "target": 3,
+            "value": 1
+        },
+        {
+            "source": 5,
+            "target": 6,
+            "value": 1
+        },
+        {
+            "source": 3,
+            "target": 6,
+            "value": 1
+        },
+        {
+            "source": 6,
+            "target": 8,
+            "value": 1
+        },
+        {
+            "source": 6,
+            "target": 7,
+            "value": 1
+        },
+        {
+            "source": 7,
+            "target": 9,
+            "value": 1
+        },
+        {
+            "source": 8,
+            "target": 9,
+            "value": 1
+        }
+    ],
+    "maxN": 10,
+    "nodes": [
+        {
+            "group": 1,
+            "name": "0_img2float",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//img2float/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//img2float/result_img2float.pklz"
+        },
+        {
+            "group": 1,
+            "name": "1_getthreshold",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//getthreshold/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//getthreshold/result_getthreshold.pklz"
+        },
+        {
+            "group": 1,
+            "name": "2_thresholding",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//thresholding/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//thresholding/result_thresholding.pklz"
+        },
+        {
+            "group": 1,
+            "name": "3_cal_intensity_scale_factor",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//cal_intensity_scale_factor/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//cal_intensity_scale_factor/result_cal_intensity_scale_factor.pklz"
+        },
+        {
+            "group": 1,
+            "name": "4_dilatemask",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//dilatemask/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//dilatemask/result_dilatemask.pklz"
+        },
+        {
+            "group": 1,
+            "name": "5_apply_dilatemask",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//apply_dilatemask/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//apply_dilatemask/result_apply_dilatemask.pklz"
+        },
+        {
+            "group": 1,
+            "name": "6_meanscale",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//meanscale/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//meanscale/result_meanscale.pklz"
+        },
+        {
+            "group": 1,
+            "name": "7_highpass_filering",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//highpass_filering/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//highpass_filering/result_highpass_filering.pklz"
+        },
+        {
+            "group": 1,
+            "name": "8_meanfunc",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//meanfunc/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//meanfunc/result_meanfunc.pklz"
+        },
+        {
+            "group": 1,
+            "name": "9_addmean",
+            "report": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//addmean/_report/report.rst",
+            "result": "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline//addmean/result_addmean.pklz"
+        }
+    ]
+}

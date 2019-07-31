@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "CP (lh-superiorparietal).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_20.txt
+#$ -e bash/err_20.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "CP20"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "CP (lh-superiorparietal).py"

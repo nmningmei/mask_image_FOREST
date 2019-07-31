@@ -1,0 +1,115 @@
+190509-13:58:49,325 nipype.workflow INFO:
+	 Generated workflow graph: hpf/highpassfiler/session 06 run 07.png (graph2use=hierarchical, simple_form=True).
+190509-13:58:49,968 nipype.workflow INFO:
+	 Workflow highpassfiler settings: ['check', 'execution', 'logging', 'monitoring']
+190509-13:58:50,107 nipype.workflow INFO:
+	 Running serially.
+190509-13:58:50,108 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.img2float" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float".
+190509-13:58:50,112 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.img2float".
+190509-13:58:50,123 nipype.workflow INFO:
+	 [Node] Setting-up "_img2float0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0".
+190509-13:58:50,125 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_img2float0".
+190509-13:58:50,186 nipype.workflow INFO:
+	 [Node] Running "_img2float0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-06/sub-01_unfeat_run-07/outputs/func/ICA_AROMA/denoised_func_data_nonaggr.nii.gz  /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -odt float
+190509-13:59:10,268 nipype.workflow INFO:
+	 [Node] Finished "_img2float0".
+190509-13:59:10,285 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.img2float".
+190509-13:59:10,286 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.getthreshold" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold".
+190509-13:59:10,296 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.getthreshold".
+190509-13:59:10,319 nipype.workflow INFO:
+	 [Node] Setting-up "_getthreshold0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold/mapflow/_getthreshold0".
+190509-13:59:10,322 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_getthreshold0".
+190509-13:59:10,345 nipype.workflow INFO:
+	 [Node] Running "_getthreshold0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -p 2 -p 98
+190509-13:59:25,977 nipype.interface INFO:
+	 stdout 2019-05-09T13:59:25.977785:0.000000 16130.220703 
+190509-13:59:26,150 nipype.workflow INFO:
+	 [Node] Finished "_getthreshold0".
+190509-13:59:26,160 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.getthreshold".
+190509-13:59:26,160 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.thresholding" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding".
+190509-13:59:26,188 nipype.workflow INFO:
+	 [Node] Setting-up "_thresholding0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0".
+190509-13:59:26,212 nipype.workflow INFO:
+	 [Node] Running "_thresholding0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -thr 1613.0220703000 -Tmin -bin /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0/denoised_func_data_nonaggr_dtype_thresh.nii.gz -odt char
+190509-13:59:26,293 nipype.interface INFO:
+	 stderr 2019-05-09T13:59:26.293461:** ERROR (nifti_image_read): short header read '/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz'
+190509-13:59:26,294 nipype.interface INFO:
+	 stderr 2019-05-09T13:59:26.294316:** ERROR: nifti_image_open(/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype): bad header info
+190509-13:59:26,294 nipype.interface INFO:
+	 stderr 2019-05-09T13:59:26.294316:ERROR: failed to open file /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype
+190509-13:59:26,294 nipype.interface INFO:
+	 stderr 2019-05-09T13:59:26.294316:Cannot open volume /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype for reading!
+190509-13:59:26,404 nipype.workflow WARNING:
+	 [Node] Error on "_thresholding0" (/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0)
+190509-13:59:26,410 nipype.workflow WARNING:
+	 [Node] Error on "highpassfiler.thresholding" (/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding)
+190509-13:59:26,422 nipype.workflow ERROR:
+	 Node thresholding failed to run on host cajal-1-6.local.
+190509-13:59:26,423 nipype.workflow ERROR:
+	 Saving crash info to /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/crash-20190509-135926-nmei-thresholding-49c7b3b2-d9fd-43ac-ba9d-a3914047c9c0.pklz
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/plugins/linear.py", line 48, in run
+    node.run(updatehash=updatehash)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 473, in run
+    result = self._run_interface(execute=True)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1253, in _run_interface
+    self.config['execution']['stop_on_first_crash'])))
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1175, in _collate_results
+    (self.name, '\n'.join(msg)))
+Exception: Subnodes of node: thresholding failed:
+Subnode 0 failed
+Error: Traceback (most recent call last):
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/utils.py", line 99, in nodelist_runner
+    result = node.run(updatehash=updatehash)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 473, in run
+    result = self._run_interface(execute=True)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 557, in _run_interface
+    return self._run_command(execute)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 637, in _run_command
+    result = self._interface.run(cwd=outdir)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/interfaces/base/core.py", line 375, in run
+    runtime = self._run_interface(runtime)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/interfaces/base/core.py", line 758, in _run_interface
+    self.raise_exception(runtime)
+
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/interfaces/base/core.py", line 695, in raise_exception
+    ).format(**runtime.dictcopy()))
+
+RuntimeError: Command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -thr 1613.0220703000 -Tmin -bin /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0/denoised_func_data_nonaggr_dtype_thresh.nii.gz -odt char
+Standard output:
+
+Standard error:
+** ERROR (nifti_image_read): short header read '/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz'
+** ERROR: nifti_image_open(/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype): bad header info
+ERROR: failed to open file /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype
+Cannot open volume /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype for reading!
+Return code: 1
+
+
+190509-13:59:26,434 nipype.workflow INFO:
+	 ***********************************
+190509-13:59:26,434 nipype.workflow ERROR:
+	 could not run node: highpassfiler.thresholding
+190509-13:59:26,434 nipype.workflow INFO:
+	 crashfile: /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/crash-20190509-135926-nmei-thresholding-49c7b3b2-d9fd-43ac-ba9d-a3914047c9c0.pklz
+190509-13:59:26,434 nipype.workflow INFO:
+	 ***********************************

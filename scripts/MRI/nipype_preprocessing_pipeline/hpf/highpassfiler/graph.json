@@ -1,0 +1,85 @@
+[
+    {
+        "group": 1,
+        "imports": [],
+        "name": "0_img2float",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "0_img2float"
+        ],
+        "name": "1_getthreshold",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "0_img2float",
+            "1_getthreshold"
+        ],
+        "name": "2_thresholding",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "0_img2float",
+            "2_thresholding"
+        ],
+        "name": "3_cal_intensity_scale_factor",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "2_thresholding"
+        ],
+        "name": "4_dilatemask",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "0_img2float",
+            "4_dilatemask"
+        ],
+        "name": "5_apply_dilatemask",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "5_apply_dilatemask",
+            "3_cal_intensity_scale_factor"
+        ],
+        "name": "6_meanscale",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "6_meanscale"
+        ],
+        "name": "7_highpass_filering",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "6_meanscale"
+        ],
+        "name": "8_meanfunc",
+        "size": 1
+    },
+    {
+        "group": 1,
+        "imports": [
+            "7_highpass_filering",
+            "8_meanfunc"
+        ],
+        "name": "9_addmean",
+        "size": 1
+    }
+]

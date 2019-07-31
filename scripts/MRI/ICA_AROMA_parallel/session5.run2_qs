@@ -1,0 +1,14 @@
+
+#!/bin/bash
+#$ -cwd
+#$ -o out_52.txt
+#$ -e err_52.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "s5r2"
+#$ -S /bin/bash
+
+module load rocks-fsl-5.0.10
+module load rocks-python-2.7
+python ../ICA_AROMA.py -den nonaggr -warp /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/reg/highres2standard_warp.nii.gz -i /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/filtered_func_data.nii.gz -m /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/mask.nii.gz -affmat /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/reg/example_func2highres.mat -mc /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/mc/prefiltered_func_data_mcf.par -o /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-05/sub-01_unfeat_run-02/FEAT.session5.run2.feat/ICA_AROMA -ow

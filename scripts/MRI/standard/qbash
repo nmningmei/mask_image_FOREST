@@ -1,0 +1,13 @@
+
+#!/bin/bash
+#$ -cwd
+#$ -o out.txt
+#$ -e err.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "qsub_jobs"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python qsub_jobs.py

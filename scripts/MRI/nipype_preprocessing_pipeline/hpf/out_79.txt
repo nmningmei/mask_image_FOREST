@@ -1,0 +1,156 @@
+190509-14:04:19,122 nipype.workflow INFO:
+	 Generated workflow graph: hpf/highpassfiler/session 07 run 09.png (graph2use=hierarchical, simple_form=True).
+190509-14:04:19,718 nipype.workflow INFO:
+	 Workflow highpassfiler settings: ['check', 'execution', 'logging', 'monitoring']
+190509-14:04:19,748 nipype.workflow INFO:
+	 Running serially.
+190509-14:04:19,749 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.img2float" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float".
+190509-14:04:19,756 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.img2float".
+190509-14:04:19,777 nipype.workflow INFO:
+	 [Node] Setting-up "_img2float0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0".
+190509-14:04:19,780 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_img2float0".
+190509-14:04:19,858 nipype.workflow INFO:
+	 [Node] Running "_img2float0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-07/sub-01_unfeat_run-09/outputs/func/ICA_AROMA/denoised_func_data_nonaggr.nii.gz  /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -odt float
+190509-14:04:39,990 nipype.workflow INFO:
+	 [Node] Finished "_img2float0".
+190509-14:04:40,1 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.img2float".
+190509-14:04:40,2 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.getthreshold" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold".
+190509-14:04:40,10 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.getthreshold".
+190509-14:04:40,26 nipype.workflow INFO:
+	 [Node] Setting-up "_getthreshold0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold/mapflow/_getthreshold0".
+190509-14:04:40,29 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_getthreshold0".
+190509-14:04:40,54 nipype.workflow INFO:
+	 [Node] Running "_getthreshold0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -p 2 -p 98
+190509-14:04:55,585 nipype.interface INFO:
+	 stdout 2019-05-09T14:04:55.585545:0.000000 15880.350586 
+190509-14:04:55,751 nipype.workflow INFO:
+	 [Node] Finished "_getthreshold0".
+190509-14:04:55,760 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.getthreshold".
+190509-14:04:55,760 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.thresholding" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding".
+190509-14:04:55,790 nipype.workflow INFO:
+	 [Node] Setting-up "_thresholding0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0".
+190509-14:04:55,813 nipype.workflow INFO:
+	 [Node] Running "_thresholding0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -thr 1588.0350586000 -Tmin -bin /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0/denoised_func_data_nonaggr_dtype_thresh.nii.gz -odt char
+190509-14:05:07,120 nipype.workflow INFO:
+	 [Node] Finished "_thresholding0".
+190509-14:05:07,132 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.thresholding".
+190509-14:05:07,133 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.cal_intensity_scale_factor" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/cal_intensity_scale_factor".
+190509-14:05:07,143 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.cal_intensity_scale_factor".
+190509-14:05:07,162 nipype.workflow INFO:
+	 [Node] Setting-up "_cal_intensity_scale_factor0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/cal_intensity_scale_factor/mapflow/_cal_intensity_scale_factor0".
+190509-14:05:07,165 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_cal_intensity_scale_factor0".
+190509-14:05:07,228 nipype.workflow INFO:
+	 [Node] Running "_cal_intensity_scale_factor0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -k /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0/denoised_func_data_nonaggr_dtype_thresh.nii.gz -p 50 
+190509-14:05:21,308 nipype.interface INFO:
+	 stdout 2019-05-09T14:05:21.308496:9663.204102 
+190509-14:05:21,464 nipype.workflow INFO:
+	 [Node] Finished "_cal_intensity_scale_factor0".
+190509-14:05:21,473 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.cal_intensity_scale_factor".
+190509-14:05:21,474 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.dilatemask" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/dilatemask".
+190509-14:05:21,493 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.dilatemask".
+190509-14:05:21,510 nipype.workflow INFO:
+	 [Node] Setting-up "_dilatemask0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/dilatemask/mapflow/_dilatemask0".
+190509-14:05:21,522 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_dilatemask0".
+190509-14:05:21,604 nipype.workflow INFO:
+	 [Node] Running "_dilatemask0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding/mapflow/_thresholding0/denoised_func_data_nonaggr_dtype_thresh.nii.gz -dilF /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/dilatemask/mapflow/_dilatemask0/denoised_func_data_nonaggr_dtype_thresh_dil.nii.gz
+190509-14:05:23,180 nipype.workflow INFO:
+	 [Node] Finished "_dilatemask0".
+190509-14:05:23,191 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.dilatemask".
+190509-14:05:23,191 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.apply_dilatemask" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/apply_dilatemask".
+190509-14:05:23,224 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.apply_dilatemask".
+190509-14:05:23,363 nipype.workflow INFO:
+	 [Node] Setting-up "_apply_dilatemask0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/apply_dilatemask/mapflow/_apply_dilatemask0".
+190509-14:05:23,396 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_apply_dilatemask0".
+190509-14:05:23,497 nipype.workflow INFO:
+	 [Node] Running "_apply_dilatemask0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -mas /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/dilatemask/mapflow/_dilatemask0/denoised_func_data_nonaggr_dtype_thresh_dil.nii.gz /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/apply_dilatemask/mapflow/_apply_dilatemask0/denoised_func_data_nonaggr_dtype_mask.nii.gz
+190509-14:05:43,603 nipype.workflow INFO:
+	 [Node] Finished "_apply_dilatemask0".
+190509-14:05:43,692 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.apply_dilatemask".
+190509-14:05:43,692 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.meanscale" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanscale".
+190509-14:05:43,721 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.meanscale".
+190509-14:05:43,741 nipype.workflow INFO:
+	 [Node] Setting-up "_meanscale0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanscale/mapflow/_meanscale0".
+190509-14:05:43,775 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_meanscale0".
+190509-14:05:43,963 nipype.workflow INFO:
+	 [Node] Running "_meanscale0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/apply_dilatemask/mapflow/_apply_dilatemask0/denoised_func_data_nonaggr_dtype_mask.nii.gz -mul 1.0348534393 /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanscale/mapflow/_meanscale0/denoised_func_data_nonaggr_dtype_mask_intnorm.nii.gz
+190509-14:06:03,798 nipype.workflow INFO:
+	 [Node] Finished "_meanscale0".
+190509-14:06:03,811 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.meanscale".
+190509-14:06:03,812 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.highpass_filering" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/highpass_filering".
+190509-14:06:03,830 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.highpass_filering".
+190509-14:06:03,858 nipype.workflow INFO:
+	 [Node] Setting-up "_highpass_filering0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/highpass_filering/mapflow/_highpass_filering0".
+190509-14:06:03,879 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_highpass_filering0".
+190509-14:06:03,952 nipype.workflow INFO:
+	 [Node] Running "_highpass_filering0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanscale/mapflow/_meanscale0/denoised_func_data_nonaggr_dtype_mask_intnorm.nii.gz -bptf 35.2941176471 -1 /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/highpass_filering/mapflow/_highpass_filering0/denoised_func_data_nonaggr_dtype_mask_intnorm_tempfilt.nii.gz
+190509-14:10:45,162 nipype.workflow INFO:
+	 [Node] Finished "_highpass_filering0".
+190509-14:10:45,215 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.highpass_filering".
+190509-14:10:45,216 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.meanfunc" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanfunc".
+190509-14:10:45,275 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.meanfunc".
+190509-14:10:45,972 nipype.workflow INFO:
+	 [Node] Setting-up "_meanfunc0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanfunc/mapflow/_meanfunc0".
+190509-14:10:45,984 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_meanfunc0".
+190509-14:10:46,140 nipype.workflow INFO:
+	 [Node] Running "_meanfunc0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanscale/mapflow/_meanscale0/denoised_func_data_nonaggr_dtype_mask_intnorm.nii.gz -Tmean /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanfunc/mapflow/_meanfunc0/denoised_func_data_nonaggr_dtype_mask_intnorm_mean.nii.gz
+190509-14:10:56,347 nipype.workflow INFO:
+	 [Node] Finished "_meanfunc0".
+190509-14:10:56,358 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.meanfunc".
+190509-14:10:56,359 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.addmean" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/addmean".
+190509-14:10:56,381 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.addmean".
+190509-14:10:56,440 nipype.workflow INFO:
+	 [Node] Setting-up "_addmean0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/addmean/mapflow/_addmean0".
+190509-14:10:56,482 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_addmean0".
+190509-14:10:56,623 nipype.workflow INFO:
+	 [Node] Running "_addmean0" ("nipype.interfaces.fsl.maths.BinaryMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/highpass_filering/mapflow/_highpass_filering0/denoised_func_data_nonaggr_dtype_mask_intnorm_tempfilt.nii.gz -add /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/meanfunc/mapflow/_meanfunc0/denoised_func_data_nonaggr_dtype_mask_intnorm_mean.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-07/sub-01_unfeat_run-09/outputs/func/ICAed_filtered/filtered.nii.gz
+190509-14:11:16,354 nipype.workflow INFO:
+	 [Node] Finished "_addmean0".
+190509-14:11:16,697 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.addmean".

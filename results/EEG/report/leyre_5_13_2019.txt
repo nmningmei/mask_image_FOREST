@@ -1,0 +1,72 @@
+session 1, vis = '1', n_trials = 42
+session 1, vis = '2', n_trials = 24
+session 1, vis = '3', n_trials = 30
+session 2, vis = '1', n_trials = 40
+session 2, vis = '2', n_trials = 30
+session 2, vis = '3', n_trials = 26
+session 3, vis = '1', n_trials = 42
+session 3, vis = '2', n_trials = 26
+session 3, vis = '3', n_trials = 28
+session 4, vis = '1', n_trials = 41
+session 4, vis = '2', n_trials = 31
+session 4, vis = '3', n_trials = 24
+session 5, vis = '1', n_trials = 36
+session 5, vis = '2', n_trials = 38
+session 5, vis = '3', n_trials = 22
+session 6, vis = '1', n_trials = 46
+session 6, vis = '2', n_trials = 27
+session 6, vis = '3', n_trials = 23
+session 7, vis = '1', n_trials = 45
+session 7, vis = '2', n_trials = 25
+session 7, vis = '3', n_trials = 26
+session 8, vis = '1', n_trials = 44
+session 8, vis = '2', n_trials = 21
+session 8, vis = '3', n_trials = 31
+session 9, vis = '1', n_trials = 43
+session 9, vis = '2', n_trials = 28
+session 9, vis = '3', n_trials = 25
+session 10, vis = '1', n_trials = 41
+session 10, vis = '2', n_trials = 29
+session 10, vis = '3', n_trials = 26
+session 11, vis = '1', n_trials = 41
+session 11, vis = '2', n_trials = 26
+session 11, vis = '3', n_trials = 29
+session 12, vis = '1', n_trials = 39
+session 12, vis = '2', n_trials = 30
+session 12, vis = '3', n_trials = 27
+session 13, vis = '1', n_trials = 40
+session 13, vis = '2', n_trials = 29
+session 13, vis = '3', n_trials = 27
+session 14, vis = '1', n_trials = 35
+session 14, vis = '2', n_trials = 36
+session 14, vis = '3', n_trials = 25
+session 15, vis = '1', n_trials = 42
+session 15, vis = '2', n_trials = 35
+session 15, vis = '3', n_trials = 19
+session 16, vis = '1', n_trials = 39
+session 16, vis = '2', n_trials = 24
+session 16, vis = '3', n_trials = 33
+session 17, vis = '1', n_trials = 39
+session 17, vis = '2', n_trials = 29
+session 17, vis = '3', n_trials = 28
+session 18, vis = '1', n_trials = 39
+session 18, vis = '2', n_trials = 31
+session 18, vis = '3', n_trials = 26
+
+vis = 1.0,mean frames = 2.00000
+vis = 1.0,prob(press 1) = 0.3747, p(press 2) = 0.6253
+
+vis = 2.0,mean frames = 3.00000
+vis = 2.0,prob(press 1) = 0.6339, p(press 2) = 0.3661
+
+vis = 3.0,mean frames = 5.00000
+vis = 3.0,prob(press 1) = 0.4611, p(press 2) = 0.5389
+vis = '1',N = 734,mean frames = 2.92 +/- 2.10
+p(correct) = 0.5450
+RT = 0.272 +/- 0.319
+vis = '2',N = 519,mean frames = 3.67 +/- 2.07
+p(correct) = 0.7168
+RT = 0.244 +/- 0.278
+vis = '3',N = 475,mean frames = 5.04 +/- 2.32
+p(correct) = 0.9284
+RT = 0.211 +/- 0.165

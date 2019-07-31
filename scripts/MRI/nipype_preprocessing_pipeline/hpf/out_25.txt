@@ -1,0 +1,88 @@
+190509-13:39:49,273 nipype.workflow INFO:
+	 Generated workflow graph: hpf/highpassfiler/session 02 run 05.png (graph2use=hierarchical, simple_form=True).
+190509-13:39:49,939 nipype.workflow INFO:
+	 Workflow highpassfiler settings: ['check', 'execution', 'logging', 'monitoring']
+190509-13:39:49,966 nipype.workflow INFO:
+	 Running serially.
+190509-13:39:49,967 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.img2float" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float".
+190509-13:39:49,976 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.img2float".
+190509-13:39:49,994 nipype.workflow INFO:
+	 [Node] Setting-up "_img2float0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0".
+190509-13:39:49,998 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_img2float0".
+190509-13:39:50,62 nipype.workflow INFO:
+	 [Node] Running "_img2float0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-02/sub-01_unfeat_run-05/outputs/func/ICA_AROMA/denoised_func_data_nonaggr.nii.gz  /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -odt float
+190509-13:40:10,0 nipype.workflow INFO:
+	 [Node] Finished "_img2float0".
+190509-13:40:10,14 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.img2float".
+190509-13:40:10,15 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.getthreshold" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold".
+190509-13:40:10,26 nipype.workflow INFO:
+	 [Node] Outdated cache found for "highpassfiler.getthreshold".
+190509-13:40:10,47 nipype.workflow INFO:
+	 [Node] Setting-up "_getthreshold0" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/getthreshold/mapflow/_getthreshold0".
+190509-13:40:10,50 nipype.workflow INFO:
+	 [Node] Outdated cache found for "_getthreshold0".
+190509-13:40:10,79 nipype.workflow INFO:
+	 [Node] Running "_getthreshold0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz -p 2 -p 98
+190509-13:40:25,859 nipype.interface INFO:
+	 stdout 2019-05-09T13:40:25.859596:0.000000 16688.998047 
+190509-13:40:26,38 nipype.workflow INFO:
+	 [Node] Finished "_getthreshold0".
+190509-13:40:26,48 nipype.workflow INFO:
+	 [Node] Finished "highpassfiler.getthreshold".
+190509-13:40:26,49 nipype.workflow INFO:
+	 [Node] Setting-up "highpassfiler.thresholding" in "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/thresholding".
+190509-13:40:26,62 nipype.workflow ERROR:
+	 Node thresholding failed to run on host cajal-1-6.local.
+190509-13:40:26,120 nipype.workflow ERROR:
+	 Saving crash info to /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/crash-20190509-134026-nmei-thresholding-d714f6af-41e7-4db1-8c96-1cf638131c08.pklz
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/plugins/linear.py", line 48, in run
+    node.run(updatehash=updatehash)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 410, in run
+    cached, updated = self.is_cached()
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 296, in is_cached
+    hashed_inputs, hashvalue = self._get_hashval()
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1043, in _get_hashval
+    self._get_inputs()
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1203, in _get_inputs
+    super(MapNode, self)._get_inputs()
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 533, in _get_inputs
+    self.set_input(key, deepcopy(output_value))
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1031, in set_input
+    self._set_mapnode_input(parameter, deepcopy(val))
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/nodes.py", line 1037, in _set_mapnode_input
+    setattr(self._inputs, name, newvalue)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/interfaces/base/traits_extension.py", line 341, in validate
+    value = super(MultiObject, self).validate(object, name, newvalue)
+  File "/opt/anaconda3/lib/python3.6/site-packages/traits/trait_types.py", line 2572, in validate
+    return TraitListObject(self, object, name, value)
+  File "/opt/anaconda3/lib/python3.6/site-packages/traits/trait_handlers.py", line 2474, in __init__
+    raise excp
+  File "/opt/anaconda3/lib/python3.6/site-packages/traits/trait_handlers.py", line 2466, in __init__
+    value = [validate(object, name, val) for val in value]
+  File "/opt/anaconda3/lib/python3.6/site-packages/traits/trait_handlers.py", line 2466, in <listcomp>
+    value = [validate(object, name, val) for val in value]
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/interfaces/base/traits_extension.py", line 112, in validate
+    self.info_text, value))
+traits.trait_errors.TraitError: The trait 'in_file' of a DynamicTraitedSpec instance is an existing file name, but the path  '/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz' does not exist.
+Error setting node input:
+Node: thresholding
+input: in_file
+results_file: /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/result_img2float.pklz
+value: ['/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/hpf/highpassfiler/img2float/mapflow/_img2float0/denoised_func_data_nonaggr_dtype.nii.gz']
+
+190509-13:40:26,124 nipype.workflow INFO:
+	 ***********************************
+190509-13:40:26,124 nipype.workflow ERROR:
+	 could not run node: highpassfiler.thresholding
+190509-13:40:26,124 nipype.workflow INFO:
+	 crashfile: /bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nipype_preprocessing_pipeline/crash-20190509-134026-nmei-thresholding-d714f6af-41e7-4db1-8c96-1cf638131c08.pklz
+190509-13:40:26,124 nipype.workflow INFO:
+	 ***********************************

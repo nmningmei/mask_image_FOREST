@@ -1,0 +1,18 @@
+
+#!/bin/bash
+
+# This is a script to send "spaceNet post stats 3.py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_3.txt
+#$ -e bash/err_3.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "SN3"
+#$ -S /bin/bash
+
+module load rocks-python-3.6 rocks-fsl-5.0.10
+python "spaceNet post stats 3.py"
+    

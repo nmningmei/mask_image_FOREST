@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "CP (lh-lingual).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_9.txt
+#$ -e bash/err_9.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "CP9"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "CP (lh-lingual).py"

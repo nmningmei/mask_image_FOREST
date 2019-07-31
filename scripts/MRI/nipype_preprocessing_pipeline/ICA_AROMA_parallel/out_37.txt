@@ -1,0 +1,19 @@
+
+------------------------------- RUNNING ICA-AROMA ------------------------------- 
+--------------- 'ICA-based Automatic Removal Of Motion Artifacts' --------------- 
+
+Warning! Output directory /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-03/sub-01_unfeat_run-07/outputs/func/ICA_AROMA exists and will be overwritten.
+
+Step 1) MELODIC
+Step 2) Automatic classification of the components
+  - registering the spatial maps to MNI
+  - extracting the CSF & Edge fraction features
+  - extracting the Maximum RP correlation feature
+  - extracting the High-frequency content feature
+  - classification
+Found 1 file(s)
+Found 39 head motion-related components in a total of 73 components.
+Step 3) Data denoising
+
+----------------------------------- Finished -----------------------------------
+

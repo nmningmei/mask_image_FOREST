@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "decoding (23).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_23.txt
+#$ -e bash/err_23.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "CP23"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "decoding (23).py"

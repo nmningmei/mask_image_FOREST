@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "LOO (4).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_4.txt
+#$ -e bash/err_4.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "LOO4"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "LOO (4).py"

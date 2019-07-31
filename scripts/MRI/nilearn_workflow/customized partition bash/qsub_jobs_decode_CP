@@ -1,0 +1,15 @@
+
+#!/bin/bash
+
+# This is a script to send qsub_jobs_decode (CP).py as a batch job.
+
+#$ -cwd
+#$ -o bash/out_q.txt
+#$ -e bash/err_q.txt
+#$ -m be
+#$ -M nmei@bcbl.eu
+#$ -N "qsubjobs"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "../customized partition bash/qsub_jobs_decode (CP).py"

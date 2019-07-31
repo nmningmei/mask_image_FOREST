@@ -1,0 +1,810 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)
+/opt/anaconda3/lib/python3.6/site-packages/scipy/ndimage/measurements.py:272: DeprecationWarning: In future, it will be an error for 'np.bool_' scalars to be interpreted as an index
+  return _nd_image.find_objects(input, max_label)

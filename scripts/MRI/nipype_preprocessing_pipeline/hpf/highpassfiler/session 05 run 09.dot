@@ -1,0 +1,31 @@
+digraph highpassfiler{
+  label="highpassfiler";
+  highpassfiler_inputspec[label="inputspec (utility)"];
+  highpassfiler_img2float[label="img2float (fsl)"];
+  highpassfiler_getthreshold[label="getthreshold (fsl)"];
+  highpassfiler_thresholding[label="thresholding (fsl)"];
+  highpassfiler_cal_intensity_scale_factor[label="cal_intensity_scale_factor (fsl)"];
+  highpassfiler_dilatemask[label="dilatemask (fsl)"];
+  highpassfiler_apply_dilatemask[label="apply_dilatemask (fsl)"];
+  highpassfiler_meanscale[label="meanscale (fsl)"];
+  highpassfiler_highpass_filering[label="highpass_filering (fsl)"];
+  highpassfiler_meanfunc[label="meanfunc (fsl)"];
+  highpassfiler_addmean[label="addmean (fsl)"];
+  highpassfiler_outputspec[label="outputspec (utility)"];
+  highpassfiler_inputspec -> highpassfiler_img2float;
+  highpassfiler_img2float -> highpassfiler_getthreshold;
+  highpassfiler_img2float -> highpassfiler_thresholding;
+  highpassfiler_img2float -> highpassfiler_apply_dilatemask;
+  highpassfiler_img2float -> highpassfiler_cal_intensity_scale_factor;
+  highpassfiler_getthreshold -> highpassfiler_thresholding;
+  highpassfiler_thresholding -> highpassfiler_dilatemask;
+  highpassfiler_thresholding -> highpassfiler_cal_intensity_scale_factor;
+  highpassfiler_cal_intensity_scale_factor -> highpassfiler_meanscale;
+  highpassfiler_dilatemask -> highpassfiler_apply_dilatemask;
+  highpassfiler_apply_dilatemask -> highpassfiler_meanscale;
+  highpassfiler_meanscale -> highpassfiler_meanfunc;
+  highpassfiler_meanscale -> highpassfiler_highpass_filering;
+  highpassfiler_highpass_filering -> highpassfiler_addmean;
+  highpassfiler_meanfunc -> highpassfiler_addmean;
+  highpassfiler_addmean -> highpassfiler_outputspec;
+}

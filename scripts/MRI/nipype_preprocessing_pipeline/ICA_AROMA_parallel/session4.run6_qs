@@ -1,0 +1,14 @@
+
+#!/bin/bash
+#$ -cwd
+#$ -o out_46.txt
+#$ -e err_46.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "s4r6"
+#$ -S /bin/bash
+
+module load rocks-fsl-5.0.10
+module load rocks-python-2.7
+python ../../ICA_AROMA.py -den nonaggr -warp /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-02/sub-01_unfeat_run-01/outputs/reg/highres2standard_warp.nii.gz -i /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-06/outputs/func/prefiltered_func.nii.gz -m /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-06/outputs/func/mask.nii.gz -affmat /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-02/sub-01_unfeat_run-01/outputs/reg/example_func2highres.mat -mc /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-06/outputs/func/MC/MCflirt.par -o /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-06/outputs/func/ICA_AROMA -ow

@@ -1,0 +1,12 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+Traceback (most recent call last):
+  File "4.8.highpass_filter_session_2_run_8.py", line 40, in <module>
+    highpass_workflow.run()
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/engine/workflows.py", line 599, in run
+    runner.run(execgraph, updatehash=updatehash, config=self.config)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/plugins/linear.py", line 71, in run
+    report_nodes_not_run(notrun)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nipype/pipeline/plugins/tools.py", line 82, in report_nodes_not_run
+    raise RuntimeError(('Workflow did not execute cleanly. '
+RuntimeError: Workflow did not execute cleanly. Check log for details

@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "LOO (21).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_21.txt
+#$ -e bash/err_21.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "LOO21"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "LOO (21).py"

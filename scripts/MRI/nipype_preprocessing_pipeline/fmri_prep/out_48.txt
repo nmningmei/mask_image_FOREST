@@ -1,0 +1,217 @@
+190509-11:12:55,831 nipype.workflow INFO:
+	 Generated workflow graph: /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/graph.png (graph2use=hierarchical, simple_form=True).
+190509-11:12:59,808 nipype.workflow INFO:
+	 Workflow nipype_workflow settings: ['check', 'execution', 'logging', 'monitoring']
+190509-11:12:59,963 nipype.workflow INFO:
+	 Running serially.
+190509-11:12:59,964 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.img2float" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/img2float".
+190509-11:13:00,47 nipype.workflow INFO:
+	 [Node] Setting-up "_img2float0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/img2float/mapflow/_img2float0".
+190509-11:13:00,126 nipype.workflow INFO:
+	 [Node] Running "_img2float0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/sub-01_unfeat_run-08_bold.nii  /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/img2float/mapflow/_img2float0/sub-01_unfeat_run-08_bold_dtype.nii.gz -odt float
+190509-11:15:40,551 nipype.workflow INFO:
+	 [Node] Finished "_img2float0".
+190509-11:15:40,608 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.img2float".
+190509-11:15:40,609 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.remove_volumes" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/remove_volumes".
+190509-11:15:40,647 nipype.workflow INFO:
+	 [Node] Setting-up "_remove_volumes0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/remove_volumes/mapflow/_remove_volumes0".
+190509-11:15:40,668 nipype.workflow INFO:
+	 [Node] Running "_remove_volumes0" ("nipype.interfaces.fsl.utils.ExtractROI"), a CommandLine Interface with command:
+fslroi /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/img2float/mapflow/_img2float0/sub-01_unfeat_run-08_bold_dtype.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/remove_volumes/mapflow/_remove_volumes0/sub-01_unfeat_run-08_bold_dtype_roi.nii.gz 10 508
+190509-11:18:23,193 nipype.workflow INFO:
+	 [Node] Finished "_remove_volumes0".
+190509-11:18:23,298 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.remove_volumes".
+190509-11:18:23,298 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.MCFlirt" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt".
+190509-11:18:23,323 nipype.workflow INFO:
+	 [Node] Setting-up "_MCFlirt0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0".
+190509-11:18:23,334 nipype.workflow INFO:
+	 [Node] Running "_MCFlirt0" ("nipype.interfaces.fsl.preprocess.MCFLIRT"), a CommandLine Interface with command:
+mcflirt -in /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/remove_volumes/mapflow/_remove_volumes0/sub-01_unfeat_run-08_bold_dtype_roi.nii.gz -spline_final -out /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz -reffile /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-02/sub-01_unfeat_run-01/outputs/func/example_func.nii.gz -mats -plots -rmsabs -rmsrel -stats
+190509-11:23:23,10 nipype.workflow INFO:
+	 [Node] Finished "_MCFlirt0".
+190509-11:23:23,108 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.MCFlirt".
+190509-11:23:23,109 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.plot_motion" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_displacement/plot_motion".
+190509-11:23:23,163 nipype.workflow INFO:
+	 [Node] Setting-up "_plot_motion0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_displacement/plot_motion/mapflow/_plot_motion0".
+190509-11:23:23,194 nipype.workflow INFO:
+	 [Node] Running "_plot_motion0" ("nipype.interfaces.fsl.utils.PlotMotionParams"), a CommandLine Interface with command:
+fsl_tsplot -i /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz.par -o /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz_disp.png -t 'MCFLIRT estimated mean displacement (mm)' -a abs,rel
+190509-11:23:23,489 nipype.workflow INFO:
+	 [Node] Finished "_plot_motion0".
+190509-11:23:23,524 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.plot_motion".
+190509-11:23:23,524 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.plot_motion" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_translations/plot_motion".
+190509-11:23:23,568 nipype.workflow INFO:
+	 [Node] Setting-up "_plot_motion0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_translations/plot_motion/mapflow/_plot_motion0".
+190509-11:23:23,597 nipype.workflow INFO:
+	 [Node] Running "_plot_motion0" ("nipype.interfaces.fsl.utils.PlotMotionParams"), a CommandLine Interface with command:
+fsl_tsplot -i /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz.par -o /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz_trans.png -t 'MCFLIRT estimated translations (mm)' --start=4 --finish=6 -a x,y,z
+190509-11:23:23,746 nipype.workflow INFO:
+	 [Node] Finished "_plot_motion0".
+190509-11:23:23,792 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.plot_motion".
+190509-11:23:23,793 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.plot_motion" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_rotations/plot_motion".
+190509-11:23:23,846 nipype.workflow INFO:
+	 [Node] Setting-up "_plot_motion0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/_plot_type_rotations/plot_motion/mapflow/_plot_motion0".
+190509-11:23:23,868 nipype.workflow INFO:
+	 [Node] Running "_plot_motion0" ("nipype.interfaces.fsl.utils.PlotMotionParams"), a CommandLine Interface with command:
+fsl_tsplot -i /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz.par -o /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz_rot.png -t 'MCFLIRT estimated rotations (radians)' --start=1 --finish=3 -a x,y,z
+190509-11:23:24,46 nipype.workflow INFO:
+	 [Node] Finished "_plot_motion0".
+190509-11:23:24,82 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.plot_motion".
+190509-11:23:24,83 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.meanfunc" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc".
+190509-11:23:24,108 nipype.workflow INFO:
+	 [Node] Running "meanfunc" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz -Tmean /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mean.nii.gz
+190509-11:23:40,60 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.meanfunc".
+190509-11:23:40,62 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.bet2_mean_func" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/bet2_mean_func".
+190509-11:23:40,261 nipype.workflow INFO:
+	 [Node] Running "bet2_mean_func" ("nipype.interfaces.fsl.preprocess.BET"), a CommandLine Interface with command:
+bet /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mean.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/bet2_mean_func/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mean_brain.nii.gz -f 0.30 -m -n -A
+190509-11:23:52,28 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.bet2_mean_func".
+190509-11:23:52,28 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.maskfunc" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/maskfunc".
+190509-11:23:52,86 nipype.workflow INFO:
+	 [Node] Setting-up "_maskfunc0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/maskfunc/mapflow/_maskfunc0".
+190509-11:23:52,97 nipype.workflow INFO:
+	 [Node] Running "_maskfunc0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz -mas /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/bet2_mean_func/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mean_brain_mask.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/maskfunc/mapflow/_maskfunc0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet.nii.gz
+190509-11:24:26,640 nipype.workflow INFO:
+	 [Node] Finished "_maskfunc0".
+190509-11:24:26,652 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.maskfunc".
+190509-11:24:26,653 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.getthreshold" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/getthreshold".
+190509-11:24:26,672 nipype.workflow INFO:
+	 [Node] Setting-up "_getthreshold0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/getthreshold/mapflow/_getthreshold0".
+190509-11:24:26,689 nipype.workflow INFO:
+	 [Node] Running "_getthreshold0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/maskfunc/mapflow/_maskfunc0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet.nii.gz -p 2 -p 98
+190509-11:24:52,182 nipype.interface INFO:
+	 stdout 2019-05-09T11:24:52.182593:0.000000 13437.588867 
+190509-11:24:52,423 nipype.workflow INFO:
+	 [Node] Finished "_getthreshold0".
+190509-11:24:52,454 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.getthreshold".
+190509-11:24:52,454 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.tresholding" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/tresholding".
+190509-11:24:52,506 nipype.workflow INFO:
+	 [Node] Setting-up "_tresholding0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/tresholding/mapflow/_tresholding0".
+190509-11:24:52,528 nipype.workflow INFO:
+	 [Node] Running "_tresholding0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/maskfunc/mapflow/_maskfunc0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet.nii.gz -thr 1343.7588867000 -Tmin -bin /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/tresholding/mapflow/_tresholding0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet_thresh.nii.gz -odt char
+190509-11:25:03,851 nipype.workflow INFO:
+	 [Node] Finished "_tresholding0".
+190509-11:25:03,860 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.tresholding".
+190509-11:25:03,860 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.dilatemask" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilatemask".
+190509-11:25:03,888 nipype.workflow INFO:
+	 [Node] Setting-up "_dilatemask0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilatemask/mapflow/_dilatemask0".
+190509-11:25:03,900 nipype.workflow INFO:
+	 [Node] Running "_dilatemask0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/tresholding/mapflow/_tresholding0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet_thresh.nii.gz -dilF /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/mask.nii.gz
+190509-11:25:05,680 nipype.workflow INFO:
+	 [Node] Finished "_dilatemask0".
+190509-11:25:05,803 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.dilatemask".
+190509-11:25:05,804 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.dilateMask_MCed" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_MCed".
+190509-11:25:06,40 nipype.workflow INFO:
+	 [Node] Setting-up "_dilateMask_MCed0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_MCed/mapflow/_dilateMask_MCed0".
+190509-11:25:06,254 nipype.workflow INFO:
+	 [Node] Running "_dilateMask_MCed0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz -mas /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/mask.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_MCed/mapflow/_dilateMask_MCed0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask.nii.gz
+190509-11:25:44,638 nipype.workflow INFO:
+	 [Node] Finished "_dilateMask_MCed0".
+190509-11:25:44,668 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.dilateMask_MCed".
+190509-11:25:44,668 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.meanfunc2" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc2".
+190509-11:25:44,704 nipype.workflow INFO:
+	 [Node] Setting-up "_meanfunc20" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc2/mapflow/_meanfunc20".
+190509-11:25:44,719 nipype.workflow INFO:
+	 [Node] Running "_meanfunc20" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_MCed/mapflow/_dilateMask_MCed0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask.nii.gz -Tmean /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc2/mapflow/_meanfunc20/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_mean.nii.gz
+190509-11:25:54,167 nipype.workflow INFO:
+	 [Node] Finished "_meanfunc20".
+190509-11:25:54,180 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.meanfunc2".
+190509-11:25:54,180 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.merge" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/merge".
+190509-11:25:54,197 nipype.workflow INFO:
+	 [Node] Running "merge" ("nipype.interfaces.utility.base.Merge")
+190509-11:25:54,222 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.merge".
+190509-11:25:54,222 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.susan_smooth" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/susan_smooth".
+190509-11:25:54,311 nipype.workflow INFO:
+	 [Node] Setting-up "_susan_smooth0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/susan_smooth/mapflow/_susan_smooth0".
+190509-11:25:54,330 nipype.workflow INFO:
+	 [Node] Running "_susan_smooth0" ("nipype.interfaces.fsl.preprocess.SUSAN"), a CommandLine Interface with command:
+susan /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_MCed/mapflow/_dilateMask_MCed0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask.nii.gz 6046.9149901500 1.2739827004 3 1 1 /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanfunc2/mapflow/_meanfunc20/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_mean.nii.gz 6046.9149901500 /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/susan_smooth/mapflow/_susan_smooth0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_smooth.nii.gz
+190509-11:29:40,851 nipype.workflow INFO:
+	 [Node] Finished "_susan_smooth0".
+190509-11:29:40,978 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.susan_smooth".
+190509-11:29:40,979 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.dilateMask_smoothed" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_smoothed".
+190509-11:29:41,163 nipype.workflow INFO:
+	 [Node] Setting-up "_dilateMask_smoothed0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_smoothed/mapflow/_dilateMask_smoothed0".
+190509-11:29:41,250 nipype.workflow INFO:
+	 [Node] Running "_dilateMask_smoothed0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/susan_smooth/mapflow/_susan_smooth0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_smooth.nii.gz -mas /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/mask.nii.gz /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_smoothed/mapflow/_dilateMask_smoothed0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_smooth_mask.nii.gz
+190509-11:30:02,77 nipype.workflow INFO:
+	 [Node] Finished "_dilateMask_smoothed0".
+190509-11:30:02,85 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.dilateMask_smoothed".
+190509-11:30:02,86 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.cal_intensity_scale_factor" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/cal_intensity_scale_factor".
+190509-11:30:02,133 nipype.workflow INFO:
+	 [Node] Setting-up "_cal_intensity_scale_factor0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/cal_intensity_scale_factor/mapflow/_cal_intensity_scale_factor0".
+190509-11:30:02,144 nipype.workflow INFO:
+	 [Node] Running "_cal_intensity_scale_factor0" ("nipype.interfaces.fsl.utils.ImageStats"), a CommandLine Interface with command:
+fslstats /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/MCFlirt/mapflow/_MCFlirt0/sub-01_unfeat_run-08_bold_dtype_roi_mcf.nii.gz -k /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/tresholding/mapflow/_tresholding0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_bet_thresh.nii.gz -p 50 
+190509-11:30:23,271 nipype.interface INFO:
+	 stdout 2019-05-09T11:30:23.271018:8029.024902 
+190509-11:30:23,564 nipype.workflow INFO:
+	 [Node] Finished "_cal_intensity_scale_factor0".
+190509-11:30:23,653 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.cal_intensity_scale_factor".
+190509-11:30:23,653 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.meanscale" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanscale".
+190509-11:30:23,814 nipype.workflow INFO:
+	 [Node] Setting-up "_meanscale0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/meanscale/mapflow/_meanscale0".
+190509-11:30:23,827 nipype.workflow INFO:
+	 [Node] Running "_meanscale0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/dilateMask_smoothed/mapflow/_dilateMask_smoothed0/sub-01_unfeat_run-08_bold_dtype_roi_mcf_mask_smooth_mask.nii.gz -mul 1.2454812536 /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/prefiltered_func.nii.gz
+190509-11:30:44,198 nipype.workflow INFO:
+	 [Node] Finished "_meanscale0".
+190509-11:30:44,253 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.meanscale".
+190509-11:30:44,253 nipype.workflow INFO:
+	 [Node] Setting-up "nipype_workflow.gen_mean_func_img" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/gen_mean_func_img".
+190509-11:30:44,297 nipype.workflow INFO:
+	 [Node] Setting-up "_gen_mean_func_img0" in "/bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/nipype_workflow/gen_mean_func_img/mapflow/_gen_mean_func_img0".
+190509-11:30:44,310 nipype.workflow INFO:
+	 [Node] Running "_gen_mean_func_img0" ("nipype.interfaces.fsl.utils.ImageMaths"), a CommandLine Interface with command:
+fslmaths /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/prefiltered_func.nii.gz -Tmean /bcbl/home/public/Consciousness/uncon_feat/data/MRI/sub-01/func/session-04/sub-01_unfeat_run-08/outputs/func/mean_func.nii.gz
+190509-11:30:55,72 nipype.workflow INFO:
+	 [Node] Finished "_gen_mean_func_img0".
+190509-11:30:55,97 nipype.workflow INFO:
+	 [Node] Finished "nipype_workflow.gen_mean_func_img".

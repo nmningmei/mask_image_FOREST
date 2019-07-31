@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "CP (lh-superiorfrontal).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_18.txt
+#$ -e bash/err_18.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "CP18"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "CP (lh-superiorfrontal).py"

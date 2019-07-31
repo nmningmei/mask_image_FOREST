@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "CP (lh-fusiform).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_11.txt
+#$ -e bash/err_11.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "CP11"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "CP (lh-fusiform).py"
