@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -543,6 +544,9 @@ def create_fsl_FEAT_workflow_func(whichrun          = 0,
                                   first_run         = True,
                                   func_data_file    = 'temp',
                                   fwhm              = 3):
+    """
+    Works with fsl-5.0.9 and fsl-5.0.11, but not fsl-6.0.0
+    """
     from nipype.workflows.fmri.fsl             import preprocess
     from nipype.interfaces                     import fsl
     from nipype.interfaces                     import utility as util
