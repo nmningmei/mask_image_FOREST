@@ -1,3 +1,0 @@
-trials.thisRepN,trials.thisTrialN,trials.thisN,trials.thisIndex,key_resp_2.keys,key_resp_2.rt,probe_onset,response.keys,response.corr,response.rt,visible.keys,visible.corr,visible.rt,probeFrames,To_end_the_experiment.keys,To_end_the_experiment.rt,expName,random_state,frameRate,premask_dur,session,date,probeFrames,participant,experiment,n_postmask,n_premask,postmask_dur,conscious_state,
-,,,,space,64.4301854349,,,,,,,,5,,,experiment_DEF,11111,99.7817062611,10,012,2019_mar_13_1109,5,marta,EEG_bw,2,2,10,balanced,
-,,,,,,0.00409580994165,2,1,0.381053061538,4,0,1.65382544611,5,space,4.6302926947,experiment_DEF,11111,99.7817062611,10,012,2019_mar_13_1109,5,marta,EEG_bw,2,2,10,balanced,
