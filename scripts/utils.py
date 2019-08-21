@@ -2273,7 +2273,37 @@ def standard_MNI_coordinate_for_plot():
         'lh-ventrolateralPFC':(-32,54,-4),
         'rh-ventrolateralPFC':(42,46,0)}
 
-
+def bootstrap_behavioral_estimation(df_sub,n_bootstrap = int(1e2)):
+    scores,chance = [],[]
+    responses = df_sub['response.keys_raw'].values - 1
+    answers = df_sub['correctAns_raw'].values - 1
+    np.random.seed(12345)
+    for n_ in tqdm(range(n_bootstrap)):
+        idx = np.random.choice(np.arange(responses.shape[0]),
+                               size = responses.shape[0],
+                               replace = True)
+        
+        response_ = responses[idx]
+        answer_ = answers[idx]
+        score_ = roc_auc_score(answer_,response_)
+        scores.append(score_)
+    scores = np.array(scores)
+    # chance
+    # by keeping the answers in order but shuffle the response, 
+    # we can estimate the chance
+    # level accuracy
+    idx = np.random.choice(np.arange(responses.shape[0]),
+                           size = responses.shape[0],
+                           replace = True)
+    
+    response_ = responses[idx]
+    answer_ = answers[idx]
+    chance = np.array([roc_auc_score(answer_,shuffle(response_))\
+                       for _ in tqdm(range(n_bootstrap))])
+    
+    pvals = resample_ttest_2sample(scores,chance,one_tail = True,
+                                   match_sample_size = True)
+    return pvals,scores,chance
 
 
 
