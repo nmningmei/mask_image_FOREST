@@ -10,6 +10,8 @@ This script is decoding with LOO methods
 """
 
 import os
+import warnings
+warnings.filterwarnings('ignore') 
 os.chdir('..')
 import pandas as pd
 import numpy  as np
@@ -37,25 +39,26 @@ stacked_data_dir    = '../../../data/BOLD_average/{}/'.format(sub)
 output_dir          = '../../../results/MRI/nilearn/{}/LOO'.format(sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-BOLD_data           = glob(os.path.join(stacked_data_dir,'*BOLD.npy'))
-event_data          = glob(os.path.join(stacked_data_dir,'*.csv'))
+BOLD_data           = np.sort(glob(os.path.join(stacked_data_dir,'*BOLD.npy')))
+event_data          = np.sort(glob(os.path.join(stacked_data_dir,'*.csv')))
+
 model_names         = [
-#        'None + Dummy',
+        'None + Dummy',
         'None + Linear-SVM',
 #        'None + Ensemble-SVMs',
 #        'None + KNN',
 #        'None + Tree',
-#        'PCA + Dummy',
+        'PCA + Dummy',
         'PCA + Linear-SVM',
 #        'PCA + Ensemble-SVMs',
 #        'PCA + KNN',
 #        'PCA + Tree',
-#        'Mutual + Dummy',
+        'Mutual + Dummy',
         'Mutual + Linear-SVM',
 #        'Mutual + Ensemble-SVMs',
 #        'Mutual + KNN',
 #        'Mutual + Tree',
-#        'RandomForest + Dummy',
+        'RandomForest + Dummy',
         'RandomForest + Linear-SVM',
 #        'RandomForest + Ensemble-SVMs',
 #        'RandomForest + KNN',
@@ -65,6 +68,7 @@ model_names         = [
 label_map           = {'Nonliving_Things':[0,1],
                        'Living_Things':   [1,0]}
 average             = True
+n_jobs              = 8
 
 idx = 0
 np.random.seed(12345)
@@ -100,7 +104,7 @@ for conscious_state in ['unconscious','glimpse','conscious']:
                                      scoring            = 'roc_auc',
                                      cv                 = zip(idxs_train,idxs_test),
                                      return_estimator   = True,
-                                     n_jobs             = 6,
+                                     n_jobs             = n_jobs,
                                      verbose            = 0,
                                      )
             
@@ -116,7 +120,7 @@ for conscious_state in ['unconscious','glimpse','conscious']:
             
             results                         = OrderedDict()
             results['fold']                 = np.arange(n_splits) + 1
-            results['sub']                  = ['01'] * n_splits
+            results['sub']                  = [sub] * n_splits
             results['roi']                  = [roi_name] * n_splits
             results['roc_auc']              = roc_auc
             results['mattews_correcoef']    = mattews_correcoef
@@ -138,4 +142,6 @@ for conscious_state in ['unconscious','glimpse','conscious']:
             results_to_save = pd.DataFrame(results)
             results_to_save.to_csv(os.path.join(output_dir,file_name),index = False)
             print(f'saving {os.path.join(output_dir,file_name)}')
+        else:
+            print(file_name)
 
