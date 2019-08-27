@@ -383,7 +383,7 @@ def get_frames(directory,new = True,EEG = True):
             df[col] = df[col].apply(str2int)
             
         df["probeFrames_raw"] = df["probe_Frames_raw"]
-    
+    df = df[df['probeFrames_raw'] != 999]
     df = df.sort_values(['run','order'])
     
     for vis,df_sub in df.groupby(['visible.keys_raw']):
@@ -440,6 +440,7 @@ def get_frames(directory,new = True,EEG = True):
             df.append(temp)
         df = pd.concat(df)
     df['probeFrames'] = df['probeFrames'].apply(str2int)
+    df = df[df['probeFrames'] != 999]
     results = []
     for vis,df_sub in df.groupby(['visible.keys_raw']):
         corrects = df_sub['response.corr_raw'].sum() / df_sub.shape[0]
@@ -2080,13 +2081,18 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     """
     import numpy as np
     experiment      = np.mean(x) # the mean of the observations in the experiment
-    experiment_diff = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
-    # newexperiment = np.mean(experiment_diff) # just look at the new mean and make sure it is at the baseline
-    # simulate/bootstrap null hypothesis distribution
-    # 1st-D := within one permutation resamping, we perform resampling same as the experimental samples,
-    # but also repeat this one sampling n_permutation times
-    # 2nd-D := repeat 2nd-D n_ps times to obtain a distribution of p values later
-    temp            = np.random.choice(experiment_diff,size=(n_permutation,n_ps),replace=True)
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    # in each permutation, we bootstrap null items from the null set with replacement, and we bootstrap the same number as the original set
+    # repeat the permutation multiple times, and we will have a distribution of mean of null set
+    # repeat the procedure multiple times, and we will have a distribution of p values
+    if x.shape[0] < 50:
+        temp            = np.random.choice(null,size=(x.shape[0],n_permutation,n_ps),replace=True)
+        temp            = temp.mean(0)
+    else:
+        temp = np.zeros((n_ps,n_permutation))
+        for ii in range(n_ps):
+            for jj in tqdm(range(n_permutation)):
+                temp[ii,jj] = np.mean(np.random.choice(null,size=x.shape[0],replace = True))
     # along each row of the matrix (n_row = n_permutation), we count instances that are greater than the observed mean of the experiment
     # compute the proportion, and we get our p values
     
