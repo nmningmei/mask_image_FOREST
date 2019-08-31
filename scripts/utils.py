@@ -2068,7 +2068,18 @@ def LOO_partition(data,df_data):
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False):
+def multidimensional_shifting(num_samples,sample_size,elements,probabilities):
+    # replate probabilties as many times as "num_samples"
+    replicated_probabilities = np.tile(probabilities,(num_samples,1))
+    #get random shifting numbers & scale them correctly
+    random_shifts = np.random.random(replicated_probabilities.shape)
+    random_shifts /= random_shifts.sum(axis = 1)[:,np.newaxis]
+    # shift by number & find largest (by finding the smallest of the negative)
+    shifted_probabilities = random_shifts - replicated_probabilities
+    return np.argpartition(shifted_probabilities,sample_size,axis = 1)[:,:sample_size]
+
+def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
+                   n_jobs = 12, verbose = 0):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
     Inputs:
@@ -2076,73 +2087,47 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     x: numpy array vector, the data that is to be compared
     baseline: the single point that we compare the data with
     n_ps: number of p values we want to estimate
-    n_permutation: number of permutation we want to perform, the more the further it could detect the strong effects, but it is so unnecessary
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    experiment      = np.mean(x) # the mean of the observations in the experiment
-    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    bootstrap_sample= np.median(np.random.choice(x,size = (int(x.shape[0]/2.),n_permutation),replace = True),0) # the mean of the observations in the experiment
+    experiment      = np.mean(bootstrap_sample)
+    null            = bootstrap_sample - np.mean(bootstrap_sample) + baseline # shift the mean to the baseline but keep the distribution
     # in each permutation, we bootstrap null items from the null set with replacement, and we bootstrap the same number as the original set
     # repeat the permutation multiple times, and we will have a distribution of mean of null set
     # repeat the procedure multiple times, and we will have a distribution of p values
-    if x.shape[0] < 50:
-        temp            = np.random.choice(null,size=(x.shape[0],n_permutation,n_ps),replace=True)
-        temp            = temp.mean(0)
-    else:
-        temp = np.zeros((n_ps,n_permutation))
-        for ii in range(n_ps):
-            for jj in tqdm(range(n_permutation)):
-                temp[ii,jj] = np.mean(np.random.choice(null,size=x.shape[0],replace = True))
+    from joblib import Parallel,delayed
+    import gc
+    gc.collect()
+    temp = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(np.random.choice)(**{
+                    'a':null,
+                    'size':int(n_permutation),
+                    'replace':True}) for i in range(n_ps))
     # along each row of the matrix (n_row = n_permutation), we count instances that are greater than the observed mean of the experiment
     # compute the proportion, and we get our p values
     
     if one_tail:
-        ps = (np.sum(temp >= experiment,axis=0)+1.) / (n_permutation + 1.)
+        ps = (np.sum(temp >= experiment,axis = 1)+1.) / (n_permutation + 1.)
     else:
-        ps = (np.sum(np.abs(temp) >= np.abs(experiment),axis=0)+1.) / (n_permutation + 1.)
+        ps = (np.sum(np.abs(temp) >= np.abs(experiment),axis = 1)+1.) / (n_permutation + 1.)
     return ps
-def resample_ttest_2sample(a,b,n_ps=100,n_permutation=5000,one_tail=False,match_sample_size = True,):
+def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
+                           one_tail=False,
+                           match_sample_size = True,
+                           n_jobs = 6,
+                           verbose = 0):
     # when the N is matched just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
-        ps          = resample_ttest(difference,baseline=0,n_ps=n_ps,n_permutation=n_permutation,one_tail=one_tail)
+        ps          = resample_ttest(difference,baseline=0,
+                                     n_ps=n_ps,n_permutation=n_permutation,
+                                     one_tail=one_tail,
+                                     n_jobs=n_jobs,
+                                     verbose=verbose,)
         return ps
     else: # when the N is not matched
-        difference              = np.mean(a) - np.mean(b)
-        concatenated            = np.concatenate([a,b])
-        np.random.shuffle(concatenated)
-        temp                    = np.zeros((n_permutation,n_ps))
-        # the next part of the code is to estimate the "randomized situation" under the given data's distribution
-        # by randomized the items in each group (a and b), we can compute the chance level differences
-        # and then we estimate the probability of the chance level exceeds the true difference 
-        # as to represent the "p value"
-        try:
-            iterator            = tqdm(range(n_ps),desc='ps')
-        except:
-            iterator            = range(n_ps)
-        for n_p in iterator:
-            for n_permu in range(n_permutation):
-                idx_a           = np.random.choice(a    = [0,1],
-                                                   size = (len(a)+len(b)),
-                                                   p    = [float(len(a))/(len(a)+len(b)),
-                                                           float(len(b))/(len(a)+len(b))]
-                                                   ).astype(np.bool)
-                idx_b           = np.logical_not(idx_a)
-                d               = np.mean(concatenated[idx_a]) - np.mean(concatenated[idx_b])
-                if np.isnan(d):
-                    idx_a       = np.random.choice(a        = [0,1],
-                                                   size     = (len(a)+len(b)),
-                                                   p        = [float(len(a))/(len(a)+len(b)),
-                                                               float(len(b))/(len(a)+len(b))]
-                                                   ).astype(np.bool)
-                    idx_b       = np.logical_not(idx_a)
-                    d           = np.mean(concatenated[idx_a]) - np.mean(concatenated[idx_b])
-                temp[n_permu,n_p] = d
-        if one_tail:
-            ps = (np.sum(temp >= difference,axis=0)+1.) / (n_permutation + 1.)
-        else:
-            ps = (np.sum(np.abs(temp) >= np.abs(difference),axis=0)+1.) / (n_permutation + 1.)
+        print('not implemented')
         return ps
 
 class MCPConverter(object):
@@ -2309,7 +2294,103 @@ def bootstrap_behavioral_estimation(df_sub,n_bootstrap = int(1e2)):
                                    match_sample_size = True)
     return pvals,scores,chance
 
-
+def get_label_category_mapping():
+    return {'Chest-of-drawers': 'Nonliving_Things',
+ 'armadillo': 'Living_Things',
+ 'armchair': 'Nonliving_Things',
+ 'axe': 'Nonliving_Things',
+ 'barn-owl': 'Living_Things',
+ 'bed': 'Nonliving_Things',
+ 'bedside-table': 'Nonliving_Things',
+ 'boat': 'Nonliving_Things',
+ 'bookcase': 'Nonliving_Things',
+ 'bus': 'Nonliving_Things',
+ 'butterfly': 'Living_Things',
+ 'car': 'Nonliving_Things',
+ 'castle': 'Nonliving_Things',
+ 'cat': 'Living_Things',
+ 'cathedral': 'Nonliving_Things',
+ 'chair': 'Nonliving_Things',
+ 'cheetah': 'Living_Things',
+ 'church': 'Nonliving_Things',
+ 'coking-pot': 'Nonliving_Things',
+ 'couch': 'Nonliving_Things',
+ 'cow': 'Living_Things',
+ 'crab': 'Living_Things',
+ 'cup': 'Nonliving_Things',
+ 'dolphin': 'Living_Things',
+ 'dragonfly': 'Living_Things',
+ 'drum': 'Nonliving_Things',
+ 'duck': 'Living_Things',
+ 'elephant': 'Living_Things',
+ 'factory': 'Nonliving_Things',
+ 'filling-cabinet': 'Nonliving_Things',
+ 'fondue': 'Nonliving_Things',
+ 'frying-pan': 'Nonliving_Things',
+ 'giraffe': 'Living_Things',
+ 'goldfinch': 'Living_Things',
+ 'goose': 'Living_Things',
+ 'granary': 'Nonliving_Things',
+ 'guitar': 'Nonliving_Things',
+ 'hammer': 'Nonliving_Things',
+ 'hen': 'Living_Things',
+ 'hippopotamus': 'Living_Things',
+ 'horse': 'Living_Things',
+ 'house': 'Nonliving_Things',
+ 'hummingbird': 'Living_Things',
+ 'killer-whale': 'Living_Things',
+ 'kiwi': 'Living_Things',
+ 'ladybird': 'Living_Things',
+ 'lamp': 'Nonliving_Things',
+ 'lectern': 'Nonliving_Things',
+ 'lioness': 'Living_Things',
+ 'lobster': 'Living_Things',
+ 'lynx': 'Living_Things',
+ 'magpie': 'Living_Things',
+ 'manatee': 'Living_Things',
+ 'mill': 'Nonliving_Things',
+ 'motorbike': 'Nonliving_Things',
+ 'narwhal': 'Living_Things',
+ 'ostrich': 'Living_Things',
+ 'owl': 'Living_Things',
+ 'palace': 'Nonliving_Things',
+ 'partridge': 'Living_Things',
+ 'pelican': 'Living_Things',
+ 'penguin': 'Living_Things',
+ 'piano': 'Nonliving_Things',
+ 'pigeon': 'Living_Things',
+ 'plane': 'Nonliving_Things',
+ 'pomfret': 'Living_Things',
+ 'pot': 'Nonliving_Things',
+ 'raven': 'Living_Things',
+ 'rhino': 'Living_Things',
+ 'rocking-chair': 'Nonliving_Things',
+ 'rooster': 'Living_Things',
+ 'saucepan': 'Nonliving_Things',
+ 'saxophone': 'Nonliving_Things',
+ 'scorpion': 'Living_Things',
+ 'seagull': 'Living_Things',
+ 'shark': 'Living_Things',
+ 'ship': 'Nonliving_Things',
+ 'small-saucepan': 'Nonliving_Things',
+ 'sofa': 'Nonliving_Things',
+ 'sparrow': 'Living_Things',
+ 'sperm-whale': 'Living_Things',
+ 'table': 'Nonliving_Things',
+ 'tapir': 'Living_Things',
+ 'teapot': 'Nonliving_Things',
+ 'tiger': 'Living_Things',
+ 'toucan': 'Living_Things',
+ 'tractor': 'Nonliving_Things',
+ 'train': 'Nonliving_Things',
+ 'trumpet': 'Nonliving_Things',
+ 'tuba': 'Nonliving_Things',
+ 'turtle': 'Living_Things',
+ 'van': 'Nonliving_Things',
+ 'violin': 'Nonliving_Things',
+ 'wardrobe': 'Nonliving_Things',
+ 'whale': 'Living_Things',
+ 'zebra': 'Living_Things'}
 
 
 
