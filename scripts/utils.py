@@ -2068,20 +2068,12 @@ def LOO_partition(data,df_data):
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
-def multidimensional_shifting(num_samples,sample_size,elements,probabilities):
-    # replate probabilties as many times as "num_samples"
-    replicated_probabilities = np.tile(probabilities,(num_samples,1))
-    #get random shifting numbers & scale them correctly
-    random_shifts = np.random.random(replicated_probabilities.shape)
-    random_shifts /= random_shifts.sum(axis = 1)[:,np.newaxis]
-    # shift by number & find largest (by finding the smallest of the negative)
-    shifted_probabilities = random_shifts - replicated_probabilities
-    return np.argpartition(shifted_probabilities,sample_size,axis = 1)[:,:sample_size]
 
 def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
                    n_jobs = 12, verbose = 0):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
+    https://www.tau.ac.il/~saharon/StatisticsSeminar_files/Hypothesis.pdf
     Inputs:
     ----------
     x: numpy array vector, the data that is to be compared
@@ -2090,33 +2082,34 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    bootstrap_sample= np.median(np.random.choice(x,size = (int(x.shape[0]/2.),n_permutation),replace = True),0) # the mean of the observations in the experiment
-    experiment      = np.mean(bootstrap_sample)
-    null            = bootstrap_sample - np.mean(bootstrap_sample) + baseline # shift the mean to the baseline but keep the distribution
-    # in each permutation, we bootstrap null items from the null set with replacement, and we bootstrap the same number as the original set
-    # repeat the permutation multiple times, and we will have a distribution of mean of null set
-    # repeat the procedure multiple times, and we will have a distribution of p values
+    # t statistics with the original data distribution
+    t_experiment = (np.mean(x) - baseline) / (np.std(x) / np.sqrt(x.shape[0]))
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
     from joblib import Parallel,delayed
     import gc
     gc.collect()
-    temp = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(np.random.choice)(**{
-                    'a':null,
-                    'size':int(n_permutation),
-                    'replace':True}) for i in range(n_ps))
-    # along each row of the matrix (n_row = n_permutation), we count instances that are greater than the observed mean of the experiment
-    # compute the proportion, and we get our p values
+    def t_statistics(null,size,):
+        """
+        null: shifted data distribution
+        size: tuple of 2 integers (n_for_averaging,n_permutation)
+        """
+        null_dist = np.random.choice(null,size = size,replace = True)
+        t_null = (np.mean(null_dist,0) - baseline) / (np.std(null_dist,0) / np.sqrt(null_dist.shape[0]))
+        if one_tail:
+            return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
+        else:
+            return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
+    ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                    'null':null,
+                    'size':(null.shape[0],int(n_permutation)),}) for i in range(n_ps))
     
-    if one_tail:
-        ps = (np.sum(temp >= experiment,axis = 1)+1.) / (n_permutation + 1.)
-    else:
-        ps = (np.sum(np.abs(temp) >= np.abs(experiment),axis = 1)+1.) / (n_permutation + 1.)
-    return ps
+    return np.array(ps)
 def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
                            one_tail=False,
                            match_sample_size = True,
                            n_jobs = 6,
                            verbose = 0):
-    # when the N is matched just simply test the pairwise difference against 0
+    # when the samples are dependent just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
@@ -2126,8 +2119,26 @@ def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
                                      n_jobs=n_jobs,
                                      verbose=verbose,)
         return ps
-    else: # when the N is not matched
-        print('not implemented')
+    else: # when the samples are independent
+        t_experiment,_ = stats.ttest_ind(a,b,equal_var = False)
+        def t_statistics(a,b):
+            group = np.random.choice(np.concatenate([a,b]),size = int(len(a) + len(b)),replace = True)
+            new_a = group[:a.shape[0]]
+            new_b = group[a.shape[0]:]
+            t_null,_ = stats.ttest_ind(new_a,new_b,equal_var = False)
+            return t_null
+        from joblib import Parallel,delayed
+        import gc
+        gc.collect()
+        ps = np.zeros(n_ps)
+        for ii in range(n_ps):
+            t_null_null = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                            'a':a,
+                            'b':b}) for i in range(n_permutation))
+            if one_tail:
+                ps[ii] = ((np.sum(t_null_null >= t_experiment)) + 1) / (n_permutation + 1)
+            else:
+                ps[ii] = ((np.sum(np.abs(t_null_null) >= np.abs(t_experiment))) + 1) / (n_permutation + 1) / 2
         return ps
 
 class MCPConverter(object):
