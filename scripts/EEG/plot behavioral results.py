@@ -38,6 +38,7 @@ all_subjects = ['aingere_5_16_2019',
                 'xabier_5_15_2019',
                 ]
 all_subjects = np.sort(all_subjects)
+n_samples = int(5000)
 
 working_dir = '../../data/behavioral'
 figure_dir = '../../figures/EEG/behaviorals'
@@ -46,7 +47,7 @@ if not os.path.exists(figure_dir):
 saving_dir = '../../results/EEG/behaviorals'
 if not os.path.exists(saving_dir):
     os.mkdir(saving_dir)
-
+np.random.seed(12345)
 for sub_name in all_subjects:
     df = pd.concat([pd.read_csv(f).dropna() for f in glob(os.path.join(working_dir,
                                                     sub_name,
@@ -55,7 +56,8 @@ for sub_name in all_subjects:
                 'response.keys_raw',
                 'visible.keys_raw']:
         df[col] = df[col].apply(utils.str2int)
-    df['visibility'] = df['visible.keys_raw'].map({1.:'unconscious',2.:'glimpse',3.:'conscious'})
+    df['visibility'] = df['visible.keys_raw'].map({1.:'unconscious',2.:'glimpse',
+      3.:'conscious'})
     df = df.sort_values(['visible.keys_raw'])
     
     # RT as a function of visibility
@@ -72,11 +74,12 @@ for sub_name in all_subjects:
                 bbox_inches = 'tight')
     
     # distribution of accuracy as a function of visibility
-    n_bootstrap = int(5e3)
+    n_bootstrap = int(1e3)
     df_acc_name = os.path.join(saving_dir,
                                f'{sub_name}_bootstrapping.csv')
-    if os.path.exists(df_acc_name):
+    if os.path.exists(df_acc_name.replace('bootstrapping','stats')):
         df_acc = pd.read_csv(df_acc_name)
+        df_acc_chance = pd.read_csv(df_acc_name.replace('bootstrapping','chance'))
         df_p_val = pd.read_csv(df_acc_name.replace('bootstrapping','stats'))
     else:
         df_acc = dict(visibility = [],
@@ -84,31 +87,68 @@ for sub_name in all_subjects:
         for visibility,df_sub in df.groupby(['visibility']):
             responses = df_sub['response.keys_raw'].values - 1
             answers = df_sub['correctAns_raw'].values - 1
-            np.random.seed(12345)
             for n_ in tqdm(range(n_bootstrap)):
-                idx = np.random.choice(np.arange(responses.shape[0]),size = int(responses.shape[0]*0.8),
+                idx = np.random.choice(np.arange(responses.shape[0]),
+                                       size = int(len(responses)),
                                        replace = True)
                 
                 response_ = responses[idx]
                 answer_ = answers[idx]
-                score_ = roc_auc_score(answer_,response_)
+                score_ = roc_auc_score(answer_,response_,average='micro')
                 df_acc['visibility'].append(visibility)
                 df_acc['score'].append(score_)
         df_acc = pd.DataFrame(df_acc)
         df_acc.to_csv(df_acc_name,index = False)
-        df_p_val = dict(visibility = [],
-                        ps_mean = [],)
-        for visibility,df_sub in df_acc.groupby(['visibility']):
-            scores = df_sub['score'].values
-            df_temp = df[df['visibility'] == visibility]
-            # by keeping the answers in order but shuffle the response, we can estimate the chance
-            # level accuracy
-            chance = np.array([roc_auc_score(df_temp['correctAns_raw'].values - 1,
-                                             shuffle(df_temp['response.keys_raw'].values - 1))\
-                        for _ in tqdm(range(n_bootstrap))])
-            pvals = utils.resample_ttest_2sample(scores,chance,one_tail = True,match_sample_size = True)
+
+
+        df_chance = dict(visibility = [],
+                         score = [])
+        for visibility,df_sub in df.groupby(['visibility']):
+            responses = df_sub['response.keys_raw'].values - 1
+            answers = df_sub['correctAns_raw'].values - 1
+            for n_ in tqdm(range(n_bootstrap)):
+                idx = np.random.choice(np.arange(responses.shape[0]),
+                                       size = int(len(responses)),
+                                       replace = True)
+                
+                response_ = responses[idx]
+                answer_ = answers[idx]
+                score_ = roc_auc_score(answer_,shuffle(response_),average='micro')
+                df_chance['visibility'].append(visibility)
+                df_chance['score'].append(score_)
+        df_chance = pd.DataFrame(df_chance)
+        df_chance.to_csv(df_acc_name.replace('bootstrapping','chance'))
+        
+        df_p_val = dict(diff_mean = [],
+                        diff_std = [],
+                        visibility = [],
+                        ps_mean = [],
+                        ps_std = [],
+                        p = [],
+                        t = [],)
+        for visibility,df_acc_sub, in df_acc.groupby('visibility'):
+            df_chance_sub = df_chance[df_chance['visibility'] == visibility]
+            ps = utils.resample_ttest_2sample(df_acc_sub['score'].values,
+                                              df_chance_sub['score'].values,
+                                              one_tail = True,
+                                              match_sample_size = True)
+            from scipy import stats
+            t,p = stats.ttest_rel(df_acc_sub['score'].values,
+                                  df_chance_sub['score'].values,)
+            if df_acc_sub['score'].values.mean() <= df_chance_sub['score'].values.mean():
+                p = 1-p/2
+            else:
+                p = p/2
+            df_p_val['diff_mean'].append(np.mean(df_acc_sub['score'].values - df_chance_sub['score'].values)
+            )
+            df_p_val['diff_std'].append(np.std(df_acc_sub['score'].values - df_chance_sub['score'].values)
+            )
             df_p_val['visibility'].append(visibility)
-            df_p_val['ps_mean'].append(pvals.mean())
+            df_p_val['ps_mean'].append(ps.mean())
+            df_p_val['ps_std'].append(ps.std())
+            df_p_val['p'].append(p)
+            df_p_val['t'].append(t)
+        
         df_p_val = pd.DataFrame(df_p_val)
         df_p_val = df_p_val.sort_values(['ps_mean'])
         pvals = df_p_val['ps_mean'].values
@@ -117,11 +157,15 @@ for sub_name in all_subjects:
         df_p_val['ps_corrected'] = d['bonferroni'].values
         df_p_val['star'] = df_p_val['ps_corrected'].apply(utils.stars)
         df_p_val.to_csv(df_acc_name.replace('bootstrapping','stats'),index = False)
+        df_acc['type'] = 'score'
+        df_chance['type'] = 'chance'
+    df_acc_plot = pd.concat([df_acc,df_chance])
     fig,ax = plt.subplots(figsize = (8,6))
     ax = sns.barplot(x = 'visibility',
                      y = 'score',
+                     hue = 'type',
                      ci = 'sd',
-                     data = df_acc,
+                     data = df_acc_plot,
                      )
     ax.set(xlabel = 'Visibility Ratings', ylabel = 'Accuracy',
            title = f'{sub_name}_bootstrapped_acc',
@@ -134,7 +178,7 @@ for sub_name in all_subjects:
     dpi = 300,
     bbox_inches = 'tight')
     
-    
+    plt.close('all')
 
 
 
