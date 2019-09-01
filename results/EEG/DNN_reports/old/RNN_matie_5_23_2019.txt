@@ -1,3 +1,0 @@
-unconscious 0.5002 +/- 0.0797
-glimpse    0.5011 +/- 0.1077
-conscious  0.4733 +/- 0.1384
