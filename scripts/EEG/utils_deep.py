@@ -9,24 +9,14 @@ deep learn util funtions
 
 """
 
-import os
+
 import mne
-import re
 import numpy as np
-import pandas as pd
-from datetime import datetime
-from glob import glob
-from shutil import copyfile
-from scipy.stats import mode
-from sklearn import metrics
-from sklearn.utils import shuffle
-from sklearn.preprocessing import MinMaxScaler,StandardScaler
-from sklearn.model_selection import train_test_split,StratifiedShuffleSplit
+from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
 from tensorflow.keras import layers,Model, optimizers,losses,regularizers,callbacks#,Sequential
 from keras import metrics as k_metrics
 import tensorflow.keras.backend as K
-from collections import Counter
 
 def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_delta=1e-4,patience=50,frequency = 1):
     from tensorflow.keras.callbacks import ModelCheckpoint,EarlyStopping
@@ -49,17 +39,19 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
     EarlyStopping: early stoppi....
     """
     checkPoint = ModelCheckpoint(model_name,# saving path
-                                 monitor          = monitor,# saving criterion
+#                                 monitor          = monitor,# saving criterion
                                  save_best_only   = True,# save only the best model
                                  mode             = mode,# saving criterion
-                                 period           = frequency,# frequency of check the update 
-                                 verbose          = verbose# print out (>1) or not (0)
+#                                 period           = frequency,# frequency of check the update 
+                                 verbose          = verbose,# print out (>1) or not (0)
+                                 load_weights_on_restart = True,
                                  )
     earlyStop = EarlyStopping(   monitor          = monitor,
                                  min_delta        = min_delta,
                                  patience         = patience,
                                  verbose          = verbose, 
                                  mode             = mode,
+                                 restore_best_weights = True,
                                  )
     return [checkPoint,earlyStop]
 def preprocess_features(X,vectorizer = None,scaler = None):
@@ -120,8 +112,8 @@ def build_model(timesteps,
                 batch_size  = 32,
                 n_layers    = 1,
                 drop        = True,
-                l1          = 1e-2,
-                l2          = 1e-2,):
+                l1          = 1e-4,
+                l2          = 1e-4,):
     K.clear_session()
     inputs          = layers.Input(
                                    shape        = (timesteps,data_dim,),
@@ -132,6 +124,8 @@ def build_model(timesteps,
                              return_state       = True,
                              return_sequences   = True,
                              kernel_regularizer = regularizers.l2(l2),
+                             recurrent_regularizer = regularizers.l2(l2),
+                             activity_regularizer = regularizers.l1(l1),
                              name               = 'rnn{}'.format(1))(inputs_)
     RNN         = layers.BatchNormalization(
                              name               = 'norm{}'.format(1))(RNN)
@@ -149,6 +143,8 @@ def build_model(timesteps,
                                  dropout            = 0.1,
                                  recurrent_dropout  = 0.25,
                                  kernel_regularizer = regularizers.l2(l2),
+                                 recurrent_regularizer = regularizers.l2(l2),
+                                 activity_regularizer = regularizers.l1(l1),
                                  name               = 'rnn{}'.format(n_temp + 2))(RNN,initial_state = [state_h])
         RNN         = layers.BatchNormalization(
                                  name               = 'norm{}'.format(n_temp + 2))(RNN)
