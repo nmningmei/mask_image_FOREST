@@ -44,12 +44,12 @@ all_subjects = ['aingere_5_16_2019',
                 'pedro_5_14_2019',
                 'xabier_5_15_2019',
                 ]
-all_subjects = np.sort(all_subjects[1:])
+all_subjects = np.sort(all_subjects)
 
 for subject in all_subjects:
     working_dir         = f'../../data/clean EEG highpass detrend/{subject}'
     working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
-    n_splits            = 25
+    n_splits            = 100
     n_epochs            = int(2e2)
     print_model         = True
     
@@ -99,20 +99,22 @@ for subject in all_subjects:
                 n_units     = 1
                 n_layers    = 1
                 dropout     = True
+                l2          = 1e-4
                 # make the model
                 classifier = utils_deep.build_model(timesteps   = timesteps,
                                                     data_dim    = data_dim,
                                                     n_units     = n_units,
                                                     batch_size  = batch_size,
                                                     n_layers    = n_layers,
-                                                    drop        = dropout)
+                                                    drop        = dropout,
+                                                    l2          = l2,)
                 print(f'the model has {classifier.count_params()} parameters')
                 if print_model:
                     classifier.summary()
                     print_model = False
                     
                 # compile the model with optimizer, loss function
-                classifier.compile(optimizer                = optimizers.Adam(lr = 1e-4),
+                classifier.compile(optimizer                = optimizers.Adam(lr = 1e-3),
                                    loss                     = losses.categorical_crossentropy,
                                    metrics                  = [k_metrics.categorical_accuracy])
                 # early stopping
@@ -120,7 +122,7 @@ for subject in all_subjects:
                                    model_name,
                                    verbose                  = 0,# print out the process
                                    frequency                = 1,
-                                   **utils_deep.call_back_dict(classifier,'loss'))
+                                   **utils_deep.call_back_dict(classifier,'metric'))
                 
                 # prepare the data
                 X_train,y_train = utils_deep.prepare_data_batch(X_train,y_train,batch_size = batch_size)

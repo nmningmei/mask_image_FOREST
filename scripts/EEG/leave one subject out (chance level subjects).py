@@ -34,12 +34,12 @@ logistic = LogisticRegression(
                               )
 n_jobs = 6
 
-working_dir = '../../data/clean EEG'
+working_dir = '../../data/clean EEG highpass detrend'
 working_data = glob(os.path.join(working_dir,'*','*.fif'))
-array_dir = '../../results/EEG/LOO_CV'
+array_dir = '../../results/EEG/LOO_CV_chance_subjects'
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
-figure_dir = '../../figures/EEG/LOO_CV'
+figure_dir = '../../figures/EEG/LOO_CV_chance_subjects'
 if not os.path.exists(figure_dir):
     os.mkdir(figure_dir)
 def load_epochs(f,conscious_state,sub = 0):
@@ -49,6 +49,9 @@ def load_epochs(f,conscious_state,sub = 0):
     epochs_temp.events = events
     epochs_needed = mne.concatenate_epochs([epochs_temp[name] for name in epochs_temp.event_id.keys() if (conscious_state in name)])
     return epochs_needed
+working_data = [item for item in working_data if ('ana' in item) or ('mattin' in item) or \
+                ('alba' in item) or ('clara' in item) or ('leyre' in item)\
+                or ('lierni' in item) or ('maria' in item) or ('matie' in item)]
 
 for conscious_state in ['unconscious','glimpse',' conscious']:
     conscious_state
@@ -60,11 +63,20 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     
     X = epochs.get_data()
     y = epochs.events[:,-1] // 100 - 2
+    times = epochs.times
     np.random.seed(12345)
     X,y = shuffle(X,y)
     groups = epochs.events[:,1]
     
     cv = LeaveOneGroupOut()
+    idxs_train, idxs_test = [],[]
+    for idx_train,idx_test in cv.split(X,y,groups):
+        for _ in range(2):
+            idx_ = np.random.choice(idx_train,
+                                    size = int(len(idx_train) * .8),
+                                    replace = False)
+            idxs_train.append(idx_)
+            idxs_test.append(idx_test)
     clf         = make_pipeline(
                                 StandardScaler(),
                                 clone(logistic))
@@ -85,7 +97,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                                             time_decod, 
                                             X,
                                             y,
-                                            cv                  = cv, 
+                                            cv                  = zip(idxs_train,idxs_test), 
                                             n_jobs              = n_jobs,
                                             groups              = groups,
                                             )
@@ -143,7 +155,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                                             time_gen, 
                                             X,
                                             y,
-                                            cv                  = cv, 
+                                            cv                  = zip(idxs_train,idxs_test), 
                                             n_jobs              = n_jobs,
                                             groups              = groups,
                                             )
@@ -192,7 +204,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     if saving_name in glob(os.path.join(array_dir,'*.npy')):
         T_obs = np.load(saving_name)
         clusters = np.load(saving_name.replace('T_obs','clusters'))
-        cluster_p_values = np.load(saving_name.replace('T_obs','clustre_p_values'))
+        cluster_p_values = np.load(saving_name.replace('T_obs','cluster_p_values'))
     else:
         alpha           = 0.0001
         sigma           = 1e-3
@@ -216,7 +228,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                             )
         np.save(saving_name,T_obs)
         np.save(saving_name.replace("T_obs","clusters"),clusters)
-        np.save(saving_name.replace('T_obs','clustre_p_values'),cluster_p_values)
+        np.save(saving_name.replace('T_obs','cluster_p_values'),cluster_p_values)
     # since the p values of each cluster is corrected for multiple comparison, 
     # we could directly use 0.05 as the threshold to filter clusters
     T_obs_plot              = 0 * np.ones_like(T_obs)

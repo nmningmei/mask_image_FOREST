@@ -39,10 +39,10 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
     EarlyStopping: early stoppi....
     """
     checkPoint = ModelCheckpoint(model_name,# saving path
-#                                 monitor          = monitor,# saving criterion
+                                 monitor          = monitor,# saving criterion
                                  save_best_only   = True,# save only the best model
                                  mode             = mode,# saving criterion
-#                                 period           = frequency,# frequency of check the update 
+                                 save_freq        = 'epoch',# frequency of check the update 
                                  verbose          = verbose,# print out (>1) or not (0)
                                  load_weights_on_restart = True,
                                  )
@@ -82,7 +82,7 @@ def prepare_data_batch(X,y,batch_size = 32):
     -------------------------------
     processed X,y
     """
-    X       = X / np.abs(X.max())
+    X       = X / np.abs(X.max(-1).max(-1))
     remain_ = X.shape[0] % batch_size
     if remain_ != 0:
         np.random.seed(12345)
@@ -120,13 +120,14 @@ def build_model(timesteps,
                                    batch_size   = batch_size,#(batch_size,timesteps,data_dim),
                                    name         = 'inputs')
     inputs_         = inputs
-    RNN,state_h = layers.GRU(units              = n_units,
-                             return_state       = True,
-                             return_sequences   = True,
-                             kernel_regularizer = regularizers.l2(l2),
-                             recurrent_regularizer = regularizers.l2(l2),
-                             activity_regularizer = regularizers.l1(l1),
-                             name               = 'rnn{}'.format(1))(inputs_)
+    RNN,state_h,state_c = layers.LSTM(units              = n_units,
+                                      activation         = 'sigmoid',
+                                      return_state       = True,
+                                      return_sequences   = True,
+                                      kernel_regularizer = regularizers.l2(l2),
+                                      recurrent_regularizer = regularizers.l2(l2),
+                                      activity_regularizer = regularizers.l1(l1),
+                                      name               = 'rnn{}'.format(1))(inputs_)
     RNN         = layers.BatchNormalization(
                              name               = 'norm{}'.format(1))(RNN)
     if n_units == 1:
@@ -137,15 +138,16 @@ def build_model(timesteps,
     for n_temp in range(n_layers - 1):
         l1 /= 10
         l2 /= 10
-        RNN,state_h = layers.GRU(units              = n_units,
-                                 return_state       = True,
-                                 return_sequences   = True,
-                                 dropout            = 0.1,
-                                 recurrent_dropout  = 0.25,
-                                 kernel_regularizer = regularizers.l2(l2),
-                                 recurrent_regularizer = regularizers.l2(l2),
-                                 activity_regularizer = regularizers.l1(l1),
-                                 name               = 'rnn{}'.format(n_temp + 2))(RNN,initial_state = [state_h])
+        RNN,state_h,state_c = layers.LSTM(units              = n_units,
+                                          activation         = 'sigmoid',
+                                          return_state       = True,
+                                          return_sequences   = True,
+                                          dropout            = 0.1,
+                                          recurrent_dropout  = 0.25,
+                                          kernel_regularizer = regularizers.l2(l2),
+                                          recurrent_regularizer = regularizers.l2(l2),
+                                          activity_regularizer = regularizers.l1(l1),
+                                          name               = 'rnn{}'.format(n_temp + 2))(RNN,initial_state = [state_h,state_c])
         RNN         = layers.BatchNormalization(
                                  name               = 'norm{}'.format(n_temp + 2))(RNN)
         if n_units == 1:

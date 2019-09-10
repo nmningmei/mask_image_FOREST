@@ -36,10 +36,10 @@ n_jobs = 6
 
 working_dir = '../../data/clean EEG'
 working_data = glob(os.path.join(working_dir,'*','*.fif'))
-array_dir = '../../results/EEG/LOO_CV'
+array_dir = '../../results/EEG/LOO_incorrect'
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
-figure_dir = '../../figures/EEG/LOO_CV'
+figure_dir = '../../figures/EEG/LOO_incorrect'
 if not os.path.exists(figure_dir):
     os.mkdir(figure_dir)
 def load_epochs(f,conscious_state,sub = 0):
@@ -50,11 +50,15 @@ def load_epochs(f,conscious_state,sub = 0):
     epochs_needed = mne.concatenate_epochs([epochs_temp[name] for name in epochs_temp.event_id.keys() if (conscious_state in name)])
     return epochs_needed
 
-for conscious_state in ['unconscious','glimpse',' conscious']:
+for conscious_state in ['unconscious']:
     conscious_state
     
     epochs = mne.concatenate_epochs([load_epochs(f,conscious_state,ii) for ii,f in enumerate(working_data)])
-    
+    # decode the incorrect trials
+    epochs = mne.concatenate_epochs(
+                [epochs['living nonliving unconscious'],
+                 epochs['nonliving living unconscious']
+                        ])
     print('resampling...')
     epochs.resample(100)
     

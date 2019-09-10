@@ -17,6 +17,7 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_auc_score
 from sklearn.utils import shuffle
+from sklearn.model_selection import StratifiedKFold,StratifiedShuffleSplit
 from shutil import copyfile
 copyfile('../utils.py','utils.py')
 import utils
@@ -38,7 +39,6 @@ all_subjects = ['aingere_5_16_2019',
                 'xabier_5_15_2019',
                 ]
 all_subjects = np.sort(all_subjects)
-n_samples = int(5000)
 
 working_dir = '../../data/behavioral'
 figure_dir = '../../figures/EEG/behaviorals'
@@ -74,7 +74,13 @@ for sub_name in all_subjects:
                 bbox_inches = 'tight')
     
     # distribution of accuracy as a function of visibility
-    n_bootstrap = int(1e3)
+    n_bootstrap = int(30)
+    if n_bootstrap < df.shape[0] / 10:
+        cv = StratifiedKFold(n_splits = n_bootstrap,shuffle = True,random_state = 12345)
+    else:
+        cv = StratifiedShuffleSplit(n_splits = n_bootstrap,
+                                    test_size = 0.2,
+                                    random_state = 12345)
     df_acc_name = os.path.join(saving_dir,
                                f'{sub_name}_bootstrapping.csv')
     if os.path.exists(df_acc_name.replace('bootstrapping','stats')):
@@ -87,11 +93,7 @@ for sub_name in all_subjects:
         for visibility,df_sub in df.groupby(['visibility']):
             responses = df_sub['response.keys_raw'].values - 1
             answers = df_sub['correctAns_raw'].values - 1
-            for n_ in tqdm(range(n_bootstrap)):
-                idx = np.random.choice(np.arange(responses.shape[0]),
-                                       size = int(len(responses)),
-                                       replace = True)
-                
+            for idx,_ in cv.split(responses,answers):
                 response_ = responses[idx]
                 answer_ = answers[idx]
                 score_ = roc_auc_score(answer_,response_,average='micro')
@@ -106,11 +108,7 @@ for sub_name in all_subjects:
         for visibility,df_sub in df.groupby(['visibility']):
             responses = df_sub['response.keys_raw'].values - 1
             answers = df_sub['correctAns_raw'].values - 1
-            for n_ in tqdm(range(n_bootstrap)):
-                idx = np.random.choice(np.arange(responses.shape[0]),
-                                       size = int(len(responses)),
-                                       replace = True)
-                
+            for idx,_ in cv.split(responses,answers):
                 response_ = responses[idx]
                 answer_ = answers[idx]
                 score_ = roc_auc_score(answer_,shuffle(response_),average='micro')
@@ -131,7 +129,7 @@ for sub_name in all_subjects:
             ps = utils.resample_ttest_2sample(df_acc_sub['score'].values,
                                               df_chance_sub['score'].values,
                                               one_tail = True,
-                                              match_sample_size = True)
+                                              match_sample_size = False)
             from scipy import stats
             t,p = stats.ttest_rel(df_acc_sub['score'].values,
                                   df_chance_sub['score'].values,)
