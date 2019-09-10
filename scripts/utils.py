@@ -80,7 +80,99 @@ try:
 except:
     print('why is tqdm not installed?')
 
-def preprocessing_conscious(
+def preprocessing_conscious(raw,
+                            events,
+                            session,
+                            tmin = -0,
+                            tmax = 1,
+                            notch_filter = 50,
+                            event_id = {'living':1,'nonliving':2},
+                            baseline = (None,None)
+                            ):
+    """
+    0. re-reference - explicitly
+    """
+    raw_ref ,_  = mne.set_eeg_reference(raw,
+                                        ref_channels     = 'average',
+                                        projection       = True,)
+    raw_ref.apply_proj() # it might tell you it already has been re-referenced, but do it anyway
+    # everytime before filtering, explicitly pick the type of channels you want
+    # to perform the filters
+    picks = mne.pick_types(raw_ref.info,
+                           meg = False, # No MEG
+                           eeg = True,  # YES EEG
+                           eog = True,  # YES EOG
+                           )
+    # regardless the bandpass filtering later, we should always filter
+    # for wire artifacts and their oscillations
+    raw_ref.notch_filter(np.arange(notch_filter,241,notch_filter),
+                         picks = picks)
+    epochs      = mne.Epochs(raw_ref,
+                             events,    # numpy array
+                             event_id,  # dictionary
+                             tmin        = tmin,
+                             tmax        = tmax,
+                             baseline    = baseline, # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                             picks       = picks,
+                             detrend     = 1, # detrend
+                             preload     = True # must be true if we want to do further processing
+                             )
+#    picks       = mne.pick_types(epochs.info,
+#                           eeg          = True, # YES EEG
+#                           eog          = False # NO EOG
+#                           )
+#    ar          = AutoReject(
+#                    picks               = picks,
+#                    random_state        = 12345,
+#                    )
+#    ar.fit(epochs)
+#    _,reject_log = ar.transform(epochs,return_log=True)
+#    # calculate the noise covariance of the epochs
+#    noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+#                                         tmin                   = tmin,
+#                                         tmax                   = tmax,
+#                                         method                 = 'empirical',
+#                                         rank                   = None,)
+#    # define an ica function
+#    ica         = mne.preprocessing.ICA(n_components            = .99,
+#                                        n_pca_components        = .99,
+#                                        max_pca_components      = None,
+#                                        method                  = 'extended-infomax',
+#                                        max_iter                = int(3e3),
+#                                        noise_cov               = noise_cov,
+#                                        random_state            = 12345,)
+#    picks       = mne.pick_types(epochs.info,
+#                                 eeg = True, # YES EEG
+#                                 eog = False # NO EOG
+#                                 ) 
+#    ica.fit(epochs[~reject_log.bad_epochs],
+#            picks   = picks,
+#            start   = tmin,
+#            stop    = tmax,
+#            decim   = 3,
+#            tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+#            )
+#    # search for artificial ICAs automatically
+#    # most of these hyperparameters were used in a unrelated published study
+#    ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+#                         eog_ch         = ['FT9','FT10','TP9','TP10'],
+#                         eog_criterion  = 0.4, # arbitary choice
+#                         skew_criterion = 2,   # arbitary choice
+#                         kurt_criterion = 2,   # arbitary choice
+#                         var_criterion  = 2,   # arbitary choice
+#                         )
+#    picks       = mne.pick_types(epochs.info,
+#                                 eeg = True, # YES EEG
+#                                 eog = False # NO EOG
+#                                 ) 
+#    epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+#                            exclude    = ica.exclude,
+#                            )
+    
+    clean_epochs = epochs.pick_types(eeg = True, eog = False)
+    
+    return clean_epochs
+def _preprocessing_conscious(
                   raw,events,session,
                   n_interpolates = np.arange(1,32,4),
                   consensus_pers = np.linspace(0,1.0,11),
@@ -92,7 +184,8 @@ def preprocessing_conscious(
                   notch_filter = 50,
                   fix = False,
                   ICA = False,
-                  logging = None):
+                  logging = None,
+                  filtering = False,):
     """
     Preprocessing pipeline for conscious trials
     
@@ -144,17 +237,18 @@ def preprocessing_conscious(
                            eeg = True,  # YES EEG
                            eog = False, # No EOG
                            )
-    raw_ref.filter(high_pass,
-                   None,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   l_trans_bandwidth= high_pass,
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
-    
+    if filtering:
+        raw_ref.filter(high_pass,
+                       None,
+                       picks            = picks,
+                       filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+                       l_trans_bandwidth= high_pass,
+                       method           = 'fir',     # overlap-add FIR filtering
+                       phase            = 'zero',    # the delay of this filter is compensated for
+                       fir_window       = 'hamming', # The window to use in FIR design
+                       fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+                       )
+        
     """
     2. epoch the data
     """
@@ -167,7 +261,7 @@ def preprocessing_conscious(
                              event_id,  # dictionary
                         tmin        = tmin,
                         tmax        = tmax,
-                        baseline    = (tmin,-0.2), # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                        baseline    = (tmin,- (1 / 60 * 20)), # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
                         picks       = picks,
                         detrend     = 1, # linear detrend
                         preload     = True # must be true if we want to do further processing
@@ -263,15 +357,15 @@ def preprocessing_conscious(
         picks = mne.pick_types(epochs.info,
                                eeg = True,
                                eog = False,)
-        epochs.filter(None,
-                   low_pass,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
+#        epochs.filter(None,
+#                   low_pass,
+#                   picks            = picks,
+#                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+#                   method           = 'fir',     # overlap-add FIR filtering
+#                   phase            = 'zero',    # the delay of this filter is compensated for
+#                   fir_window       = 'hamming', # The window to use in FIR design
+#                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+#                   )
         if logging is not None:
             for key in epochs.event_id.keys():
                 evoked = epochs[key].average()
@@ -303,15 +397,15 @@ def preprocessing_conscious(
         picks = mne.pick_types(clean_epochs.info,
                                eeg = True,
                                eog = False,)
-        clean_epochs.filter(None,
-                   low_pass,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
+#        clean_epochs.filter(None,
+#                   low_pass,
+#                   picks            = picks,
+#                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+#                   method           = 'fir',     # overlap-add FIR filtering
+#                   phase            = 'zero',    # the delay of this filter is compensated for
+#                   fir_window       = 'hamming', # The window to use in FIR design
+#                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+#                   )
         if logging is not None:
             for key in clean_epochs.event_id.keys():
                 evoked = epochs[key].average()
@@ -1653,9 +1747,9 @@ def registration_plotting(output_dir,
     except:
         print('you should not use python 2.7, update your python!!')
 
-def create_highpass_filter_workflow(workflow_name = 'highpassfiler',
-                                    HP_freq = 60,
-                                    TR = 0.85):
+def create_highpass_filter_workflow(workflow_name   = 'highpassfiler',
+                                    HP_freq         = 60,
+                                    TR              = 0.85):
     from nipype.workflows.fmri.fsl    import preprocess
     from nipype.interfaces            import fsl
     from nipype.pipeline              import engine as pe
@@ -1672,86 +1766,86 @@ def create_highpass_filter_workflow(workflow_name = 'highpassfiler',
                                       fields    = ['filtered_file']),
                                       name      = 'outputspec')
     
-    img2float = pe.MapNode(interface    = fsl.ImageMaths(out_data_type     = 'float',
-                                                         op_string         = '',
-                                                         suffix            = '_dtype'),
-                           iterfield    = ['in_file'],
-                           name         = 'img2float')
+    img2float               = pe.MapNode(interface     = fsl.ImageMaths(out_data_type     = 'float',
+                                                                        op_string         = '',
+                                                                        suffix            = '_dtype'),
+                                         iterfield     = ['in_file'],
+                                         name          = 'img2float')
     highpass_workflow.connect(inputnode,'ICAed_file',
                               img2float,'in_file')
     
-    getthreshold = pe.MapNode(interface     = fsl.ImageStats(op_string = '-p 2 -p 98'),
-                              iterfield     = ['in_file'],
-                              name          = 'getthreshold')
+    getthreshold            = pe.MapNode(interface     = fsl.ImageStats(op_string = '-p 2 -p 98'),
+                                         iterfield     = ['in_file'],
+                                         name          = 'getthreshold')
     highpass_workflow.connect(img2float,    'out_file',
                               getthreshold, 'in_file')
-    thresholding = pe.MapNode(interface     = fsl.ImageMaths(out_data_type  = 'char',
-                                                             suffix         = '_thresh',
-                                                             op_string      = '-Tmin -bin'),
-                                iterfield   = ['in_file','op_string'],
-                                name        = 'thresholding')
+    thresholding            = pe.MapNode(interface    = fsl.ImageMaths(out_data_type  = 'char',
+                                                                       suffix         = '_thresh',
+                                                                       op_string      = '-Tmin -bin'),
+                                         iterfield    = ['in_file','op_string'],
+                                         name         = 'thresholding')
     highpass_workflow.connect(img2float,    'out_file',
                               thresholding, 'in_file')
     highpass_workflow.connect(getthreshold,('out_stat',getthreshop),
                               thresholding,'op_string')
     
-    dilatemask = pe.MapNode(interface   = fsl.ImageMaths(suffix     = '_dil',
-                                                         op_string  = '-dilF'),
-                            iterfield   = ['in_file'],
-                            name        = 'dilatemask')
+    dilatemask              = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_dil',
+                                                                       op_string  = '-dilF'),
+                                         iterfield    = ['in_file'],
+                                         name         = 'dilatemask')
     highpass_workflow.connect(thresholding,'out_file',
                               dilatemask,'in_file')
     
-    maskfunc = pe.MapNode(interface     = fsl.ImageMaths(suffix     = '_mask',
-                                                         op_string  = '-mas'),
-                          iterfield     = ['in_file','in_file2'],
-                          name          = 'apply_dilatemask')
+    maskfunc                = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_mask',
+                                                                       op_string  = '-mas'),
+                                         iterfield    = ['in_file','in_file2'],
+                                         name         = 'apply_dilatemask')
     highpass_workflow.connect(img2float,    'out_file',
                               maskfunc,     'in_file')
     highpass_workflow.connect(dilatemask,   'out_file',
                               maskfunc,     'in_file2')
     
-    medianval = pe.MapNode(interface    = fsl.ImageStats(op_string = '-k %s -p 50'),
-                           iterfield    = ['in_file','mask_file'],
-                           name         = 'cal_intensity_scale_factor')
+    medianval               = pe.MapNode(interface    = fsl.ImageStats(op_string = '-k %s -p 50'),
+                                         iterfield    = ['in_file','mask_file'],
+                                         name         = 'cal_intensity_scale_factor')
     highpass_workflow.connect(img2float,    'out_file',
                               medianval,    'in_file')
     highpass_workflow.connect(thresholding, 'out_file',
                               medianval,    'mask_file')
     
-    meanscale = pe.MapNode(interface    = fsl.ImageMaths(suffix = '_intnorm'),
-                           iterfield    = ['in_file','op_string'],
-                           name         = 'meanscale')
+    meanscale               = pe.MapNode(interface    = fsl.ImageMaths(suffix    = '_intnorm'),
+                                         iterfield    = ['in_file','op_string'],
+                                         name         = 'meanscale')
     highpass_workflow.connect(maskfunc,     'out_file',
                               meanscale,    'in_file')
     highpass_workflow.connect(medianval,    ('out_stat',getmeanscale),
                               meanscale,    'op_string')
     
-    meanfunc = pe.MapNode(interface     = fsl.ImageMaths(suffix     = '_mean',
-                                                         op_string  = '-Tmean'),
-                           iterfield    = ['in_file'],
-                           name         = 'meanfunc')
+    meanfunc                = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_mean',
+                                                                       op_string  = '-Tmean'),
+                                         iterfield    = ['in_file'],
+                                         name         = 'meanfunc')
     highpass_workflow.connect(meanscale, 'out_file',
                               meanfunc,  'in_file')
     
     
-    hpf = pe.MapNode(interface  = fsl.ImageMaths(suffix     = '_tempfilt',
-                                                 op_string  = '-bptf %.10f -1' % (HP_freq/2/TR)),
-                     iterfield  = ['in_file'],
-                     name       = 'highpass_filering')
+    hpf                     = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_tempfilt',
+                                                                       op_string  = '-bptf %.10f -1' % (HP_freq/2/TR)),
+                                         iterfield    = ['in_file'],
+                                         name         = 'highpass_filering')
     highpass_workflow.connect(meanscale,'out_file',
                               hpf,      'in_file',)
     
-    addMean = pe.MapNode(interface  = fsl.BinaryMaths(operation = 'add'),
-                         iterfield  = ['in_file','operand_file'],
-                         name       = 'addmean')
+    addMean                 = pe.MapNode(interface    = fsl.BinaryMaths(operation = 'add'),
+                                         iterfield    = ['in_file','operand_file'],
+                                         name         = 'addmean')
     highpass_workflow.connect(hpf,      'out_file',
                               addMean,  'in_file')
     highpass_workflow.connect(meanfunc, 'out_file',
                               addMean,  'operand_file')
     
-    highpass_workflow.connect(addMean,      'out_file',
-                              outputnode,   'filtered_file')
+    highpass_workflow.connect(addMean,   'out_file',
+                              outputnode,'filtered_file')
     
     return highpass_workflow
 
@@ -1769,7 +1863,7 @@ def load_csv(f,print_ = False):
 
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
-                           remove_invariant = False,
+                           remove_invariant = True,
                            n_jobs = 1):
     np.random.seed(12345)
     svm = LinearSVC(penalty = 'l2', # default
