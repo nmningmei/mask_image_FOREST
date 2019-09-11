@@ -96,6 +96,7 @@ def preprocessing_conscious(raw,
                                         ref_channels     = 'average',
                                         projection       = True,)
     raw_ref.apply_proj() # it might tell you it already has been re-referenced, but do it anyway
+    
     # everytime before filtering, explicitly pick the type of channels you want
     # to perform the filters
     picks = mne.pick_types(raw_ref.info,
@@ -130,7 +131,7 @@ def preprocessing_conscious(raw,
 #    # calculate the noise covariance of the epochs
 #    noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
 #                                         tmin                   = tmin,
-#                                         tmax                   = tmax,
+#                                         tmax                   = 0,
 #                                         method                 = 'empirical',
 #                                         rank                   = None,)
 #    # define an ica function
