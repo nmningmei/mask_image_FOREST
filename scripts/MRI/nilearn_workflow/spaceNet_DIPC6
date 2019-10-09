@@ -1,0 +1,14 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=80gb
+#PBS -l cput=768:00:00
+#PBS -N SN6
+#PBS -o spaceNet_outputs/out_spaceNet6
+#PBS -e spaceNet_outputs/err_spaceNet6
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+python "spaceNet_6.py"
+    

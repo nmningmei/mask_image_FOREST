@@ -10,7 +10,7 @@ import os
 from glob import glob
 import re
 
-sub = 'sub-04'
+sub = 'sub-07'
 data_dir = '../../../data/MRI/{}/func/*/*/outputs/func/ICA_AROMA'.format(sub)
 ICAed_data = glob(os.path.join(
         data_dir,

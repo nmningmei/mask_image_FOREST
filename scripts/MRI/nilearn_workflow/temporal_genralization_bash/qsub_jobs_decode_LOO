@@ -1,0 +1,15 @@
+
+#!/bin/bash
+
+# This is a script to send qsub_jobs_decode_LOO.py as a batch job.
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=50mb
+#PBS -l cput=1:00:00
+#PBS -N qsubjobs
+#PBS -o bash/out_q.txt
+#PBS -e bash/err_q.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+python "../temporal_genralization_bash/qsub_jobs_decode_LOO.py"

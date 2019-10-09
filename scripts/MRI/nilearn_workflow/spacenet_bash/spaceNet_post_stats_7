@@ -1,0 +1,13 @@
+
+#!/bin/bash
+#$ -cwd
+#$ -o bash/out_7.txt
+#$ -e bash/err_7.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "SNP7"
+#$ -S /bin/bash
+module load rocks-python-3.6 rocks-fsl-5.0.10 rocks-freesurfer-6.0.0
+python "spaceNet post stats 7.py"
+    

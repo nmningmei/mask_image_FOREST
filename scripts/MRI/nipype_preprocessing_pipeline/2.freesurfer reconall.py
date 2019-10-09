@@ -10,7 +10,7 @@ from nipype.interfaces.freesurfer import ReconAll
 import os
 from glob import glob
 
-sub = 'sub-04'
+sub = 'sub-07'
 working_dir = '../../../data/MRI/{}/anat'.format(sub)
 reconall = ReconAll()
 reconall.inputs.subject_id = sub

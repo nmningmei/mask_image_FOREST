@@ -31,7 +31,7 @@ from sklearn.utils.testing   import ignore_warnings
 from collections             import OrderedDict
 
 
-sub                 = 'sub-04'
+sub                 = 'sub-01'
 stacked_data_dir    = '../../../data/BOLD_average/{}/'.format(sub)
 output_dir          = '../../../results/MRI/nilearn/{}/decoding'.format(sub)
 if not os.path.exists(output_dir):
@@ -39,26 +39,26 @@ if not os.path.exists(output_dir):
 BOLD_data           = glob(os.path.join(stacked_data_dir,'*BOLD.npy'))
 event_data          = glob(os.path.join(stacked_data_dir,'*.csv'))
 model_names         = [
-#        'None + Dummy',
+        'None + Dummy',
         'None + Linear-SVM',
-#        'None + Ensemble-SVMs',
-#        'None + KNN',
-#        'None + Tree',
-#        'PCA + Dummy',
+        'None + Ensemble-SVMs',
+        'None + KNN',
+        'None + Tree',
+        'PCA + Dummy',
         'PCA + Linear-SVM',
-#        'PCA + Ensemble-SVMs',
-#        'PCA + KNN',
-#        'PCA + Tree',
-#        'Mutual + Dummy',
+        'PCA + Ensemble-SVMs',
+        'PCA + KNN',
+        'PCA + Tree',
+        'Mutual + Dummy',
         'Mutual + Linear-SVM',
-#        'Mutual + Ensemble-SVMs',
-#        'Mutual + KNN',
-#        'Mutual + Tree',
-#        'RandomForest + Dummy',
+        'Mutual + Ensemble-SVMs',
+        'Mutual + KNN',
+        'Mutual + Tree',
+        'RandomForest + Dummy',
         'RandomForest + Linear-SVM',
-#        'RandomForest + Ensemble-SVMs',
-#        'RandomForest + KNN',
-#        'RandomForest + Tree',
+        'RandomForest + Ensemble-SVMs',
+        'RandomForest + KNN',
+        'RandomForest + Tree',
         ]
 #build_model_dictionary().keys()
 label_map           = {'Nonliving_Things':[0,1],
@@ -104,7 +104,7 @@ for conscious_state in ['unconscious','glimpse','conscious']:
                                      cv                 = zip(idxs_train,idxs_test),
                                      return_estimator   = True,
                                      n_jobs             = 8,
-                                     verbose            = 0,
+                                     verbose            = 1,
                                      )
             
             preds               = [estimator.predict_proba(  features[ii])[:,-1] for ii,estimator in zip(idxs_test,res['estimator'])]

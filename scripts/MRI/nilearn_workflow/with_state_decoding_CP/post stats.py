@@ -18,7 +18,7 @@ from shutil import copyfile
 copyfile('../../../utils.py','utils.py')
 import utils
 
-sub = 'sub-02'
+sub = 'sub-01'
 working_dir = '../../../../results/MRI/nilearn/{}/decoding'.format(sub)
 beha_dir = '../../../../data/behavioral/{}'.format(sub)
 results,summary_ = utils.get_frames(beha_dir,EEG = False)
@@ -58,50 +58,48 @@ df['side'] = temp[:,0]
 df_plot = pd.concat(df[df['conscious_state'] == state].sort_values(['roi_name','side']) for state in ['unconscious','glimpse','conscious'])
 df_plot['x'] = 0
 
-if not os.path.exists(os.path.join(saving_dir,'decoding 4 models.csv')):
-    results = dict(
-            roi_name = [],
-            side = [],
-            feature_selector = [],
-            conscious_state = [],
-            ps_mean = [],
-            ps_std = [],
-            diff = [])
-    for (roi,side,feature_selector,conscious_state),df_sub in df_plot.copy().groupby([
-            'roi_name','side','feature_selector','conscious_state']):
-        
-    #    df_baseline = df_sub[df_sub['estimator'] == 'Dummy'].sort_values(['roi','feature_selector','conscious_state'])
-        df_est = df_sub[df_sub['estimator'] != 'Dummy'].sort_values(['roi','feature_selector','conscious_state'])
-        
-        a = df_est['roc_auc'].values
-    #    b = df_baseline['roc_auc'].values
-        
-        ps = utils.resample_ttest(a,0.5,n_ps=100,n_permutation=10000,one_tail=True)
-        
-        results['roi_name'].append(roi)
-        results['side'].append(side)
-        results['feature_selector'].append(feature_selector)
-        results['conscious_state'].append(conscious_state)
-        results['ps_mean'].append(ps.mean())
-        results['ps_std'].append(ps.std())
-        results['diff'].append(a.mean() - 0.5)
+results = dict(
+        roi_name = [],
+        side = [],
+        feature_selector = [],
+        conscious_state = [],
+        ps_mean = [],
+        ps_std = [],
+        diff = [])
+for (roi,side,feature_selector,conscious_state),df_sub in df_plot.copy().groupby([
+        'roi_name','side','feature_selector','conscious_state']):
     
-    results = pd.DataFrame(results)
+#    df_baseline = df_sub[df_sub['estimator'] == 'Dummy'].sort_values(['roi','feature_selector','conscious_state'])
+    df_est = df_sub[df_sub['estimator'] != 'Dummy'].sort_values(['roi','feature_selector','conscious_state'])
     
-    temp = []
-    for (conscious_state),df_sub in results.groupby(['conscious_state']):
-        df_sub = df_sub.sort_values(['ps_mean'])
-        converter = utils.MCPConverter(pvals = df_sub['ps_mean'].values)
-        d = converter.adjust_many()
-        df_sub['ps_corrected'] = d['bonferroni'].values
-        temp.append(df_sub)
-    results = pd.concat(temp)
+    a = df_est['roc_auc'].values
+#    b = df_baseline['roc_auc'].values
     
+    ps = utils.resample_ttest(a,0.5,n_ps=100,n_permutation=10000,one_tail=True)
     
-    results = results.sort_values(['conscious_state','roi_name','side','feature_selector','ps_corrected'])
-    results.to_csv(os.path.join(saving_dir,'decoding 4 models.csv'),index=False)
-else:
-    results = pd.read_csv(os.path.join(saving_dir,'decoding 4 models.csv'))
+    results['roi_name'].append(roi)
+    results['side'].append(side)
+    results['feature_selector'].append(feature_selector)
+    results['conscious_state'].append(conscious_state)
+    results['ps_mean'].append(ps.mean())
+    results['ps_std'].append(ps.std())
+    results['diff'].append(a.mean() - 0.5)
+
+results = pd.DataFrame(results)
+
+temp = []
+for (conscious_state),df_sub in results.groupby(['conscious_state']):
+    df_sub = df_sub.sort_values(['ps_mean'])
+    converter = utils.MCPConverter(pvals = df_sub['ps_mean'].values)
+    d = converter.adjust_many()
+    df_sub['ps_corrected'] = d['bonferroni'].values
+    temp.append(df_sub)
+results = pd.concat(temp)
+
+
+results = results.sort_values(['conscious_state','roi_name','side','feature_selector','ps_corrected'])
+results.to_csv(os.path.join(saving_dir,'decoding 4 models.csv'),index=False)
+
 results['stars'] = results['ps_corrected'].apply(utils.stars)
 
 results_trim = results[results['ps_corrected'] < 0.05]

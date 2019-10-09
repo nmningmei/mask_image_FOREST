@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=20
+#PBS -l mem=40gb
+#PBS -l cput=960:00:00
+#PBS -N S6R9
+#PBS -o bash/out_69.txt
+#PBS -e bash/err_69.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-rostralmiddlefrontal"
+
+python "LOO_9.py"

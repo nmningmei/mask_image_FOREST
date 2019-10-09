@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=4gb
+#PBS -l cput=240:00:00
+#PBS -N sub-04
+#PBS -o out_4.txt
+#PBS -e err_4.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+
+python "post stats (sub-04).py"
+    

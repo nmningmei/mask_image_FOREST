@@ -12,7 +12,7 @@ from glob import glob
 from shutil import copyfile
 copyfile('../../utils.py','utils.py')
 from utils import create_highpass_filter_workflow
-sub = 'sub-01'
+sub = 'sub-07'
 data_dir = '../../../data/MRI/{}/func/*/*/outputs/func/ICA_AROMA'.format(sub)
 ICAed_data = glob(os.path.join(
         data_dir,

@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=96gb
+#PBS -l cput=768:00:00
+#PBS -N S1R7
+#PBS -o bash/out_17.txt
+#PBS -e bash/err_17.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-pericalcarine"
+
+python encoding_model_7.py
+

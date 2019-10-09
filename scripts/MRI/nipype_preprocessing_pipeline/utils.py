@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -341,13 +342,19 @@ def plot_EEG_autoreject_log(autoreject_object,):
     plt.colorbar(im)
     return fig
 def str2int(x):
-    return float(re.findall(r'\d+',x)[0])
+    try:
+        return float(re.findall(r'\d+',x)[0])
+    except:
+        return 999
 def simple_load(f,idx):
     df = pd.read_csv(f)
     df['run'] = idx
     return df
-def get_frames(directory,new = True,):
-    files = glob(os.path.join(directory,'*trials.csv'))
+def get_frames(directory,new = True,EEG = True):
+    if EEG:
+        files = glob(os.path.join(directory,'*trials.csv'))
+    else:
+        files = glob(os.path.join(directory,'*','*.csv'))
     empty_temp = ''
     for ii,f in enumerate(files):
         df = pd.read_csv(f).dropna()
@@ -361,10 +368,21 @@ def get_frames(directory,new = True,):
                       vis,df_sub.shape[0]))
                 
     df = pd.concat([simple_load(f,ii).dropna() for ii,f in enumerate(files)])
-    for col in ['probeFrames_raw',
-                'response.keys_raw',
-                'visible.keys_raw']:
-        df[col] = df[col].apply(str2int)
+    try:
+        for col in ['probeFrames_raw',
+                    'response.keys_raw',
+                    'visible.keys_raw']:
+#            print(df[col])
+            df[col] = df[col].apply(str2int)
+            
+    except:
+        for col in ['probe_Frames_raw',
+                    'response.keys_raw',
+                    'visible.keys_raw']:
+#            print(df[col])
+            df[col] = df[col].apply(str2int)
+            
+        df["probeFrames_raw"] = df["probe_Frames_raw"]
     
     df = df.sort_values(['run','order'])
     
@@ -386,7 +404,10 @@ def get_frames(directory,new = True,):
         df = []
         for f in files:
             temp = pd.read_csv(f).dropna()
-            temp[['probeFrames_raw','visible.keys_raw']]
+            try:
+                temp[['probeFrames_raw','visible.keys_raw']]
+            except:
+                temp['probeFrames_raw'] = temp['probe_Frames_raw']
             probeFrame = []
             for ii,row in temp.iterrows():
                 if int(re.findall(r'\d',row['visible.keys_raw'])[0]) == 1:
@@ -523,6 +544,9 @@ def create_fsl_FEAT_workflow_func(whichrun          = 0,
                                   first_run         = True,
                                   func_data_file    = 'temp',
                                   fwhm              = 3):
+    """
+    Works with fsl-5.0.9 and fsl-5.0.11, but not fsl-6.0.0
+    """
     from nipype.workflows.fmri.fsl             import preprocess
     from nipype.interfaces                     import fsl
     from nipype.interfaces                     import utility as util
@@ -2218,9 +2242,36 @@ def compute_xy(df_sub,position_map,hue_map):
     df_add = pd.concat(df_add)
     return df_add
 
+def split_probe_path(x,idx):
+    temp = x.split('/')
+    return temp[idx]
 
-
-
+def standard_MNI_coordinate_for_plot():
+    return {
+        'lh-fusiform':(-47,-52,-12),
+        'rh-fusiform':(47,-51,-14),
+        'lh-inferiorparietal':(-46,-60,33),
+        'rh-inferiorparietal':(46,-59,31),
+        'lh-inferiortemporal':(-47,-14,-34),
+        'rh-inferiortemporal':(48,-17,-31),
+        'lh-lateraloccipital':(-46,-58,-8),
+        'rh-lateraloccipital':(40,-78,12),
+        'lh-lingual':(-11,-81,7),
+        'rh-lingual':(11,-78,9),
+        'lh-rostralmiddlefrontal':(-30,50,24),
+        'rh-rostralmiddlefrontal':(4,58,30),
+        'lh-parahippocampal':(-25,-22,-22),
+        'rh-parahippocampal':(27,-19,-25),
+        'lh-pericalcarine':(-24,-66,8),
+        'rh-pericalcarine':(26,-68,12),
+        'lh-precuneus':None,
+        'rh-precuneus':None,
+        'lh-superiorfrontal':(-23,24,44),
+        'rh-superiorfrontal':(22,26,45),
+        'lh-superiorparietal':(-18,-61,55),
+        'rh-superiorparietal':(27,-60,45),
+        'lh-ventrolateralPFC':(-32,54,-4),
+        'rh-ventrolateralPFC':(42,46,0)}
 
 
 

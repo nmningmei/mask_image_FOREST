@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=96gb
+#PBS -l cput=768:00:00
+#PBS -N S1R12
+#PBS -o bash/out_112.txt
+#PBS -e bash/err_112.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-ventrolateralPFC"
+
+python encoding_model_12.py
+

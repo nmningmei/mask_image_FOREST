@@ -1,0 +1,18 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=96gb
+#PBS -l cput=768:00:00
+#PBS -N S1R20
+#PBS -o bash/out_120.txt
+#PBS -e bash/err_120.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+source activate keras-2.1.6_tensorflow-2.0.0
+pwd
+echo "rh-precuneus"
+
+python encoding_model_20.py
+

@@ -24,7 +24,8 @@ import os
 import re
 import csv
 
-sub             = 'sub-04'
+sub             = 'sub-07'
+folder_name     = 'post_response'
 MRI_dir         = '../../../data/MRI/{}/func/'.format(sub)
 MRI_data        = np.sort(glob(os.path.join(MRI_dir,
                                     '*', # session
@@ -102,8 +103,10 @@ for ii,row in df_temp.iterrows():
     df['start'] = df['image_onset_time_raw'] - 0.4 - 0.5 - 0.5
     # we are interested in the volumes that fall between 4 to 7 seconds after the onset
     # of the probe image
-    df['t1']    = df['image_onset_time_raw'] + 4
-    df['t2']    = df['image_onset_time_raw'] + 7
+    # or 0 to 3 seconds from the onset
+    # or 2 to 5 seconds after the visibility response
+    df['t1']    = df['image_onset_time_raw'] + 0.2 + df['jitter1_raw'] + 1.5 + 1.5 + 2
+    df['t2']    = df['image_onset_time_raw'] + 0.2 + df['jitter1_raw'] + 1.5 + 1.5 + 5
     
     # after preparing the time segments, we can start inserting the 
     # so-called "time coordinate"
@@ -119,7 +122,7 @@ for ii,row in df_temp.iterrows():
     RT_visibility   = trials.copy()
     probe_frame     = trials.copy()
     # initialize the placeholders for string data
-    targets         = np.array(['AAAAAAAAAAAAAAAAAAAA'] * time_coor.shape[0])
+    targets         = np.array(['AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'] * time_coor.shape[0])
     subcategory     = targets.copy()
     options         = targets.copy()
     labels          = targets.copy()
@@ -180,7 +183,9 @@ for ii,row in df_temp.iterrows():
     to_tsv['volume_interest']   = temp
     to_tsv['visibility']        = to_tsv['visibility'].map(visible_map)
     # define output directory, in which the raw-raw fMRI data lives in
-    output_dir = '/'.join(MRI_file.split('/')[:-3])
+    output_dir = os.path.join('/'.join(MRI_file.split('/')[:-3]),f'{folder_name}')
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     print(os.path.join(output_dir,
     '{}_session_{}_run_{}.csv'.format(sub,n_day,n_run)))
     # save csv

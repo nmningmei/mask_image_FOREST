@@ -11,7 +11,7 @@ import re
 from glob import glob
 import numpy as np
 
-sub             = 'sub-04' #specify subject name/code
+sub             = 'sub-07' #specify subject name/code
 first_session   = '01' # which session is the very first functional session, to which we align the rest
 func_dir        = '../../../data/MRI/{}/func/'.format(sub) # define the parent directory of the functional data
 

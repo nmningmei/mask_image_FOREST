@@ -19,12 +19,11 @@ from shutil         import copyfile,rmtree
 copyfile('../../utils.py',
          'utils.py')
 from utils          import (create_fsl_FEAT_workflow_func,
-                            create_registration_workflow,
-                            registration_plotting)
+                            create_registration_workflow)
 
 
-sub             = 'sub-01' #specify subject name/code
-first_session   = '02' # which session is the very first functional session, to which we align the rest
+sub             = 'sub-07' #specify subject name/code
+first_session   = '01' # which session is the very first functional session, to which we align the rest
 func_dir        = '../../../data/MRI/{}/func/'.format(sub) # define the parent directory of the functional data
 
 # because for one subject we remove the first session, thus, there is "wrong" in the name of that session
@@ -32,11 +31,11 @@ func_dir        = '../../../data/MRI/{}/func/'.format(sub) # define the parent d
 func_data       = [item for item in glob(os.path.join(func_dir,
                                                       '*',
                                                       '*',
-                                                      '*.nii')) if ('wrong' not in item)]
+                                                      '*.nii*')) if ('wrong' not in item)]
 func_data       = np.sort(func_data)
 
 # pick the functional data
-func_data_file = '../../../data/MRI/sub-01/func/session-03/sub-01_unfeat_run-02/sub-01_unfeat_run-02_bold.nii'
+func_data_file = '../../../data/MRI/sub-07/func/session-03/sub-07_unfeat_run-02/sub-07_unfeat_run-02_bold.nii.gz'
 # get the number of session (1 to 6) and number of run (1 to 9)
 temp            = re.findall('\d+',func_data_file)
 n_session       = int(temp[1])
@@ -69,6 +68,7 @@ preproc,MC_dir,output_dir = create_fsl_FEAT_workflow_func(
         )
 # make a figure of the workflow
 preproc.write_graph()
+
 # run the workflow
 res             = preproc.run()
 
@@ -114,7 +114,7 @@ if first_run == True:
     standard_mask       = '/opt/fsl/fsl-5.0.9/fsl/data/standard/MNI152_T1_2mm_brain_mask_dil.nii.gz'
     # specify the path of the structural scan with and without the skull
     anat_brain          = os.path.abspath(glob(os.path.join(anat_dir.format(sub),'*brain*'))[0]) # BET
-    anat_head           = os.path.abspath(glob(os.path.join(anat_dir.format(sub),'*6.nii'))[0])
+    anat_head           = os.path.abspath(glob(os.path.join(anat_dir.format(sub),'*t1*.nii*'))[0])
     # the so-called "example_func.nii.gz"
     func_ref            = os.path.join(preproc.base_dir,
                                              'outputs',
@@ -148,10 +148,47 @@ if first_run == True:
     registration.run()
     
     
-    # plot the results
-    registration_plotting(output_dir,
-                          anat_brain,
-                          standard_brain)
+    ######################
+    ###### plotting ######
+    example_func2highres = os.path.abspath(os.path.join(output_dir,
+                                                        'example_func2highres'))
+    example_func2standard = os.path.abspath(os.path.join(output_dir,
+                                                         "example_func2standard"))
+    highres2standard = os.path.abspath(os.path.join(output_dir,
+                                                    'highres2standard'))
+    highres = os.path.abspath(anat_brain)
+    standard = os.path.abspath(standard_brain)
+    
+    plot_example_func2highres = f"""
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {example_func2highres} {highres} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {example_func2highres}1.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {highres} {example_func2highres} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {example_func2highres}2.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend {example_func2highres}1.png - {example_func2highres}2.png {example_func2highres}.png; 
+/bin/rm -f sl?.png {example_func2highres}2.png
+/bin/rm {example_func2highres}1.png
+    """.replace("\n"," ")
+    
+    plot_highres2standard = f"""
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {highres2standard} {standard} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {highres2standard}1.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {standard} {highres2standard} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {highres2standard}2.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend {highres2standard}1.png - {highres2standard}2.png {highres2standard}.png; 
+/bin/rm -f sl?.png {highres2standard}2.png
+/bin/rm {highres2standard}1.png
+    """.replace("\n"," ")
+    
+    plot_example_func2standard = f"""
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {example_func2standard} {standard} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {example_func2standard}1.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/slicer {standard} {example_func2standard} -s 2 -x 0.35 sla.png -x 0.45 slb.png -x 0.55 slc.png -x 0.65 sld.png -y 0.35 sle.png -y 0.45 slf.png -y 0.55 slg.png -y 0.65 slh.png -z 0.35 sli.png -z 0.45 slj.png -z 0.55 slk.png -z 0.65 sll.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend sla.png + slb.png + slc.png + sld.png + sle.png + slf.png + slg.png + slh.png + sli.png + slj.png + slk.png + sll.png {example_func2standard}2.png ; 
+/opt/fsl/fsl-5.0.10/fsl/bin/pngappend {example_func2standard}1.png - {example_func2standard}2.png {example_func2standard}.png; 
+/bin/rm -f sl?.png {example_func2standard}2.png
+    """.replace("\n"," ")
+    for cmdline in [plot_example_func2highres,plot_example_func2standard,plot_highres2standard]:
+        os.system(cmdline)
 
 
 

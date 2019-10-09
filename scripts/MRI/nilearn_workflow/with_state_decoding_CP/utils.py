@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -371,18 +372,18 @@ def get_frames(directory,new = True,EEG = True):
         for col in ['probeFrames_raw',
                     'response.keys_raw',
                     'visible.keys_raw']:
-            print(df[col])
+#            print(df[col])
             df[col] = df[col].apply(str2int)
             
     except:
         for col in ['probe_Frames_raw',
                     'response.keys_raw',
                     'visible.keys_raw']:
-            print(df[col])
+#            print(df[col])
             df[col] = df[col].apply(str2int)
             
         df["probeFrames_raw"] = df["probe_Frames_raw"]
-    
+    df = df[df['probeFrames_raw'] != 999]
     df = df.sort_values(['run','order'])
     
     for vis,df_sub in df.groupby(['visible.keys_raw']):
@@ -439,6 +440,7 @@ def get_frames(directory,new = True,EEG = True):
             df.append(temp)
         df = pd.concat(df)
     df['probeFrames'] = df['probeFrames'].apply(str2int)
+    df = df[df['probeFrames'] != 999]
     results = []
     for vis,df_sub in df.groupby(['visible.keys_raw']):
         corrects = df_sub['response.corr_raw'].sum() / df_sub.shape[0]
@@ -543,6 +545,9 @@ def create_fsl_FEAT_workflow_func(whichrun          = 0,
                                   first_run         = True,
                                   func_data_file    = 'temp',
                                   fwhm              = 3):
+    """
+    Works with fsl-5.0.9 and fsl-5.0.11, but not fsl-6.0.0
+    """
     from nipype.workflows.fmri.fsl             import preprocess
     from nipype.interfaces                     import fsl
     from nipype.interfaces                     import utility as util
@@ -2063,7 +2068,7 @@ def LOO_partition(data,df_data):
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 5000,one_tail = False):
+def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
     Inputs:
@@ -2079,12 +2084,10 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 5000,one_tail = F
     experiment_diff = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
     # newexperiment = np.mean(experiment_diff) # just look at the new mean and make sure it is at the baseline
     # simulate/bootstrap null hypothesis distribution
-    # 1st-D := number of sample same as the experiment
-    # 2nd-D := within one permutation resamping, we perform resampling same as the experimental samples,
+    # 1st-D := within one permutation resamping, we perform resampling same as the experimental samples,
     # but also repeat this one sampling n_permutation times
-    # 3rd-D := repeat 2nd-D n_ps times to obtain a distribution of p values later
-    temp            = np.random.choice(experiment_diff,size=(x.shape[0],n_permutation,n_ps),replace=True)
-    temp            = temp.mean(0)# take the mean over the sames because we only care about the mean of the null distribution
+    # 2nd-D := repeat 2nd-D n_ps times to obtain a distribution of p values later
+    temp            = np.random.choice(experiment_diff,size=(n_permutation,n_ps),replace=True)
     # along each row of the matrix (n_row = n_permutation), we count instances that are greater than the observed mean of the experiment
     # compute the proportion, and we get our p values
     
@@ -2238,11 +2241,68 @@ def compute_xy(df_sub,position_map,hue_map):
     df_add = pd.concat(df_add)
     return df_add
 
+def split_probe_path(x,idx):
+    temp = x.split('/')
+    return temp[idx]
 
+def standard_MNI_coordinate_for_plot():
+    return {
+        'lh-fusiform':(-47,-52,-12),
+        'rh-fusiform':(47,-51,-14),
+        'lh-inferiorparietal':(-46,-60,33),
+        'rh-inferiorparietal':(46,-59,31),
+        'lh-inferiortemporal':(-47,-14,-34),
+        'rh-inferiortemporal':(48,-17,-31),
+        'lh-lateraloccipital':(-46,-58,-8),
+        'rh-lateraloccipital':(40,-78,12),
+        'lh-lingual':(-11,-81,7),
+        'rh-lingual':(11,-78,9),
+        'lh-rostralmiddlefrontal':(-30,50,24),
+        'rh-rostralmiddlefrontal':(4,58,30),
+        'lh-parahippocampal':(-25,-22,-22),
+        'rh-parahippocampal':(27,-19,-25),
+        'lh-pericalcarine':(-24,-66,8),
+        'rh-pericalcarine':(26,-68,12),
+        'lh-precuneus':None,
+        'rh-precuneus':None,
+        'lh-superiorfrontal':(-23,24,44),
+        'rh-superiorfrontal':(22,26,45),
+        'lh-superiorparietal':(-18,-61,55),
+        'rh-superiorparietal':(27,-60,45),
+        'lh-ventrolateralPFC':(-32,54,-4),
+        'rh-ventrolateralPFC':(42,46,0)}
 
-
-
-
+def bootstrap_behavioral_estimation(df_sub,n_bootstrap = int(1e2)):
+    scores,chance = [],[]
+    responses = df_sub['response.keys_raw'].values - 1
+    answers = df_sub['correctAns_raw'].values - 1
+    np.random.seed(12345)
+    for n_ in tqdm(range(n_bootstrap)):
+        idx = np.random.choice(np.arange(responses.shape[0]),
+                               size = responses.shape[0],
+                               replace = True)
+        
+        response_ = responses[idx]
+        answer_ = answers[idx]
+        score_ = roc_auc_score(answer_,response_)
+        scores.append(score_)
+    scores = np.array(scores)
+    # chance
+    # by keeping the answers in order but shuffle the response, 
+    # we can estimate the chance
+    # level accuracy
+    idx = np.random.choice(np.arange(responses.shape[0]),
+                           size = responses.shape[0],
+                           replace = True)
+    
+    response_ = responses[idx]
+    answer_ = answers[idx]
+    chance = np.array([roc_auc_score(answer_,shuffle(response_))\
+                       for _ in tqdm(range(n_bootstrap))])
+    
+    pvals = resample_ttest_2sample(scores,chance,one_tail = True,
+                                   match_sample_size = True)
+    return pvals,scores,chance
 
 
 

@@ -19,13 +19,16 @@ from shutil             import copyfile,rmtree
 copyfile('../../utils.py','utils.py')
 from utils              import groupby_average,load_csv
 
-sub         = 'sub-04'
+sub         = 'sub-07'
+folder_name = 'post_response'
+target_folder_name = 'postresp'
 first_session = 1
 parent_dir  = '../../../data/MRI/{}/func/'.format(sub)
 mask_dir    = '../../../data/MRI/{}/anat/ROI_BOLD'.format(sub)
 event_dir   = '../../../data/MRI/{}/func/*/*/'.format(sub)
 
-output_dir = '../../../data/BOLD_whole_brain_averaged/{}'.format(sub)
+output_dir = '../../../data/BOLD_whole_brain_averaged_{}/{}'.format(target_folder_name,
+                                                      sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
@@ -35,7 +38,7 @@ whole_brain_mask    = os.path.join(parent_dir,
                                    f'session-0{first_session}/{sub}_unfeat_run-01/outputs/func/ICA_AROMA',
                                    'mask.nii.gz')
 
-if  os.path.exists(
+if  not os.path.exists(
         os.path.join(output_dir,
                      BOLD_to_file_name.replace('.nii.gz','_conscious.nii.gz'))):
     # if there is no data in the folder, we will create them, otherwise, don't waste our time
@@ -51,7 +54,8 @@ if  os.path.exists(
                                     '*',
                                     '*',
                                     'outputs',
-                                            '*.csv')))
+                                    f'{folder_name}',
+                                    '*.csv')))
     
     def extract_volumes(BOLD_file,csv_file,session_index):
         masker          = NiftiMasker(mask_img          = whole_brain_mask,

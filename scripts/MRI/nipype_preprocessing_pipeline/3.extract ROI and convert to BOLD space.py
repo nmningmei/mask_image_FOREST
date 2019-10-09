@@ -17,7 +17,7 @@ fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
 
 freesurfer_list = pd.read_csv('../../../FreesurferLTU.csv')
 
-sub = 'sub-04'
+sub = 'sub-07'
 first_session = 1
 os.environ['SUBJECTS_DIR'] = os.path.abspath('../../../data/MRI/{}/'.format(sub))
 in_file = os.path.abspath('../../../data/MRI/{}/anat/{}/mri/aparc+aseg.mgz'.format(sub,sub))

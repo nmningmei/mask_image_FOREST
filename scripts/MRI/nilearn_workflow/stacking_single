@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This is a script to send "spaceNet.py" as a batch job.
+
+
+#$ -cwd
+#$ -o cachedir/out_P_7.txt
+#$ -e cachedir/err_P_7.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "STP7"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "stacking runs.py"

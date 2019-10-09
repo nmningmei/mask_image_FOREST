@@ -24,7 +24,9 @@ from shutil             import copyfile,rmtree
 copyfile('../../utils.py','utils.py')
 from utils              import groupby_average,load_csv
 
-sub         = 'sub-04'
+sub         = 'sub-07'
+folder_name = 'post_response'
+target_folder_name = 'postresp'
 parent_dir  = '../../../data/MRI/{}/func/'.format(sub)
 mask_dir    = '../../../data/MRI/{}/anat/ROI_BOLD'.format(sub)
 event_dir   = '../../../data/MRI/{}/func/*/*/'.format(sub)
@@ -43,14 +45,17 @@ events      = glob(os.path.join(parent_dir,
                                 '*',
                                 '*',
                                 'outputs',
+                                f'{folder_name}',
                                 '*.csv'))
 events      = np.sort(events)
 
-for average in [True,False,]:
+for average in [True]:
     if average:
-        output_dir = '../../../data/BOLD_average/{}/'.format(sub)
+        output_dir = '../../../data/BOLD_average_{}/{}/'.format(target_folder_name,
+                                                 sub)
     else:
-        output_dir = '../../../data/BOLD_no_average/{}/'.format(sub)
+        output_dir = '../../../data/BOLD_no_average_{}/{}/'.format(target_folder_name,
+                                                    sub)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     

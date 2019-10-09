@@ -17,7 +17,7 @@ from glob import glob
 from nipype.interfaces.dcm2nii import Dcm2nii,Dcm2niix
 import numpy as np
 
-sub_name = 'sub-01'
+sub_name = 'sub-07'
 
 output_dir = f'/export/home/nmei/nmei/MRI/converted/{sub_name}/'
 if not os.path.exists(output_dir):

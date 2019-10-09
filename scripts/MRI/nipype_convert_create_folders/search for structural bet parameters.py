@@ -13,7 +13,7 @@ from nilearn.plotting import plot_anat
 import numpy as np
 from matplotlib import pyplot as plt
 
-sub_name = 'sub-03'
+sub_name = 'sub-07'
 
 working_dir = f'/export/home/nmei/nmei/MRI/converted/{sub_name}/'
 working_data = glob(os.path.join(
@@ -36,7 +36,7 @@ def bet(in_file, frac = 0.40, robust = True):
     return skullstrip
 
 
-fracs = np.arange(0.35,0.71,0.01)
+fracs = np.arange(0.30,0.71,0.01)
 for frac in fracs:
     skullstrip = bet(working_data,frac = round(frac,2),)
     print(skullstrip.cmdline)

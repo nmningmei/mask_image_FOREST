@@ -19,7 +19,7 @@ from nipype.interfaces.fsl import ICA_AROMA
 import re
 from shutil import rmtree
 
-sub                     = 'sub-04'
+sub                     = 'sub-07'
 MRI_dir                 = '../../../data/MRI/{}/func'.format(sub)
 parent_dir              = os.path.join(MRI_dir,'session-*','*','outputs',)
 preprocessed_BOLD_files = glob(os.path.join(parent_dir,

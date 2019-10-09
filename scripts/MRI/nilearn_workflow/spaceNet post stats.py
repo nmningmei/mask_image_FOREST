@@ -39,15 +39,15 @@ masks                   = glob(
 anat_brain              = glob(
         os.path.join('../../../data/MRI/{}/anat/*brain*'.format(sub))
                                 )
-standard_brain          = '/opt/fsl/fsl-5.0.9/fsl/data/standard/MNI152_T1_2mm_brain.nii.gz'
+standard_brain          = '../../../data/standard_brain/MNI152_T1_2mm_brain.nii.gz'
 transformation_matrix   = glob(os.path.join(f'../../../data/MRI/{sub}/func/session-*/*/outputs/reg/example_func2highres.mat'))
 working_data            = glob(os.path.join(working_dir,sub,"*.nii.gz"))
 # this is the file that saves decoding scores of the space net classifier
 working_df              = glob(os.path.join(working_dir,sub,"*.csv"))
 df                      = pd.read_csv(working_df[0])
-figure_dir              = '../../../figures/MRI/nilearn/spanceNet'
+figure_dir              = '../../../figures/MRI/nilearn/spaceNet'
 if not os.path.exists(figure_dir):
-    os.mkdir(figure_dir)
+    os.makedirs(figure_dir)
 # get plotting coordinates in standard space
 coordinates = standard_MNI_coordinate_for_plot()
 
@@ -94,6 +94,7 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
         flt.inputs.out_file         = os.path.abspath(os.path.join(working_dir,
                                                                    sub,
                                                                    f'patterns_{conscious_state}_{roi_name}_highres.nii.gz'))
+#        flt.inputs.out_matrix_file  = ''
         flt.inputs.apply_xfm        = True
         res                         = flt.run()
         
