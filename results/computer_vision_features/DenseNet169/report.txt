@@ -1,0 +1,9 @@
+DenseNet169, leave 2 objects out cross validation (folds = 2304),
+scores = 1.0000 +/- 0.0010
+pairs of living-nonliving objects incorrectly decoded:
+cat                      ,plane                     ROC_AUC = 0.9945
+lobster                  ,motorbike                 ROC_AUC = 0.9945
+lobster                  ,plane                     ROC_AUC = 0.9534
+coking-pot               ,shark                     ROC_AUC = 0.9986
+mill                     ,shark                     ROC_AUC = 0.9973
+motorbike                ,shark                     ROC_AUC = 0.9945
