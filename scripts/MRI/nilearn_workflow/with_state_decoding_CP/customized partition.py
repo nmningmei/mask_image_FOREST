@@ -10,21 +10,25 @@ cross validation method
 
 """
 import os
+import gc
 os.chdir('..')
 import pandas as pd
 import numpy  as np
+import multiprocessing
+print(f'availabel cpus = {multiprocessing.cpu_count()}')
 
 from glob                    import glob
 from tqdm                    import tqdm
 from sklearn.utils           import shuffle
 from shutil                  import copyfile
 copyfile('../../utils.py','utils.py')
-from utils                   import (customized_partition,
+from utils                   import (
+#                                     customized_partition,
                                      check_train_test_splits,
                                      check_train_balance,
                                      build_model_dictionary,
                                      Find_Optimal_Cutoff)
-from sklearn.model_selection import cross_validate
+from sklearn.model_selection import cross_validate,StratifiedShuffleSplit
 from sklearn                 import metrics
 from sklearn.exceptions      import ConvergenceWarning
 from sklearn.utils.testing   import ignore_warnings
@@ -36,35 +40,36 @@ stacked_data_dir    = '../../../data/BOLD_average/{}/'.format(sub)
 output_dir          = '../../../results/MRI/nilearn/{}/decoding'.format(sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
-BOLD_data           = glob(os.path.join(stacked_data_dir,'*BOLD.npy'))
-event_data          = glob(os.path.join(stacked_data_dir,'*.csv'))
+BOLD_data           = np.sort(glob(os.path.join(stacked_data_dir,'*BOLD.npy')))
+event_data          = np.sort(glob(os.path.join(stacked_data_dir,'*.csv')))
 model_names         = [
         'None + Dummy',
         'None + Linear-SVM',
-        'None + Ensemble-SVMs',
-        'None + KNN',
-        'None + Tree',
-        'PCA + Dummy',
-        'PCA + Linear-SVM',
-        'PCA + Ensemble-SVMs',
-        'PCA + KNN',
-        'PCA + Tree',
-        'Mutual + Dummy',
-        'Mutual + Linear-SVM',
-        'Mutual + Ensemble-SVMs',
-        'Mutual + KNN',
-        'Mutual + Tree',
-        'RandomForest + Dummy',
-        'RandomForest + Linear-SVM',
-        'RandomForest + Ensemble-SVMs',
-        'RandomForest + KNN',
-        'RandomForest + Tree',
+#        'None + Ensemble-SVMs',
+#        'None + KNN',
+#        'None + Tree',
+#        'PCA + Dummy',
+#        'PCA + Linear-SVM',
+#        'PCA + Ensemble-SVMs',
+#        'PCA + KNN',
+#        'PCA + Tree',
+#        'Mutual + Dummy',
+#        'Mutual + Linear-SVM',
+#        'Mutual + Ensemble-SVMs',
+#        'Mutual + KNN',
+#        'Mutual + Tree',
+#        'RandomForest + Dummy',
+#        'RandomForest + Linear-SVM',
+#        'RandomForest + Ensemble-SVMs',
+#        'RandomForest + KNN',
+#        'RandomForest + Tree',
         ]
 #build_model_dictionary().keys()
 label_map           = {'Nonliving_Things':[0,1],
                        'Living_Things':   [1,0]}
 average             = True
-n_splits            = 300
+n_splits            = 48 * 48
+n_jobs              = -1
 
 idx = 0
 np.random.seed(12345)
@@ -72,22 +77,38 @@ BOLD_name,df_name   = BOLD_data[idx],event_data[idx]
 BOLD                = np.load(BOLD_name)
 df_event            = pd.read_csv(df_name)
 roi_name            = df_name.split('/')[-1].split('_events')[0]
+print(roi_name)
 for conscious_state in ['unconscious','glimpse','conscious']:
+    gc.collect()
     idx_unconscious = df_event['visibility'] == conscious_state
     data            = BOLD[idx_unconscious]
     df_data         = df_event[idx_unconscious].reset_index(drop=True)
     df_data['id']   = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
     targets         = np.array([label_map[item] for item in df_data['targets'].values])[:,-1]
     
-    idxs_test       = customized_partition(df_data,['id','labels'],n_splits = n_splits)
-    while check_train_test_splits(idxs_test): # just in case
-        idxs_test   = customized_partition(df_data,['id','labels'],n_splits = n_splits)
+    print('partitioning')
+#    idxs_test       = customized_partition(df_data,['id','labels'],n_splits = n_splits)
+#    while check_train_test_splits(idxs_test): # just in case
+#        idxs_test   = customized_partition(df_data,['id','labels'],n_splits = n_splits)
+#    idxs_train      = [shuffle(np.array([idx for idx in df_data.index.tolist() if (idx not in idx_test)])) for idx_test in idxs_test]
+#    idxs_train      = [check_train_balance(df_data,idx_train,list(label_map.keys())) for idx_train in tqdm(idxs_train)]
+    
+    cv = StratifiedShuffleSplit(n_splits = n_splits,
+                                test_size = 0.1,
+                                train_size = 0.9,
+                                random_state = 12345)
+    idxs_train,idxs_test = [],[]
+    for idx_train,idx_test in cv.split(data,targets):
+        idxs_train.append(idx_train)
+        idxs_test.append(idx_test)
+    print(f'There is repeated teset set: {check_train_test_splits(idxs_test)}')
     idxs_train      = [shuffle(np.array([idx for idx in df_data.index.tolist() if (idx not in idx_test)])) for idx_test in idxs_test]
     idxs_train      = [check_train_balance(df_data,idx_train,list(label_map.keys())) for idx_train in tqdm(idxs_train)]
     
     for model_name in model_names:
         file_name   = f'4 models decoding ({sub} {roi_name} {conscious_state} {model_name}).csv'
-        if not os.path.exists(os.path.join(output_dir,file_name)):
+        print(f'working on {model_name}')
+        if True:#not os.path.exists(os.path.join(output_dir,file_name)):
             np.random.seed(12345)
             
             pipeline    = build_model_dictionary(n_jobs            = 4,
@@ -103,7 +124,7 @@ for conscious_state in ['unconscious','glimpse','conscious']:
                                      scoring            = 'roc_auc',
                                      cv                 = zip(idxs_train,idxs_test),
                                      return_estimator   = True,
-                                     n_jobs             = 8,
+                                     n_jobs             = n_jobs,
                                      verbose            = 1,
                                      )
             

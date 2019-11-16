@@ -15,9 +15,10 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
 sub                 = 'sub-01'
-cores               = 10
-mem                 = 2 * cores
-time_               = 48 * cores
+nodes               = 2
+cores               = 16
+mem                 = 2 * cores * nodes
+time_               = 48 * cores * nodes
 stacked_data_dir    = '../../../../data/BOLD_average/{}/'.format(sub)
 BOLD_data           = np.sort(glob(os.path.join(stacked_data_dir,'*BOLD.npy')))
 
@@ -29,7 +30,7 @@ for ii,BOLD_data_file in enumerate(BOLD_data):
                 if "../../../data/" in line:
                     line = line.replace("../../../data/","../../../../data/")
                 elif "sub                 = 'sub-01'" in line:
-                    line = line.replace("'sub-01",f"{sub}")
+                    line = line.replace("sub-01",f"{sub}")
                 elif "os.chdir('..')" in line:
                     line = 'print(os.getcwd())\n'
                 elif "../../../results/" in line:
@@ -38,8 +39,8 @@ for ii,BOLD_data_file in enumerate(BOLD_data):
                     line = line.replace("idx = 0","idx = {}".format(ii))
                 elif "../../utils.py" in line:
                     line = line.replace("../../utils.py","../../../utils.py")
-                elif "n_jobs              = " in line:
-                    line = f"n_jobs              = {cores}"
+#                elif "n_jobs              = " in line:
+#                    line = f"n_jobs              = {cores}\n"
                 new_file.write(line)
             old_file.close()
         new_file.close()
@@ -53,12 +54,12 @@ for ii, BOLD_data_file in enumerate(BOLD_data):
     content = f"""
 #!/bin/bash
 #PBS -q bcbl
-#PBS -l nodes=1:ppn={cores}
+#PBS -l nodes={nodes}:ppn={cores}
 #PBS -l mem={mem}gb
 #PBS -l cput={time_}:00:00
-#PBS -N S{sub[-1]}R{ii+1}
-#PBS -o bash/out_{sub[-1]}{ii+1}.txt
-#PBS -e bash/err_{sub[-1]}{ii+1}.txt
+#PBS -N S{sub[-1]}R{ii+1}D
+#PBS -o bash/out_{sub[-1]}{ii+1}_{roi_name}.txt
+#PBS -e bash/err_{sub[-1]}{ii+1}_{roi_name}.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

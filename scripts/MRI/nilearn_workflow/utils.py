@@ -118,6 +118,9 @@ def preprocessing_conscious(raw,
                              detrend     = 1, # detrend
                              preload     = True # must be true if we want to do further processing
                              )
+    """
+    1. if necessary, perform ICA
+    """
     if perform_ICA:
         picks       = mne.pick_types(epochs.info,
                                eeg          = True, # YES EEG
@@ -171,7 +174,121 @@ def preprocessing_conscious(raw,
                                 exclude    = ica.exclude,
                                 )
         epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
+    clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
+    return clean_epochs
+
+def preprocessing_unconscious(raw,
+                              events,
+                              session,
+                              tmin = -0,
+                              tmax = 1,
+                              notch_filter = 50,
+                              event_id = {'living':1,'nonliving':2},
+                              baseline = (None,None),
+                              perform_ICA = False,
+                              eog_chs = [],
+                              ecg_chs = [],):
+    # everytime before filtering, explicitly pick the type of channels you want
+    # to perform the filters
+    picks = mne.pick_types(raw.info,
+                           meg = True,  # No MEG
+                           eeg = False, # NO EEG
+                           eog = True,  # YES EOG
+                           ecg = True,  # YES ECG
+                           )
+    # regardless the bandpass filtering later, we should always filter
+    # for wire artifacts and their oscillations
+    if type(notch_filter) is list:
+        for item in notch_filter:
+            raw.notch_filter(np.arange(item,301,item),
+                                 picks = picks)
+    else:
+        raw.notch_filter(np.arange(notch_filter,301,notch_filter),
+                             picks = picks)
+    # filter EOG and ECG channels
+    picks = mne.pick_types(raw.info,
+                           meg = False,
+                           eeg = True)
+    raw.filter(1,80,picks = picks,)
+    # epoch the data
+    picks = mne.pick_types(raw.info,
+                           meg = True,
+                           eog = True,
+                           ecg = True,
+                           )
+    epochs      = mne.Epochs(raw,
+                             events,    # numpy array
+                             event_id,  # dictionary
+                             tmin        = tmin,
+                             tmax        = tmax,
+                             baseline    = baseline, # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                             picks       = picks,
+                             detrend     = 1, # detrend
+                             preload     = True # must be true if we want to do further processing
+                             )
+    """
+    1. if necessary, perform ICA
+    """
+    if perform_ICA:
+        picks       = mne.pick_types(epochs.info,
+                               meg          = True,  # YES MEG
+                               eeg          = False, # NO EEG
+                               eog          = False, # NO EOG
+                               ecg          = False, # NO ECG
+                               )
+        ar          = AutoReject(
+                        picks               = picks,
+                        random_state        = 12345,
+                        )
+        ar.fit(epochs)
+        _,reject_log = ar.transform(epochs,return_log=True)
+        # calculate the noise covariance of the epochs
+        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+                                             tmin                   = tmin,
+                                             tmax                   = 0,
+                                             method                 = 'empirical',
+                                             rank                   = None,)
+        # define an ica function
+        ica         = mne.preprocessing.ICA(n_components            = .99,
+                                            n_pca_components        = .99,
+                                            max_pca_components      = None,
+                                            method                  = 'extended-infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        ica.fit(epochs[~reject_log.bad_epochs],
+                picks   = picks,
+                start   = tmin,
+                stop    = tmax,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+                )
+        # search for artificial ICAs automatically
+        # most of these hyperparameters were used in a unrelated published study
+        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+                             eog_ch         = eog_chs,
+                             ecg_ch         = ecg_chs,
+                             eog_criterion  = 0.4, # arbitary choice
+                             ecg_criterion  = 0.1, # arbitary choice
+                             skew_criterion = 1,   # arbitary choice
+                             kurt_criterion = 1,   # arbitary choice
+                             var_criterion  = 1,   # arbitary choice
+                             )
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+                                exclude    = ica.exclude,
+                                )
+        epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
     clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
     return clean_epochs
@@ -417,7 +534,14 @@ def _preprocessing_conscious(
                              bbox_inches = 'tight')
                 plt.close('all')
         return clean_epochs
-def plot_temporal_decoding(times,scores,frames,ii,conscious_state,plscores,n_splits):
+def plot_temporal_decoding(times,
+                           scores,
+                           frames,
+                           ii,
+                           conscious_state,
+                           plscores,
+                           n_splits,
+                           ylim = (0.2,0.8)):
     scores_mean = scores.mean(0)
     scores_se   = scores.std(0) / np.sqrt(n_splits)
     fig,ax = plt.subplots(figsize = (16,8))
@@ -442,28 +566,35 @@ def plot_temporal_decoding(times,scores,frames,ii,conscious_state,plscores,n_spl
                color        = 'blue',
                alpha        = 0.7,
                label        = 'Probe onset',)
-    ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color        = 'blue',
-               alpha        = 0.3,
-               label        = 'probe offset ave +/- std',)
+    if ii is not None:
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color        = 'blue',
+                   alpha        = 0.3,
+                   label        = 'probe offset ave +/- std',)
     ax.set(xlim     = (times.min(),
                        times.max()),
-           ylim     = (0.4,0.6),
+           ylim     = ylim,#(0.4,0.6),
            title    = f'Temporal decoding of {conscious_state} = {plscores.mean():.3f}+/-{plscores.std():.3f}',
            )
     ax.legend()
     return fig,ax
-def plot_temporal_generalization(scores_gen_,epochs,ii,conscious_state,frames):
+def plot_temporal_generalization(scores_gen_,
+                                 epochs,
+                                 ii,
+                                 conscious_state,
+                                 frames,
+                                 vmin = 0.4,
+                                 vmax = 0.6):
     fig, ax = plt.subplots(figsize = (10,10))
     im      = ax.imshow(
-                        scores_gen_.mean(0), 
+                        scores_gen_, 
                         interpolation       = 'lanczos', 
                         origin              = 'lower', 
                         cmap                = 'RdBu_r',
                         extent              = epochs.times[[0, -1, 0, -1]], 
-                        vmin                = 0.4, 
-                        vmax                = 0.6,
+                        vmin                = vmin, 
+                        vmax                = vmax,
                         )
     ax.set_xlabel('Testing Time (s)')
     ax.set_ylabel('Training Time (s)')
@@ -478,21 +609,28 @@ def plot_temporal_generalization(scores_gen_,epochs,ii,conscious_state,frames):
                color                        = 'black',
                alpha                        = 0.7,
                )
-    ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               label                        = 'probe offset ave +/- std',)
-    ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
     plt.colorbar(im, ax = ax)
     ax.legend()
     return fig,ax
 
-def plot_t_stats(T_obs,clusters,cluster_p_values,times,ii,conscious_state,frames,):
+def plot_t_stats(T_obs,
+                 clusters,
+                 cluster_p_values,
+                 times,
+                 ii,
+                 conscious_state,
+                 frames,):
     
     # since the p values of each cluster is corrected for multiple comparison, 
     # we could directly use 0.05 as the threshold to filter clusters
@@ -547,22 +685,28 @@ def plot_t_stats(T_obs,clusters,cluster_p_values,times,ii,conscious_state,frames
                color                        = 'black',
                alpha                        = 0.7,
                )
-    ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               label                        = 'probe offset ave +/- std',)
-    ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
     ax.set(xlabel                           = 'Test time',
            ylabel                           = 'Train time',
            title                            = f'nonparametric t test of {conscious_state}')
     ax.legend()
     return fig,ax
-def plot_p_values(times,clusters,cluster_p_values,ii,conscious_state,frames):
+def plot_p_values(times,
+                  clusters,
+                  cluster_p_values,
+                  ii,
+                  conscious_state,
+                  frames):
     width = len(times)
     p_clust = np.ones((width, width))# * np.nan
     k = np.array([np.sum(c) for c in clusters])
@@ -619,16 +763,17 @@ def plot_p_values(times,clusters,cluster_p_values,ii,conscious_state,frames):
                color                        = 'black',
                alpha                        = 0.7,
                )
-    ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               label                        = 'probe offset ave +/- std',)
-    ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
-               frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
-               color                        = 'black',
-               alpha                        = 0.2,
-               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
     ax.set(xlabel                           = 'Test time',
            ylabel                           = 'Train time',
            title                            = f'p value map of {conscious_state}')
@@ -667,6 +812,8 @@ def simple_load(f,idx):
 def get_frames(directory,new = True,EEG = True):
     if EEG:
         files = glob(os.path.join(directory,'*trials.csv'))
+#    elif EEG == 'fMRI':
+#        files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
     empty_temp = ''
@@ -2521,6 +2668,7 @@ def define_roi_category():
                 'rostralmiddlefrontal':'Working Memory',
                 'superiorfrontal':'Working Memory',
                 'ventrolateralPFC':'Working Memory',
+                'inferiorparietal':'Visual',
                 }
     
     return roi_dict
