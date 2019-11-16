@@ -34,7 +34,7 @@ from collections             import OrderedDict
 sub                 = 'sub-01'
 source_data_dir     = '../../../../data/BOLD_average/{}/'.format(sub)
 target_data_dir     = '../../../../data/BOLD_average_postresp/{}/'.format(sub)
-output_dir          = '../../../../results/MRI/nilearn/{}/temporal_generalization'.format(sub)
+output_dir          = '../../../../results/MRI/nilearn/{}/temporal_generalization_CP'.format(sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 BOLD_data_source    = np.sort(glob(os.path.join(source_data_dir,'*BOLD.npy')))
@@ -98,17 +98,16 @@ for conscious_state in ['unconscious','glimpse','conscious']:
     
     groups = df_data_source['labels'].values
     
-#    from sklearn.model_selection import GroupShuffleSplit
-#    idxs_train,idxs_test = [],[]
-#    for idx_train,idx_test in GroupShuffleSplit(n_splits = 100,
-#                                                test_size = 0.2,
-#                                                random_state = 12345).split(
-#                                                        data_source,
-#                                                        targets_source,
-#                                                        groups = groups):
-#        idxs_train.append(idx_train)
-#        idxs_test.append(idx_test)
-    idxs_train,idxs_test = LOO_partition(df_data_source)
+    from sklearn.model_selection import StratifiedShuffleSplit
+    idxs_train,idxs_test = [],[]
+    for idx_train,idx_test in StratifiedShuffleSplit(n_splits = 500,
+                                                     test_size = 0.2,
+                                                     random_state = 12345).split(
+                                                        data_source,
+                                                        targets_source,):
+        idxs_train.append(idx_train)
+        idxs_test.append(idx_test)
+#    idxs_train,idxs_test = LOO_partition(df_data_source)
     n_splits = len(idxs_train)
         
     for model_name in model_names:
