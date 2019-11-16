@@ -1,0 +1,39 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+0it [00:00, ?it/s]/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+1it [00:28, 28.93s/it]2it [00:46, 25.57s/it]3it [01:11, 25.46s/it]4it [01:30, 23.37s/it]5it [01:52, 23.02s/it]6it [02:11, 21.68s/it]7it [02:28, 20.45s/it]/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 0.71s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+8it [02:45, 19.28s/it]9it [02:59, 17.78s/it]10it [03:16, 17.44s/it]11it [03:34, 17.80s/it]12it [03:56, 18.83s/it]13it [04:14, 18.57s/it]14it [04:28, 17.47s/it]15it [04:52, 19.27s/it]16it [05:08, 18.41s/it]17it [05:27, 18.36s/it]18it [05:47, 18.95s/it]19it [06:05, 18.66s/it]20it [06:24, 18.80s/it]21it [06:43, 18.88s/it]22it [06:58, 17.75s/it]23it [07:14, 17.17s/it]24it [07:30, 16.92s/it]25it [07:47, 16.97s/it]26it [08:05, 17.08s/it]27it [08:19, 16.12s/it]28it [08:33, 15.61s/it]29it [08:50, 16.05s/it]30it [09:06, 16.12s/it]31it [09:22, 15.95s/it]32it [09:38, 15.92s/it]33it [09:57, 16.93s/it]34it [10:14, 16.89s/it]35it [10:28, 16.02s/it]36it [10:42, 15.30s/it]37it [10:42, 10.98s/it]38it [10:59, 12.73s/it]39it [11:12, 12.71s/it]40it [11:27, 13.48s/it]41it [11:46, 15.14s/it]42it [11:59, 14.59s/it]43it [12:13, 14.24s/it]44it [12:26, 13.91s/it]45it [12:44, 14.98s/it]46it [13:01, 15.66s/it]47it [13:16, 15.47s/it]48it [13:34, 16.24s/it]49it [13:48, 15.58s/it]50it [14:45, 27.97s/it]51it [15:00, 24.12s/it]52it [15:23, 23.91s/it]53it [15:39, 21.48s/it]54it [16:05, 22.73s/it]
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:139: UserWarning: Detrending of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Detrending of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/signal.py:51: UserWarning: Standardization of 3D signal has been requested but would lead to zero values. Skipping.
+  warnings.warn('Standardization of 3D signal has been requested but '
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/base_masker.py:224: UserWarning: Persisting input arguments took 1.43s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  img = self._cache(masking.unmask)(X, self.mask_img_)

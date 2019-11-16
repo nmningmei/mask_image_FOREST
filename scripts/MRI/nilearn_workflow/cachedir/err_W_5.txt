@@ -1,0 +1,35 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+0it [00:00, ?it/s]/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+1it [00:11, 11.55s/it]2it [00:22, 11.50s/it]3it [00:35, 11.83s/it]4it [00:48, 12.25s/it]5it [01:01, 12.46s/it]6it [01:14, 12.60s/it]7it [01:29, 13.34s/it]/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 0.55s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+8it [01:46, 14.30s/it]9it [02:02, 14.98s/it]10it [02:18, 15.30s/it]11it [02:38, 16.71s/it]12it [02:53, 16.20s/it]13it [03:08, 15.77s/it]14it [03:21, 14.89s/it]15it [03:35, 14.62s/it]16it [03:47, 13.72s/it]17it [03:58, 13.00s/it]18it [04:11, 13.07s/it]19it [04:26, 13.50s/it]20it [04:40, 13.89s/it]21it [04:52, 13.34s/it]22it [05:05, 13.08s/it]23it [05:18, 13.01s/it]24it [05:34, 14.00s/it]25it [05:49, 14.34s/it]26it [06:04, 14.45s/it]27it [06:21, 15.12s/it]28it [06:34, 14.61s/it]29it [06:46, 13.89s/it]30it [07:00, 13.78s/it]31it [07:14, 13.89s/it]32it [07:27, 13.53s/it]33it [07:41, 13.69s/it]34it [07:59, 15.04s/it]35it [08:17, 15.91s/it]36it [08:32, 15.71s/it]37it [08:48, 15.64s/it]38it [09:03, 15.57s/it]39it [09:15, 14.65s/it]40it [09:32, 15.35s/it]41it [09:45, 14.65s/it]42it [10:00, 14.61s/it]43it [10:13, 14.24s/it]44it [10:29, 14.72s/it]45it [10:43, 14.48s/it]46it [10:55, 13.57s/it]47it [11:10, 14.06s/it]48it [11:23, 13.95s/it]49it [11:44, 16.07s/it]50it [11:59, 15.70s/it]51it [12:15, 15.71s/it]52it [12:34, 16.77s/it]53it [12:52, 17.06s/it]54it [13:06, 16.20s/it]
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/base_masker.py:224: UserWarning: Persisting input arguments took 1.42s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  img = self._cache(masking.unmask)(X, self.mask_img_)

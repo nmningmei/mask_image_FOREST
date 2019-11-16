@@ -1,0 +1,64 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+Traceback (most recent call last):
+  File "stacking runs.py", line 92, in <module>
+    ['id']) # groupby
+  File "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nilearn_workflow/utils.py", line 824, in groupby_average
+    df_average = pd.concat([add_track(df_sub) for ii,df_sub in df.groupby(groupby)])
+  File "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nilearn_workflow/utils.py", line 824, in <listcomp>
+    df_average = pd.concat([add_track(df_sub) for ii,df_sub in df.groupby(groupby)])
+  File "/bcbl/home/public/Consciousness/uncon_feat/scripts/MRI/nilearn_workflow/utils.py", line 818, in add_track
+    df_sub = df_sub.iloc[1,:].to_frame().T
+  File "/opt/anaconda3/lib/python3.6/site-packages/pandas/core/indexing.py", line 1325, in __getitem__
+    return self._getitem_tuple(key)
+  File "/opt/anaconda3/lib/python3.6/site-packages/pandas/core/indexing.py", line 1662, in _getitem_tuple
+    self._has_valid_tuple(tup)
+  File "/opt/anaconda3/lib/python3.6/site-packages/pandas/core/indexing.py", line 189, in _has_valid_tuple
+    if not self._has_valid_type(k, i):
+  File "/opt/anaconda3/lib/python3.6/site-packages/pandas/core/indexing.py", line 1597, in _has_valid_type
+    return self._is_valid_integer(key, axis)
+  File "/opt/anaconda3/lib/python3.6/site-packages/pandas/core/indexing.py", line 1638, in _is_valid_integer
+    raise IndexError("single positional indexer is out-of-bounds")
+IndexError: single positional indexer is out-of-bounds
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 2.39s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype

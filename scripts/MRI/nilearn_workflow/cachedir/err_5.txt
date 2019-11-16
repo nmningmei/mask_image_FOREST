@@ -1,0 +1,50 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 0.50s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 1.90s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:258: UserWarning: Persisting input arguments took 1.66s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  copy=False, interpolation='nearest')
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 15.20s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype

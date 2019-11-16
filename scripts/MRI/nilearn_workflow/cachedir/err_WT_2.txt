@@ -1,0 +1,27 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+0it [00:00, ?it/s]/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+1it [00:11, 11.32s/it]2it [00:23, 11.59s/it]3it [00:36, 12.09s/it]4it [00:49, 12.28s/it]5it [01:09, 14.48s/it]6it [01:26, 15.49s/it]7it [01:46, 16.66s/it]8it [02:05, 17.45s/it]9it [02:21, 17.01s/it]10it [02:38, 17.04s/it]11it [02:58, 17.81s/it]12it [03:16, 17.76s/it]13it [03:36, 18.67s/it]14it [03:53, 18.03s/it]15it [04:10, 17.77s/it]16it [04:28, 17.95s/it]17it [04:44, 17.30s/it]18it [05:02, 17.45s/it]19it [05:20, 17.49s/it]20it [05:34, 16.46s/it]21it [05:47, 15.61s/it]22it [06:01, 14.97s/it]23it [06:16, 15.15s/it]24it [06:32, 15.28s/it]25it [06:46, 14.80s/it]26it [07:00, 14.77s/it]27it [07:17, 15.51s/it]28it [07:34, 15.96s/it]29it [07:50, 15.91s/it]30it [08:08, 16.32s/it]31it [08:31, 18.45s/it]32it [08:36, 14.29s/it]33it [08:50, 14.27s/it]34it [09:08, 15.57s/it]35it [09:26, 16.20s/it]36it [09:47, 17.75s/it]37it [10:04, 17.33s/it]38it [10:20, 16.88s/it]39it [10:36, 16.69s/it]40it [10:55, 17.42s/it]41it [11:12, 17.41s/it]42it [11:26, 16.39s/it]43it [11:44, 16.63s/it]44it [12:07, 18.73s/it]45it [12:22, 17.55s/it]46it [12:43, 18.45s/it]47it [13:01, 18.37s/it]48it [13:16, 17.45s/it]49it [13:31, 16.78s/it]50it [13:49, 17.12s/it]51it [14:03, 16.22s/it]52it [14:18, 15.76s/it]53it [14:31, 14.92s/it]54it [14:48, 15.64s/it]55it [15:06, 16.42s/it]56it [15:58, 26.86s/it]
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/base_masker.py:224: UserWarning: Persisting input arguments took 1.91s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  img = self._cache(masking.unmask)(X, self.mask_img_)

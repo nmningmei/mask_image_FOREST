@@ -1,0 +1,60 @@
+/opt/anaconda3/lib/python3.6/site-packages/h5py/__init__.py:34: FutureWarning: Conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated. In future, it will be treated as `np.float64 == np.dtype(float).type`.
+  from ._conv import register_converters as _register_converters
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/utils.py:19: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/site-packages/autoreject/autoreject.py:28: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='cachedir'", use "location='cachedir'" instead.
+  mem = Memory(cachedir='cachedir')
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/importlib/_bootstrap.py:205: ImportWarning: can't resolve package from __spec__ or __package__, falling back on __name__ and __path__
+  return f(*args, **kwds)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:84: DeprecationWarning: The 'cachedir' parameter has been deprecated in version 0.12 and will be removed in version 0.14.
+You provided "cachedir='nilarn_cashed'", use "location='nilarn_cashed'" instead.
+  memory = Memory(cachedir=cache_dir, verbose=verbose)
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py:232: DeprecationWarning: The 'cachedir' attribute has been deprecated in version 0.12 and will be removed in version 0.14.
+Use os.path.join(memory.location, 'joblib') attribute instead.
+  if (memory.cachedir is None and memory_level is not None
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 1.54s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py:307: UserWarning: Persisting input arguments took 0.52s to run.
+If this happens often in your code, it can cause performance problems 
+(results will be correct in all cases). 
+The reason for this is probably some large input arguments for a wrapped
+ function (e.g. large strings).
+THIS IS A JOBLIB ISSUE. If you can, kindly provide the joblib's team with an
+ example so that they can fix the problem.
+  dtype=self.dtype
+Traceback (most recent call last):
+  File "stacking runs.py", line 75, in <module>
+    BOLD        = masker.fit_transform(X        = item)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/base_masker.py", line 207, in fit_transform
+    return self.fit(**fit_params).transform(X, confounds=confounds)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nilearn/input_data/nifti_masker.py", line 254, in fit
+    self.mask_img_ = self._cache(image.resample_img)(
+  File "/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py", line 309, in _cache
+    **kwargs)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py", line 242, in cache
+    cached_func = _safe_cache(memory, func, **kwargs)
+  File "/opt/anaconda3/lib/python3.6/site-packages/nilearn/_utils/cache_mixin.py", line 106, in _safe_cache
+    return memory.cache(func, **kwargs)
+  File "/opt/anaconda3/lib/python3.6/site-packages/sklearn/externals/joblib/memory.py", line 953, in cache
+    verbose=verbose, timestamp=self.timestamp)
+  File "/opt/anaconda3/lib/python3.6/site-packages/sklearn/externals/joblib/memory.py", line 422, in __init__
+    store_cached_func_code([_build_func_identifier(self.func)])
+  File "/opt/anaconda3/lib/python3.6/site-packages/sklearn/externals/joblib/_store_backends.py", line 255, in store_cached_func_code
+    self.create_location(func_path)
+  File "/opt/anaconda3/lib/python3.6/site-packages/sklearn/externals/joblib/_store_backends.py", line 352, in create_location
+    mkdirp(location)
+  File "/opt/anaconda3/lib/python3.6/site-packages/sklearn/externals/joblib/disk.py", line 60, in mkdirp
+    os.makedirs(d)
+  File "/opt/anaconda3/lib/python3.6/os.py", line 220, in makedirs
+    mkdir(name, mode)
+OSError: [Errno 116] Stale NFS file handle: 'nilarn_cashed/joblib/nilearn/image/resampling/resample_img'
