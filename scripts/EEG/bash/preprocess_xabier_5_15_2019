@@ -1,0 +1,16 @@
+
+#!/bin/bash
+# This is a script to send preprocessing scrips as a batch job.
+        
+#$ -cwd
+#$ -o outputs/out_xabier_5_15_2019.txt
+#$ -e outputs/err_xabier_5_15_2019.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "EEG14"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "preprocessing EEG with adjust onsets (xabier_5_15_2019).py"
+        

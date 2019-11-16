@@ -1,0 +1,16 @@
+
+#!/bin/bash
+# This is a script to send preprocessing scrips as a batch job.
+        
+#$ -cwd
+#$ -o outputs/out_jesica_6_7_2019.txt
+#$ -e outputs/err_jesica_6_7_2019.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "EEG6"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "preprocessing EEG with adjust onsets (jesica_6_7_2019).py"
+        

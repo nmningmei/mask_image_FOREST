@@ -1,0 +1,14 @@
+
+#!/bin/bash
+#$ -cwd
+#$ -o out.txt
+#$ -e err.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "s3r4"
+#$ -S /bin/bash
+
+module load rocks-fsl-5.0.9
+feat "session3.run4.fsf"
+
