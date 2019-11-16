@@ -331,7 +331,7 @@ for conscious_state in ['unconscious','glimpse','conscious']:
                 results['l2'             ].append(l2)
                 results['corr'           ].append(corr)
                 results_to_save = pd.DataFrame(results)
-                results_to_save.to_csv(os.path.join(output_dir,saving_name), index = False)
+#                results_to_save.to_csv(os.path.join(output_dir,saving_name), index = False)
                 del reg
         else:
             print(saving_name)
