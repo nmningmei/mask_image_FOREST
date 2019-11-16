@@ -144,6 +144,7 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
                                                seed              = 12345,                        # replication purpose
                                                )
     tf.keras.backend.clear_session()
+    
     # after loading the model from the pretrained repository, freeze the parameters
     print(f'loading {model_name} ...')
     model_loaded    = model(weights     = 'imagenet',
@@ -211,7 +212,7 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
         ###############################################################################################################
         clf.fit_generator(gen_train,
                           steps_per_epoch                           = np.ceil(gen_train.n / batch_size),
-                          epochs                                    = 18,
+                          epochs                                    = 18, # arbitrary choice
                           validation_data                           = gen_valid,
                           callbacks                                 = callbacks,
                           )

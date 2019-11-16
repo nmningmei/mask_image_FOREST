@@ -1,12 +1,12 @@
 
 #!/bin/bash
 #PBS -q bcbl
-#PBS -l nodes=1:ppn=16
-#PBS -l mem=32gb
-#PBS -l cput=768:00:00
-#PBS -N S4R22
-#PBS -o bash/out_422.txt
-#PBS -e bash/err_422.txt
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1536:00:00
+#PBS -N S1R22D
+#PBS -o bash/out_122_rh-superiorfrontal.txt
+#PBS -e bash/err_122_rh-superiorfrontal.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

@@ -10,11 +10,12 @@ cross validation method
 
 """
 import os
-import warnings
-warnings.filterwarnings('ignore') 
+import gc
 print(os.getcwd())
 import pandas as pd
 import numpy  as np
+import multiprocessing
+print(f'availabel cpus = {multiprocessing.cpu_count()}')
 
 from glob                    import glob
 from tqdm                    import tqdm
@@ -22,19 +23,21 @@ from sklearn.utils           import shuffle
 from shutil                  import copyfile
 copyfile('../../../utils.py','utils.py')
 from utils                   import (
+#                                     customized_partition,
+                                     check_train_test_splits,
+                                     check_train_balance,
                                      build_model_dictionary,
-                                     Find_Optimal_Cutoff,
-                                     get_label_category_mapping)
-from sklearn.model_selection import cross_validate,LeavePGroupsOut
+                                     Find_Optimal_Cutoff)
+from sklearn.model_selection import cross_validate,StratifiedShuffleSplit
 from sklearn                 import metrics
 from sklearn.exceptions      import ConvergenceWarning
 from sklearn.utils.testing   import ignore_warnings
 from collections             import OrderedDict
 
 
-sub                 = 'sub-04'
+sub                 = 'sub-01'
 stacked_data_dir    = '../../../../data/BOLD_average/{}/'.format(sub)
-output_dir          = '../../../../results/MRI/nilearn/{}/L2O'.format(sub)
+output_dir          = '../../../../results/MRI/nilearn/{}/decoding'.format(sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 BOLD_data           = np.sort(glob(os.path.join(stacked_data_dir,'*BOLD.npy')))
@@ -64,9 +67,9 @@ model_names         = [
 #build_model_dictionary().keys()
 label_map           = {'Nonliving_Things':[0,1],
                        'Living_Things':   [1,0]}
-target_map = {key:ii for ii,key in enumerate(get_label_category_mapping().keys())}
 average             = True
-n_jobs = 16
+n_splits            = 48 * 48
+n_jobs              = -1
 
 idx = 5
 np.random.seed(12345)
@@ -74,23 +77,37 @@ BOLD_name,df_name   = BOLD_data[idx],event_data[idx]
 BOLD                = np.load(BOLD_name)
 df_event            = pd.read_csv(df_name)
 roi_name            = df_name.split('/')[-1].split('_events')[0]
+print(roi_name)
 for conscious_state in ['unconscious','glimpse','conscious']:
+    gc.collect()
     idx_unconscious = df_event['visibility'] == conscious_state
     data            = BOLD[idx_unconscious]
     df_data         = df_event[idx_unconscious].reset_index(drop=True)
     df_data['id']   = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
     targets         = np.array([label_map[item] for item in df_data['targets'].values])[:,-1]
-    groups          = df_data['labels'].values
     
-    cv = LeavePGroupsOut(n_groups = 2)
+    print('partitioning')
+#    idxs_test       = customized_partition(df_data,['id','labels'],n_splits = n_splits)
+#    while check_train_test_splits(idxs_test): # just in case
+#        idxs_test   = customized_partition(df_data,['id','labels'],n_splits = n_splits)
+#    idxs_train      = [shuffle(np.array([idx for idx in df_data.index.tolist() if (idx not in idx_test)])) for idx_test in idxs_test]
+#    idxs_train      = [check_train_balance(df_data,idx_train,list(label_map.keys())) for idx_train in tqdm(idxs_train)]
     
+    cv = StratifiedShuffleSplit(n_splits = n_splits,
+                                test_size = 0.1,
+                                train_size = 0.9,
+                                random_state = 12345)
     idxs_train,idxs_test = [],[]
-    for idx_train,idx_test in cv.split(data,targets,groups):
+    for idx_train,idx_test in cv.split(data,targets):
         idxs_train.append(idx_train)
         idxs_test.append(idx_test)
+    print(f'There is repeated teset set: {check_train_test_splits(idxs_test)}')
+    idxs_train      = [shuffle(np.array([idx for idx in df_data.index.tolist() if (idx not in idx_test)])) for idx_test in idxs_test]
+    idxs_train      = [check_train_balance(df_data,idx_train,list(label_map.keys())) for idx_train in tqdm(idxs_train)]
     
     for model_name in model_names:
         file_name   = f'4 models decoding ({sub} {roi_name} {conscious_state} {model_name}).csv'
+        print(f'working on {model_name}')
         if True:#not os.path.exists(os.path.join(output_dir,file_name)):
             np.random.seed(12345)
             
@@ -99,37 +116,48 @@ for conscious_state in ['unconscious','glimpse','conscious']:
             
             features    = data.copy()
             targets     = targets.copy()
+            
             with ignore_warnings(category = ConvergenceWarning):
                 res = cross_validate(pipeline,
                                      features,
                                      targets,
-                                     groups             = groups,
-                                     scoring            = 'accuracy',
-                                     cv                 = cv,
+                                     scoring            = 'roc_auc',
+                                     cv                 = zip(idxs_train,idxs_test),
                                      return_estimator   = True,
                                      n_jobs             = n_jobs,
-                                     verbose            = 0,
+                                     verbose            = 1,
                                      )
             
-            preds               = [estimator.predict(features[ii]) for ii,estimator in zip(idxs_test,res['estimator'])]
-            scores              = [metrics.accuracy_score(targets[idx_test],y_pred) for idx_test,y_pred in zip(idxs_test,preds)]
+            preds               = [estimator.predict_proba(  features[ii])[:,-1] for ii,estimator in zip(idxs_test,res['estimator'])]
+            roc_auc             = [metrics.roc_auc_score(    targets[ii],y_pred) for ii,y_pred in zip(idxs_test,preds)]
+            threshold_          = [Find_Optimal_Cutoff(      targets[ii],y_pred) for ii,y_pred in zip(idxs_test,preds)]
+            mattews_correcoef   = [metrics.matthews_corrcoef(targets[ii],y_pred > thres_) for ii,y_pred,thres_ in zip(idxs_test,preds,threshold_)]
+            f1_score            = [metrics.f1_score(         targets[ii],y_pred > thres_) for ii,y_pred,thres_ in zip(idxs_test,preds,threshold_)]
+            log_loss            = [metrics.log_loss(         targets[ii],y_pred) for ii,y_pred in zip(idxs_test,preds)]
             
-            n_splits            = len(idxs_test)
+            temp                = np.array([metrics.confusion_matrix(targets[ii],y_pred > thres_).ravel() for ii,y_pred,thres_ in zip(idxs_test,preds,threshold_)])
+            tn, fp, fn, tp      = temp[:,0],temp[:,1],temp[:,2],temp[:,3]
+            
             results                         = OrderedDict()
             results['fold']                 = np.arange(n_splits) + 1
-            results['sub']                  = [sub] * n_splits
+            results['sub']                  = ['01'] * n_splits
             results['roi']                  = [roi_name] * n_splits
+            results['roc_auc']              = roc_auc
+            results['mattews_correcoef']    = mattews_correcoef
+            results['f1_score']             = f1_score
+            results['log_loss']             = log_loss
             results['model']                = [model_name] * n_splits
             results['condition_target']     = [conscious_state] * n_splits
             results['condition_source']     = [conscious_state] * n_splits
             results['flip']                 = [False] * n_splits
             results['language']             = ['Image'] * n_splits
             results['transfer']             = [False] * n_splits
-            results['accuracy']             = scores
-            results['test1']                = [pd.unique(df_data.loc[idx_test,:]['labels'])[0] for idx_test in idxs_test]
-            results['test2']                = [pd.unique(df_data.loc[idx_test,:]['labels'])[1] for idx_test in idxs_test]
+            results['tn']                   = tn
+            results['tp']                   = tp
+            results['fn']                   = fn
+            results['fp']                   = fp
             
-            print(f'{conscious_state}, {roi_name}, {model_name}, roc_auc = {np.mean(scores):.4f}+/-{np.std(scores):.4f}')
+            print(f'{conscious_state}, {roi_name}, {model_name}, roc_auc = {np.mean(roc_auc):.4f}+/-{np.std(roc_auc):.4f}')
             
             results_to_save = pd.DataFrame(results)
             results_to_save.to_csv(os.path.join(output_dir,file_name),index = False)

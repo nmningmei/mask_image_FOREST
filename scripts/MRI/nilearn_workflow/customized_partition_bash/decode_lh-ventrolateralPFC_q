@@ -1,12 +1,12 @@
 
 #!/bin/bash
 #PBS -q bcbl
-#PBS -l nodes=1:ppn=16
-#PBS -l mem=32gb
-#PBS -l cput=768:00:00
-#PBS -N S4R12
-#PBS -o bash/out_412.txt
-#PBS -e bash/err_412.txt
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1536:00:00
+#PBS -N S1R12D
+#PBS -o bash/out_112_lh-ventrolateralPFC.txt
+#PBS -e bash/err_112_lh-ventrolateralPFC.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd
