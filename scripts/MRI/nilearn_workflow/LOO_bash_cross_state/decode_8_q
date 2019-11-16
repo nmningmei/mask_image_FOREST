@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1536:00:00
+#PBS -N S1R8
+#PBS -o bash/out_18.txt
+#PBS -e bash/err_18.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-precuneus"
+
+python "LOO_8.py"
