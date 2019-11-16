@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=128gb
+#PBS -l cput=960:00:00
+#PBS -N RNN15
+#PBS -o bash/out_xabier_5_15_2019.txt
+#PBS -e bash/err_xabier_5_15_2019.txt
+#source .bashrc
+
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+source activate keras-2.1.6_tensorflow-1.14.0
+pwd
+python RNN_tf_decoding_15.py
+    

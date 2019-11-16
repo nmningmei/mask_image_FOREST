@@ -48,7 +48,7 @@ if not os.path.exists(saving_dir):
     os.mkdir(saving_dir)
 
 
-subject = all_subjects[4]
+subject = 'matie_5_23_2019'
 working_dir         = f'../../../data/{folder_name}/{subject}'
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 n_splits            = 300
@@ -158,6 +158,7 @@ for epoch_file in working_data:
                            callbacks                = callBackList,
                            shuffle                  = True,
                            sample_weight            = np.array(sample_weight), # this is the key !
+                           verbose = 0,
                            )
             
             # test the trained model
