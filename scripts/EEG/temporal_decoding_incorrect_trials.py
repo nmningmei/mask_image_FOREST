@@ -76,7 +76,8 @@ if date > breakPoint:
     new             = True
 else:
     new             = False
-working_dir         = os.path.abspath(f'../../data/clean EEG highpass detrend/{subject}')
+folder_name = "clean_EEG_detrend"
+working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
 # create the directories for figure and decoding results (numpy arrays)

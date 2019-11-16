@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=20
+#PBS -l mem=80gb
+#PBS -l cput=1200:00:00
+#PBS -N RNN7
+#PBS -o bash/out_jesica_6_7_2019.txt
+#PBS -e bash/err_jesica_6_7_2019.txt
+#source .bashrc
+
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+echo $(nproc)
+pwd
+python RNN_torch_decoding_7.py
+    

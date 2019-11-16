@@ -16,12 +16,11 @@ from datetime                import datetime
 
 
 from mne.decoding            import (
-                                        Scaler,
-                                        Vectorizer,
-                                        SlidingEstimator,
-                                        cross_val_multiscore,
-                                        GeneralizingEstimator
-                                        )
+                                     Vectorizer,
+                                     SlidingEstimator,
+                                     cross_val_multiscore,
+                                     GeneralizingEstimator
+                                     )
 from sklearn.preprocessing   import StandardScaler
 #from sklearn.calibration     import CalibratedClassifierCV
 #from sklearn.svm             import LinearSVC
@@ -40,17 +39,22 @@ from sklearn.base            import clone
 from sklearn.metrics         import make_scorer,roc_auc_score
 from matplotlib              import pyplot as plt
 from scipy                   import stats
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from functools               import partial
 from shutil                  import copyfile
 copyfile(os.path.abspath('../utils.py'),'utils.py')
-from utils                   import get_frames
+from utils                   import (get_frames,
+                                     plot_temporal_decoding,
+                                     plot_temporal_generalization,
+                                     plot_t_stats,
+                                     plot_p_values)
 
-n_jobs = 8
-func   = partial(roc_auc_score,average = 'micro')
-func.__name__ = 'micro_AUC'
-scorer = make_scorer(func,needs_proba = True)
-speed  = True
+# use more than 1 CPU to parallize the training
+n_jobs = 8 
+# customized scoring function
+func                = partial(roc_auc_score,average = 'micro')
+func.__name__       = 'micro_AUC'
+scorer              = make_scorer(func,needs_proba = True)
+speed               = True
 
 subject             = 'aingere_5_16_2019' 
 # there was a bug in the csv file, so the early behavioral is treated differently
@@ -61,41 +65,28 @@ if date > breakPoint:
     new             = True
 else:
     new             = False
-working_dir         = os.path.abspath(f'../../data/clean EEG detrend only/{subject}')
+# define lots of path for data, outputs, etc
+folder_name         = "clean_EEG_premask_baseline_ICA"
+target_name         = 'decode_premask_baseline_ICA'
+working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
 # create the directories for figure and decoding results (numpy arrays)
-figure_dir          = os.path.abspath(f'../../figures/EEG/decode/{subject}')
+figure_dir          = os.path.abspath(f'../../figures/EEG/{target_name}/{subject}')
 if not os.path.exists(figure_dir):
     os.makedirs(figure_dir)
-array_dir           = os.path.abspath(f'../../results/EEG/decode/{subject}')
+array_dir           = os.path.abspath(f'../../results/EEG/{target_name}/{subject}')
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
 # define the number of cross validation we want to do.
 n_splits            = 300
-#logistic = LogisticRegressionCV(
-#                     Cs = np.logspace(-4,4,num = 9,),
-#                     cv = 4,
-#                     scoring = 'roc_auc',
-#                     solver = 'lbfgs',
-#                     max_iter = int(1e3),
-#                     random_state = 12345)
+
 logistic = LogisticRegression(
                               solver        = 'lbfgs',
                               max_iter      = int(1e3),
                               random_state  = 12345
                               )
-#svm = LinearSVC(class_weight = 'balanced',
-#                random_state = 12345,
-#                tol = 1e-3)
-#logistic = CalibratedClassifierCV(svm,cv=5)
-#logistic = SGDClassifier(loss = 'modified_huber',
-#                         penalty = "elasticnet",
-#                         early_stopping = True,
-#                         class_weight = 'balanced',
-#                         random_state = 12345,
-#                         max_iter = int(1e3),
-#                         tol = 1e-3,)
+
 
 
 for epoch_file in working_data:
@@ -117,7 +108,8 @@ for epoch_file in working_data:
         # resample at 100 Hz to fasten the decoding process
         print('resampling...')
         epoch_temp = epochs.copy().resample(100)
-        # decode the whole segment
+        
+        ################ decode the whole segment ##################
         print('cross val scoring')
         saving_name     = os.path.join(array_dir,f'whole_segment_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
@@ -151,7 +143,7 @@ for epoch_file in working_data:
             np.save(saving_name,plscores)
         print(f'decode {conscious_state} = {plscores.mean():.4f}+/-{plscores.std():.4f}')
         
-        # temporal decoding
+        ####################### temporal decoding ##########################
         print('temporal decoding')
         saving_name     = os.path.join(array_dir,f'temporal_decoding_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
@@ -201,43 +193,7 @@ for epoch_file in working_data:
                                         )
             np.save(saving_name,scores)
         
-        
-        scores_mean = scores.mean(0)
-        scores_se   = scores.std(0) / np.sqrt(n_splits)
-        
-        fig,ax      = plt.subplots(figsize=(16,8))
-        ax.plot(times,scores_mean,
-                color = 'k',
-                alpha = .9,
-                label = f'Average across {n_splits} folds',
-                )
-        ax.fill_between(times,
-                        scores_mean + scores_se,
-                        scores_mean - scores_se,
-                        color = 'red',
-                        alpha = 0.4,
-                        label = 'Standard Error',)
-        ax.axhline(0.5,
-                   linestyle    = '--',
-                   color        = 'k',
-                   alpha        = 0.7,
-                   label        = 'Chance level')
-        ax.axvline(0,
-                   linestyle    = '--',
-                   color        = 'blue',
-                   alpha        = 0.7,
-                   label        = 'Probe onset',)
-        ax.axvspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color        = 'blue',
-                   alpha        = 0.3,
-                   label        = 'probe offset ave +/- std',)
-        ax.set(xlim     = (times.min(),
-                           times.max()),
-               ylim     = (0.4,0.6),
-               title    = f'Temporal decoding of {conscious_state} = {plscores.mean():.3f}+/-{plscores.std():.3f}',
-               )
-        ax.legend()
+        fig,ax = plot_temporal_decoding(times,scores,frames,ii,conscious_state,plscores,n_splits)
         fig.savefig(os.path.join(figure_dir,f'temporal decoding ({conscious_state}).png'),
                     bbox_inches = 'tight',
                     dpi         = 400)
@@ -245,7 +201,7 @@ for epoch_file in working_data:
         plt.clf()
         plt.close('all')
         
-        # temporal generalization
+        ####################### temporal generalization ########################
         print('temporal generalization')
         saving_name     = os.path.join(array_dir,f'temporal_generalization_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
@@ -292,49 +248,13 @@ for epoch_file in working_data:
                                         )
             np.save(saving_name.replace('.npy','_chance.npy'),scores_chance)
             
-        scores_gen_ = []
-        for s_gen,s in zip(scores_gen,scores):
-            np.fill_diagonal(s_gen,s)
-            scores_gen_.append(s_gen)
-        scores_gen_ = np.array(scores_gen_)
+        scores_gen_ = scores_gen.copy()#[]
+#        for s_gen,s in zip(scores_gen,scores):
+#            np.fill_diagonal(s_gen,s)
+#            scores_gen_.append(s_gen)
+#        scores_gen_ = np.array(scores_gen_)
         
-        fig, ax = plt.subplots(figsize = (10,10))
-        im      = ax.imshow(
-                            scores_gen_.mean(0), 
-                            interpolation       = 'lanczos', 
-                            origin              = 'lower', 
-                            cmap                = 'RdBu_r',
-                            extent              = epochs.times[[0, -1, 0, -1]], 
-                            vmin                = 0.4, 
-                            vmax                = 0.6,
-                            )
-        ax.set_xlabel('Testing Time (s)')
-        ax.set_ylabel('Training Time (s)')
-        ax.set_title(f'Temporal generalization of {conscious_state}')
-        ax.axhline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-                   label                        = 'Probe onset',)
-        ax.axvline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-    #               label                        = 'Probe onset',
-                   )
-        ax.axhspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-                   label                        = 'probe offset ave +/- std',)
-        ax.axvspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-#                   label                        = 'probe offset ave +/- std',
-                   )
-        plt.colorbar(im, ax = ax)
-        ax.legend()
+        fig,ax = plot_temporal_generalization(scores_gen_,epochs,ii,conscious_state,frames)
         fig.savefig(os.path.join(figure_dir,f'temporal generalization ({conscious_state}).png'),
                     bbox_inches = 'tight',
                     dpi         = 400)
@@ -342,12 +262,12 @@ for epoch_file in working_data:
         plt.clf()
         plt.close('all')
         
-        # permutation cluster test
+        ############################### permutation cluster test ##################################
         print('permutation cluster test')
         saving_name     = os.path.join(array_dir,f'permutation_cluster_test_T_obs_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
             T_obs = np.load(saving_name)
-            cluster = np.load(saving_name.replace('T_obs','clusters'))
+            clusters = np.load(saving_name.replace('T_obs','clusters'))
             cluster_p_values = np.load(saving_name.replace('T_obs','cluster_p_values'))
         else:
             alpha           = 0.0001
@@ -357,7 +277,7 @@ for epoch_file in working_data:
             # compute the threshold for t statistics
             t_threshold = stats.distributions.t.ppf(1 - alpha, scores.shape[0] - 1) 
             # apply the MNE python function of which I know less than nothing
-            threshold_tfce = dict(start=0, step=0.2)
+            threshold_tfce = dict(start=0, step=0.1)
             T_obs, clusters, cluster_p_values, H0   = clu \
                         = mne.stats.permutation_cluster_1samp_test(
                                 scores_gen_ - scores_chance,
@@ -366,85 +286,16 @@ for epoch_file in working_data:
                                 tail                = 1, # find clusters that are greater than the chance level
     #                            check_disjoint      = True, # not useful
                                 seed                = 12345, # random seed
-                                step_down_p         = 0.005,
+                                step_down_p         = 0.05,
                                 buffer_size         = None, # stat_fun does not treat variables independently
                                 n_jobs              = n_jobs,
                                 )
             np.save(saving_name,T_obs)
             np.save(saving_name.replace("T_obs","clusters"),clusters)
-            np.save(saving_name.replace('T_obs','clustre_p_values'),cluster_p_values)
-        # since the p values of each cluster is corrected for multiple comparison, 
-        # we could directly use 0.05 as the threshold to filter clusters
-        T_obs_plot              = 0 * np.ones_like(T_obs)
-        k = np.array([np.sum(c) for c in clusters])
-        from scipy.spatial import distance
-        j = [distance.cdist(np.where(c ==  True)[0].reshape(1,-1),np.where(c ==  True)[1].reshape(1,-1))[0][0] for c in clusters]
+            np.save(saving_name.replace('T_obs','cluster_p_values'),cluster_p_values)
         
-        if np.max(k) > 1000:
-            c_thresh = 1000
-        elif 1000 > np.max(k) > 500:
-            c_thresh = 500
-        elif 500 > np.max(k) > 100:
-            c_thresh = 100
-        elif 100 > np.max(k) > 10:
-            c_thresh = 10
-        else:
-            c_thresh = 0
-        for c, p_val in zip(clusters, cluster_p_values):
-            if (p_val <= 0.01) and (np.sum(c) >= c_thresh):# and (distance.cdist(np.where(c ==  True)[0].reshape(1,-1),np.where(c ==  True)[1].reshape(1,-1))[0][0] < 200):# and (np.sum(c) >= c_thresh):
-                T_obs_plot[c]   = T_obs[c]
-        # defind the range of the colorbar
-        vmax = np.max(np.abs(T_obs))
-        vmin = -vmax# - 2 * t_threshold
-        plt.close('all')
-        fig,ax = plt.subplots(figsize=(10,10))
-        im      = ax.imshow(T_obs_plot,
-                       origin                   = 'lower',
-                       cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
-                       extent                   = epochs.times[[0, -1, 0, -1]],
-                       vmin                     = vmin,
-                       vmax                     = vmax,
-                       interpolation            = 'lanczos',
-                       )
-        divider = make_axes_locatable(ax)
-        cax     = divider.append_axes("right", 
-                                      size      = "5%", 
-                                      pad       = 0.2)
-        cb      = plt.colorbar(im, 
-                               cax              = cax,
-                               ticks            = np.linspace(vmin,vmax,3))
-        cb.ax.set(title = 'T Statistics')
-        ax.plot([times[0],times[-1]],[times[0],times[-1]],
-                linestyle                    = '--',
-                color                        = 'black',
-                alpha                        = 0.7,
-                )
-        ax.axhline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-                   label                        = 'Probe onset',)
-        ax.axvline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-    #               label                        = 'Probe onset',
-                   )
-        ax.axhspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-                   label                        = 'probe offset ave +/- std',)
-        ax.axvspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-#                   label                        = 'probe offset ave +/- std',
-                   )
-        ax.set(xlabel                           = 'Test time',
-               ylabel                           = 'Train time',
-               title                            = f'nonparametric t test of {conscious_state}')
-        ax.legend()
+        fig,ax = plot_t_stats(T_obs,clusters,cluster_p_values,times,ii,conscious_state,frames,)
+        
         fig.savefig(os.path.join(figure_dir,f'stats ({conscious_state}).png'),
                     bbox_inches = 'tight',
                     dpi         = 400)
@@ -452,69 +303,8 @@ for epoch_file in working_data:
         plt.clf()
         plt.close('all')
         
-        width = len(times)
-        p_clust = np.ones((width, width))# * np.nan
-        for c, p_val in zip(clusters, cluster_p_values):
-#            print(np.sum(c))
-#            if (distance.cdist(np.where(c ==  True)[0].reshape(1,-1),np.where(c ==  True)[1].reshape(1,-1))[0][0] < 200):
-            if (np.sum(c) >= c_thresh):
-                p_val_ = p_val.copy()
-                if p_val_ > 0.05:
-                    p_val_ = 1.
-                p_clust[c] = p_val_
+        fig,ax = plot_p_values(times,clusters,cluster_p_values,ii,conscious_state,frames)
         
-        # defind the range of the colorbar
-        vmax = 1.
-        vmin = 0.
-        plt.close('all')
-        fig,ax = plt.subplots(figsize = (10,10))
-        im      = ax.imshow(p_clust,
-                       origin                   = 'lower',
-                       cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
-                       extent                   = epochs.times[[0, -1, 0, -1]],
-                       vmin                     = vmin,
-                       vmax                     = vmax,
-                       interpolation            = 'hanning',
-                       )
-        divider = make_axes_locatable(ax)
-        cax     = divider.append_axes("right", 
-                                      size      = "5%", 
-                                      pad       = 0.2)
-        cb      = plt.colorbar(im, 
-                               cax              = cax,
-                               ticks            = [0,0.05,1])
-        cb.ax.set(title = 'P values')
-        ax.plot([times[0],times[-1]],[times[0],times[-1]],
-                linestyle                       = '--',
-                color                           = 'black',
-                alpha                           = 0.7,
-                )
-        ax.axhline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-                   label                        = 'Probe onset',)
-        ax.axvline(0.,
-                   linestyle                    = '--',
-                   color                        = 'black',
-                   alpha                        = 0.7,
-    #               label                        = 'Probe onset',
-                   )
-        ax.axhspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-                   label                        = 'probe offset ave +/- std',)
-        ax.axvspan(frames[ii][1] * (1/ 60) - frames[ii][2] * (1/ 60),
-                   frames[ii][1] * (1/ 60) + frames[ii][2] * (1/ 60),
-                   color                        = 'black',
-                   alpha                        = 0.2,
-#                   label                        = 'probe offset ave +/- std',
-                   )
-        ax.set(xlabel                           = 'Test time',
-               ylabel                           = 'Train time',
-               title                            = f'p value map of {conscious_state}')
-        ax.legend()
         fig.savefig(os.path.join(figure_dir,f'stats (p values, {conscious_state}).png'),
                     bbox_inches = 'tight',
                     dpi         = 400)

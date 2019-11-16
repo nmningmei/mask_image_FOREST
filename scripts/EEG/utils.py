@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -60,9 +59,10 @@ from collections                                   import OrderedDict
 
 from scipy                                         import stats
 from collections                                   import Counter
-
+from mpl_toolkits.axes_grid1                       import make_axes_locatable
 import matplotlib.pyplot  as plt
 import matplotlib.patches as patches
+
 
 try:
     #from mvpa2.datasets.base                           import Dataset
@@ -87,8 +87,8 @@ def preprocessing_conscious(raw,
                             tmax = 1,
                             notch_filter = 50,
                             event_id = {'living':1,'nonliving':2},
-                            baseline = (None,None)
-                            ):
+                            baseline = (None,None),
+                            perform_ICA = False,):
     """
     0. re-reference - explicitly
     """
@@ -96,6 +96,7 @@ def preprocessing_conscious(raw,
                                         ref_channels     = 'average',
                                         projection       = True,)
     raw_ref.apply_proj() # it might tell you it already has been re-referenced, but do it anyway
+    
     # everytime before filtering, explicitly pick the type of channels you want
     # to perform the filters
     picks = mne.pick_types(raw_ref.info,
@@ -117,58 +118,177 @@ def preprocessing_conscious(raw,
                              detrend     = 1, # detrend
                              preload     = True # must be true if we want to do further processing
                              )
-#    picks       = mne.pick_types(epochs.info,
-#                           eeg          = True, # YES EEG
-#                           eog          = False # NO EOG
-#                           )
-#    ar          = AutoReject(
-#                    picks               = picks,
-#                    random_state        = 12345,
-#                    )
-#    ar.fit(epochs)
-#    _,reject_log = ar.transform(epochs,return_log=True)
-#    # calculate the noise covariance of the epochs
-#    noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
-#                                         tmin                   = tmin,
-#                                         tmax                   = tmax,
-#                                         method                 = 'empirical',
-#                                         rank                   = None,)
-#    # define an ica function
-#    ica         = mne.preprocessing.ICA(n_components            = .99,
-#                                        n_pca_components        = .99,
-#                                        max_pca_components      = None,
-#                                        method                  = 'extended-infomax',
-#                                        max_iter                = int(3e3),
-#                                        noise_cov               = noise_cov,
-#                                        random_state            = 12345,)
-#    picks       = mne.pick_types(epochs.info,
-#                                 eeg = True, # YES EEG
-#                                 eog = False # NO EOG
-#                                 ) 
-#    ica.fit(epochs[~reject_log.bad_epochs],
-#            picks   = picks,
-#            start   = tmin,
-#            stop    = tmax,
-#            decim   = 3,
-#            tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
-#            )
-#    # search for artificial ICAs automatically
-#    # most of these hyperparameters were used in a unrelated published study
-#    ica.detect_artifacts(epochs[~reject_log.bad_epochs],
-#                         eog_ch         = ['FT9','FT10','TP9','TP10'],
-#                         eog_criterion  = 0.4, # arbitary choice
-#                         skew_criterion = 2,   # arbitary choice
-#                         kurt_criterion = 2,   # arbitary choice
-#                         var_criterion  = 2,   # arbitary choice
-#                         )
-#    picks       = mne.pick_types(epochs.info,
-#                                 eeg = True, # YES EEG
-#                                 eog = False # NO EOG
-#                                 ) 
-#    epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
-#                            exclude    = ica.exclude,
-#                            )
+    """
+    1. if necessary, perform ICA
+    """
+    if perform_ICA:
+        picks       = mne.pick_types(epochs.info,
+                               eeg          = True, # YES EEG
+                               eog          = False # NO EOG
+                               )
+        ar          = AutoReject(
+                        picks               = picks,
+                        random_state        = 12345,
+                        )
+        ar.fit(epochs)
+        _,reject_log = ar.transform(epochs,return_log=True)
+        # calculate the noise covariance of the epochs
+        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+                                             tmin                   = tmin,
+                                             tmax                   = 0,
+                                             method                 = 'empirical',
+                                             rank                   = None,)
+        # define an ica function
+        ica         = mne.preprocessing.ICA(n_components            = .99,
+                                            n_pca_components        = .99,
+                                            max_pca_components      = None,
+                                            method                  = 'extended-infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        ica.fit(epochs[~reject_log.bad_epochs],
+                picks   = picks,
+                start   = tmin,
+                stop    = tmax,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+                )
+        # search for artificial ICAs automatically
+        # most of these hyperparameters were used in a unrelated published study
+        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+                             eog_ch         = ['FT9','FT10','TP9','TP10'],
+                             eog_criterion  = 0.4, # arbitary choice
+                             skew_criterion = 2,   # arbitary choice
+                             kurt_criterion = 2,   # arbitary choice
+                             var_criterion  = 2,   # arbitary choice
+                             )
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+                                exclude    = ica.exclude,
+                                )
+        epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
+    clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
+    return clean_epochs
+
+def preprocessing_unconscious(raw,
+                              events,
+                              session,
+                              tmin = -0,
+                              tmax = 1,
+                              notch_filter = 50,
+                              event_id = {'living':1,'nonliving':2},
+                              baseline = (None,None),
+                              perform_ICA = False,
+                              eog_chs = [],
+                              ecg_chs = [],):
+    # everytime before filtering, explicitly pick the type of channels you want
+    # to perform the filters
+    picks = mne.pick_types(raw.info,
+                           meg = True,  # No MEG
+                           eeg = False, # NO EEG
+                           eog = True,  # YES EOG
+                           ecg = True,  # YES ECG
+                           )
+    # regardless the bandpass filtering later, we should always filter
+    # for wire artifacts and their oscillations
+    if type(notch_filter) is list:
+        for item in notch_filter:
+            raw.notch_filter(np.arange(item,301,item),
+                                 picks = picks)
+    else:
+        raw.notch_filter(np.arange(notch_filter,301,notch_filter),
+                             picks = picks)
+    # filter EOG and ECG channels
+    picks = mne.pick_types(raw.info,
+                           meg = False,
+                           eeg = True)
+    raw.filter(1,80,picks = picks,)
+    # epoch the data
+    picks = mne.pick_types(raw.info,
+                           meg = True,
+                           eog = True,
+                           ecg = True,
+                           )
+    epochs      = mne.Epochs(raw,
+                             events,    # numpy array
+                             event_id,  # dictionary
+                             tmin        = tmin,
+                             tmax        = tmax,
+                             baseline    = baseline, # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                             picks       = picks,
+                             detrend     = 1, # detrend
+                             preload     = True # must be true if we want to do further processing
+                             )
+    """
+    1. if necessary, perform ICA
+    """
+    if perform_ICA:
+        picks       = mne.pick_types(epochs.info,
+                               meg          = True,  # YES MEG
+                               eeg          = False, # NO EEG
+                               eog          = False, # NO EOG
+                               ecg          = False, # NO ECG
+                               )
+        ar          = AutoReject(
+                        picks               = picks,
+                        random_state        = 12345,
+                        )
+        ar.fit(epochs)
+        _,reject_log = ar.transform(epochs,return_log=True)
+        # calculate the noise covariance of the epochs
+        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+                                             tmin                   = tmin,
+                                             tmax                   = 0,
+                                             method                 = 'empirical',
+                                             rank                   = None,)
+        # define an ica function
+        ica         = mne.preprocessing.ICA(n_components            = .99,
+                                            n_pca_components        = .99,
+                                            max_pca_components      = None,
+                                            method                  = 'extended-infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        ica.fit(epochs[~reject_log.bad_epochs],
+                picks   = picks,
+                start   = tmin,
+                stop    = tmax,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+                )
+        # search for artificial ICAs automatically
+        # most of these hyperparameters were used in a unrelated published study
+        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+                             eog_ch         = eog_chs,
+                             ecg_ch         = ecg_chs,
+                             eog_criterion  = 0.4, # arbitary choice
+                             ecg_criterion  = 0.1, # arbitary choice
+                             skew_criterion = 1,   # arbitary choice
+                             kurt_criterion = 1,   # arbitary choice
+                             var_criterion  = 1,   # arbitary choice
+                             )
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+                                exclude    = ica.exclude,
+                                )
+        epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
     clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
     return clean_epochs
@@ -414,6 +534,251 @@ def _preprocessing_conscious(
                              bbox_inches = 'tight')
                 plt.close('all')
         return clean_epochs
+def plot_temporal_decoding(times,
+                           scores,
+                           frames,
+                           ii,
+                           conscious_state,
+                           plscores,
+                           n_splits,
+                           ylim = (0.2,0.8)):
+    scores_mean = scores.mean(0)
+    scores_se   = scores.std(0) / np.sqrt(n_splits)
+    fig,ax = plt.subplots(figsize = (16,8))
+    ax.plot(times,scores_mean,
+            color = 'k',
+            alpha = .9,
+            label = f'Average across {n_splits} folds',
+            )
+    ax.fill_between(times,
+                    scores_mean + scores_se,
+                    scores_mean - scores_se,
+                    color = 'red',
+                    alpha = 0.4,
+                    label = 'Standard Error',)
+    ax.axhline(0.5,
+               linestyle    = '--',
+               color        = 'k',
+               alpha        = 0.7,
+               label        = 'Chance level')
+    ax.axvline(0,
+               linestyle    = '--',
+               color        = 'blue',
+               alpha        = 0.7,
+               label        = 'Probe onset',)
+    if ii is not None:
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color        = 'blue',
+                   alpha        = 0.3,
+                   label        = 'probe offset ave +/- std',)
+    ax.set(xlim     = (times.min(),
+                       times.max()),
+           ylim     = ylim,#(0.4,0.6),
+           title    = f'Temporal decoding of {conscious_state} = {plscores.mean():.3f}+/-{plscores.std():.3f}',
+           )
+    ax.legend()
+    return fig,ax
+def plot_temporal_generalization(scores_gen_,
+                                 epochs,
+                                 ii,
+                                 conscious_state,
+                                 frames,
+                                 vmin = 0.4,
+                                 vmax = 0.6):
+    fig, ax = plt.subplots(figsize = (10,10))
+    im      = ax.imshow(
+                        scores_gen_, 
+                        interpolation       = 'lanczos', 
+                        origin              = 'lower', 
+                        cmap                = 'RdBu_r',
+                        extent              = epochs.times[[0, -1, 0, -1]], 
+                        vmin                = vmin, 
+                        vmax                = vmax,
+                        )
+    ax.set_xlabel('Testing Time (s)')
+    ax.set_ylabel('Training Time (s)')
+    ax.set_title(f'Temporal generalization of {conscious_state}')
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    plt.colorbar(im, ax = ax)
+    ax.legend()
+    return fig,ax
+
+def plot_t_stats(T_obs,
+                 clusters,
+                 cluster_p_values,
+                 times,
+                 ii,
+                 conscious_state,
+                 frames,):
+    
+    # since the p values of each cluster is corrected for multiple comparison, 
+    # we could directly use 0.05 as the threshold to filter clusters
+    T_obs_plot              = 0 * np.ones_like(T_obs)
+    k = np.array([np.sum(c) for c in clusters])
+    if np.max(k) > 1000:
+        c_thresh = 1000
+    elif 1000 > np.max(k) > 500:
+        c_thresh = 500
+    elif 500 > np.max(k) > 100:
+        c_thresh = 100
+    elif 100 > np.max(k) > 10:
+        c_thresh = 10
+    else:
+        c_thresh = 0
+    for c, p_val in zip(clusters, cluster_p_values):
+        if (p_val <= 0.01) and (np.sum(c) >= c_thresh):# and (distance.cdist(np.where(c ==  True)[0].reshape(1,-1),np.where(c ==  True)[1].reshape(1,-1))[0][0] < 200):# and (np.sum(c) >= c_thresh):
+            T_obs_plot[c]   = T_obs[c]
+    # defind the range of the colorbar
+    vmax = np.max(np.abs(T_obs))
+    vmin = -vmax# - 2 * t_threshold
+    plt.close('all')
+    fig,ax = plt.subplots(figsize=(10,10))
+    im      = ax.imshow(T_obs_plot,
+                   origin                   = 'lower',
+                   cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
+                   extent                   = times[[0, -1, 0, -1]],
+                   vmin                     = vmin,
+                   vmax                     = vmax,
+                   interpolation            = 'lanczos',
+                   )
+    divider = make_axes_locatable(ax)
+    cax     = divider.append_axes("right", 
+                                  size      = "5%", 
+                                  pad       = 0.2)
+    cb      = plt.colorbar(im, 
+                           cax              = cax,
+                           ticks            = np.linspace(vmin,vmax,3))
+    cb.ax.set(title = 'T Statistics')
+    ax.plot([times[0],times[-1]],[times[0],times[-1]],
+            linestyle                    = '--',
+            color                        = 'black',
+            alpha                        = 0.7,
+            )
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    ax.set(xlabel                           = 'Test time',
+           ylabel                           = 'Train time',
+           title                            = f'nonparametric t test of {conscious_state}')
+    ax.legend()
+    return fig,ax
+def plot_p_values(times,
+                  clusters,
+                  cluster_p_values,
+                  ii,
+                  conscious_state,
+                  frames):
+    width = len(times)
+    p_clust = np.ones((width, width))# * np.nan
+    k = np.array([np.sum(c) for c in clusters])
+    if np.max(k) > 1000:
+        c_thresh = 1000
+    elif 1000 > np.max(k) > 500:
+        c_thresh = 500
+    elif 500 > np.max(k) > 100:
+        c_thresh = 100
+    elif 100 > np.max(k) > 10:
+        c_thresh = 10
+    else:
+        c_thresh = 0
+    for c, p_val in zip(clusters, cluster_p_values):
+        if (np.sum(c) >= c_thresh):
+            p_val_ = p_val.copy()
+            if p_val_ > 0.05:
+                p_val_ = 1.
+            p_clust[c] = p_val_
+    
+    # defind the range of the colorbar
+    vmax = 1.
+    vmin = 0.
+    plt.close('all')
+    fig,ax = plt.subplots(figsize = (10,10))
+    im      = ax.imshow(p_clust,
+                   origin                   = 'lower',
+                   cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
+                   extent                   = times[[0, -1, 0, -1]],
+                   vmin                     = vmin,
+                   vmax                     = vmax,
+                   interpolation            = 'hanning',
+                   )
+    divider = make_axes_locatable(ax)
+    cax     = divider.append_axes("right", 
+                                  size      = "5%", 
+                                  pad       = 0.2)
+    cb      = plt.colorbar(im, 
+                           cax              = cax,
+                           ticks            = [0,0.05,1])
+    cb.ax.set(title = 'P values')
+    ax.plot([times[0],times[-1]],[times[0],times[-1]],
+            linestyle                       = '--',
+            color                           = 'black',
+            alpha                           = 0.7,
+            )
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    ax.set(xlabel                           = 'Test time',
+           ylabel                           = 'Train time',
+           title                            = f'p value map of {conscious_state}')
+    ax.legend()
+    return fig,ax
 def plot_EEG_autoreject_log(autoreject_object,):
     ar = autoreject_object
     loss = ar.loss_['eeg'].mean(axis=-1)  # losses are stored by channel type.
@@ -446,6 +811,8 @@ def simple_load(f,idx):
     return df
 def get_frames(directory,new = True,EEG = True):
     if EEG:
+        files = glob(os.path.join(directory,'*trials.csv'))
+    elif EEG == 'fMRI':
         files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
@@ -594,8 +961,11 @@ def extract(x):
 #        return False
 def add_track(df_sub):
     n_rows = df_sub.shape[0]
-    temp = '+'.join(str(item + 10) for item in df_sub['index'].values)
-    df_sub = df_sub.iloc[1,:].to_frame().T
+    if len(df_sub.index.values) > 1:
+        temp = '+'.join(str(item + 10) for item in df_sub.index.values)
+    else:
+        temp = str(df_sub.index.values[0])
+    df_sub = df_sub.iloc[0,:].to_frame().T # why did I use 1 instead of 0?
     df_sub['n_volume'] = n_rows
     df_sub['time_indices'] = temp
     return df_sub
@@ -2144,7 +2514,7 @@ def check_train_balance(df,idx_train,keys):
         return idx_train
 
 
-def LOO_partition(data,df_data):
+def LOO_partition(df_data):
     temp = {'targets':[],'labels':[]}
     for (targets,labels),df_sub in df_data.groupby(['targets','labels']):
         temp['targets'].append(targets)
@@ -2496,7 +2866,103 @@ def get_label_category_mapping():
  'wardrobe': 'Nonliving_Things',
  'whale': 'Living_Things',
  'zebra': 'Living_Things'}
-
+def get_label_subcategory_mapping():
+    return {'Chest-of-drawers': 'Furniture',
+ 'armadillo': 'Animals',
+ 'armchair': 'Furniture',
+ 'axe': 'Tools',
+ 'barn-owl': 'Birds',
+ 'bed': 'Furniture',
+ 'bedside-table': 'Furniture',
+ 'boat': 'Vehicles',
+ 'bookcase': 'Furniture',
+ 'bus': 'Vehicles',
+ 'butterfly': 'Insects',
+ 'car': 'Vehicles',
+ 'castle': 'Buildings',
+ 'cat': 'Animals',
+ 'cathedral': 'Buildings',
+ 'chair': 'Furniture',
+ 'cheetah': 'Animals',
+ 'church': 'Buildings',
+ 'coking-pot': 'Kitchen_Uten',
+ 'couch': 'Furniture',
+ 'cow': 'Animals',
+ 'crab': 'Marine_creatures',
+ 'cup': 'Kitchen_Uten',
+ 'dolphin': 'Marine_creatures',
+ 'dragonfly': 'Insects',
+ 'drum': 'Musical_Inst',
+ 'duck': 'Birds',
+ 'elephant': 'Animals',
+ 'factory': 'Buildings',
+ 'filling-cabinet': 'Furniture',
+ 'fondue': 'Kitchen_Uten',
+ 'frying-pan': 'Kitchen_Uten',
+ 'giraffe': 'Animals',
+ 'goldfinch': 'Birds',
+ 'goose': 'Birds',
+ 'granary': 'Buildings',
+ 'guitar': 'Musical_Inst',
+ 'hammer': 'Tools',
+ 'hen': 'Birds',
+ 'hippopotamus': 'Animals',
+ 'horse': 'Animals',
+ 'house': 'Buildings',
+ 'hummingbird': 'Birds',
+ 'killer-whale': 'Marine_creatures',
+ 'kiwi': 'Birds',
+ 'ladybird': 'Insects',
+ 'lamp': 'Furniture',
+ 'lectern': 'Furniture',
+ 'lioness': 'Animals',
+ 'lobster': 'Marine_creatures',
+ 'lynx': 'Animals',
+ 'magpie': 'Birds',
+ 'manatee': 'Marine_creatures',
+ 'mill': 'Buildings',
+ 'motorbike': 'Vehicles',
+ 'narwhal': 'Marine_creatures',
+ 'ostrich': 'Birds',
+ 'owl': 'Birds',
+ 'palace': 'Buildings',
+ 'partridge': 'Birds',
+ 'pelican': 'Birds',
+ 'penguin': 'Birds',
+ 'piano': 'Musical_Inst',
+ 'pigeon': 'Birds',
+ 'plane': 'Vehicles',
+ 'pomfret': 'Marine_creatures',
+ 'pot': 'Kitchen_Uten',
+ 'raven': 'Birds',
+ 'rhino': 'Animals',
+ 'rocking-chair': 'Furniture',
+ 'rooster': 'Birds',
+ 'saucepan': 'Kitchen_Uten',
+ 'saxophone': 'Musical_Inst',
+ 'scorpion': 'Insects',
+ 'seagull': 'Birds',
+ 'shark': 'Marine_creatures',
+ 'ship': 'Vehicles',
+ 'small-saucepan': 'Kitchen_Uten',
+ 'sofa': 'Furniture',
+ 'sparrow': 'Birds',
+ 'sperm-whale': 'Marine_creatures',
+ 'table': 'Furniture',
+ 'tapir': 'Animals',
+ 'teapot': 'Kitchen_Uten',
+ 'tiger': 'Animals',
+ 'toucan': 'Birds',
+ 'tractor': 'Vehicles',
+ 'train': 'Vehicles',
+ 'trumpet': 'Musical_Inst',
+ 'tuba': 'Musical_Inst',
+ 'turtle': 'Animals',
+ 'van': 'Vehicles',
+ 'violin': 'Musical_Inst',
+ 'wardrobe': 'Furniture',
+ 'whale': 'Marine_creatures',
+ 'zebra': 'Animals'}
 
 
 

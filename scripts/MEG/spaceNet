@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This is a script to send "maxfilter_commands.py" as a batch job.
+
+
+#$ -cwd
+#$ -o out.txt
+#$ -e err.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "MF"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "maxfilter_commands.py"

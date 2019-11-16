@@ -42,16 +42,16 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
                                  monitor          = monitor,# saving criterion
                                  save_best_only   = True,# save only the best model
                                  mode             = mode,# saving criterion
-                                 save_freq        = 'epoch',# frequency of check the update 
+#                                 save_freq        = 'epoch',# frequency of check the update 
                                  verbose          = verbose,# print out (>1) or not (0)
-                                 load_weights_on_restart = True,
+#                                 load_weights_on_restart = True,
                                  )
     earlyStop = EarlyStopping(   monitor          = monitor,
                                  min_delta        = min_delta,
                                  patience         = patience,
                                  verbose          = verbose, 
                                  mode             = mode,
-                                 restore_best_weights = True,
+#                                 restore_best_weights = True,
                                  )
     return [checkPoint,earlyStop]
 def preprocess_features(X,vectorizer = None,scaler = None):
@@ -82,7 +82,7 @@ def prepare_data_batch(X,y,batch_size = 32):
     -------------------------------
     processed X,y
     """
-    X       = X / np.abs(X.max(-1).max(-1))
+    X       = (X - X.min(0)) / (X.max(0) - X.min(0))
     remain_ = X.shape[0] % batch_size
     if remain_ != 0:
         np.random.seed(12345)
@@ -139,7 +139,7 @@ def build_model(timesteps,
         l1 /= 10
         l2 /= 10
         RNN,state_h,state_c = layers.LSTM(units              = n_units,
-                                          activation         = 'sigmoid',
+                                          activation         = 'SELU',
                                           return_state       = True,
                                           return_sequences   = True,
                                           dropout            = 0.1,
