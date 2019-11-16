@@ -1,0 +1,143 @@
+moving_highres -- ImageMaths
+in_file = anat_brain
+out_file = highres
+
+moving_highres_head
+in_file = anat_head
+out_file = highre_head
+
+moving_standard -- ImageMaths
+in_file = standard_brain
+out_file = standard
+
+moving_standard_head -- ImageMaths
+in_file = standard_head
+out_file = standard_head
+
+moving_standard_mask -- ImageMaths
+in_file = standard_mask
+out_file = standard_mask
+
+linear_example_func2highres -- flirt
+in_file = func_ref
+reference = highres # anat_brain
+out_file = example_func2highres
+out_matrix_file = example_func2highres.mat
+out_log = example_func2highres.log
+cost = 'corratio'
+interp = 'trilinear'
+x,y,z [-180,180]
+dof = 7
+save_log = True
+
+get_highres2example_func -- convert_xfm
+in_file = example_func2highres.mat
+invert_xfm = True
+out_file = highres2example_func.mat
+
+linear_highres2standard --flirt
+in_file = anat_brain
+reference = standard_brain
+out_file = highres2standard_linear
+out_matrix_file = highres2standard.mat
+out_log = highres2standard.log
+cost = 'corratio'
+interp = 'trilinear'
+x,y,z [-180,180]
+dof = 12
+save_log = True
+
+nonlinear_highres2standard --fnirt
+warped_file = highres2standard --iout
+in_file = anat_head --in
+affine_file = highres2standard.mat --aff
+fieldcoeff_file = highres2standard_warp --cout
+jacobian_file = highres2highres_jac --jout
+config_file = '' --config
+ref_file = standard_head -- ref
+refmask_file = standard_mask --refmask
+warp_resolution = (10,10,10) -- warpres
+log_file = highres2standard.log -- log
+
+warp_highres2standard --applywarp
+in_file = anat_brain
+ref_file = standard_brain
+out_file = highres2standard
+field_file = highres2standard_warp
+
+get_standard2highres --convert_xfm
+in_file = highres2standard.mat
+invert_xfm = True
+out_file = standard2highres.mat
+
+get_exmaple_func2standard -- convert_xfm
+in_file = example_func2highres.mat
+in_file2 = highres2stand.mat
+concat_xfm = True
+out_file = example_func2standard.mat
+
+convertwarp_example2standard --convertwarp
+reference = standard_brain
+premat = example_func2highres.mat
+warpl = highres2standard_warp
+out_file = example_func2standard_warp
+
+warp_example2stand --applywarp
+ref_file = standard_brain
+in_file = func_ref
+out_file = example_func2standard
+field_file = example_func2standard_warp
+
+get_standard2example_func --convert_xfm
+in_file = example_func2standard.mat
+out_file = standard2example_func.mat
+invert_xfm = True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

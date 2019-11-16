@@ -1,0 +1,12 @@
+#!/bin/bash
+#$ -cwd
+#$ -o out.txt
+#$ -e err.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "S2R1"
+#$ -S /bin/bash
+
+module load rocks-fsl-5.0.10
+FEAT "run01.fsf"

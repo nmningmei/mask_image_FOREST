@@ -1,0 +1,17 @@
+
+#!/bin/bash
+
+# This is a script to send "decoding (13).py" as a batch job.
+
+
+#$ -cwd
+#$ -o bash/out_13.txt
+#$ -e bash/err_13.txt
+#$ -m be
+#$ -q fsl.q
+#$ -M nmei@bcbl.eu
+#$ -N "LOO13"
+#$ -S /bin/bash
+
+module load rocks-python-3.6
+python "decoding (13).py"
