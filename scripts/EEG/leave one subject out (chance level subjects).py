@@ -10,7 +10,7 @@ import os
 import mne
 import numpy as np
 from glob import glob
-from sklearn.model_selection import LeaveOneGroupOut
+from sklearn.model_selection import LeavePGroupsOut
 from sklearn.metrics import roc_auc_score,make_scorer
 from sklearn.linear_model import LogisticRegression
 from sklearn.base import clone
@@ -33,13 +33,14 @@ logistic = LogisticRegression(
                               random_state  = 12345
                               )
 n_jobs = 6
-
-working_dir = '../../data/clean EEG highpass detrend'
+folder_name = "clean_EEG_premask_baseline_ICA"
+target_name = "LOO_CV_chance_subjects_mask_baseline_ICA"
+working_dir = f'../../data/{folder_name}'
 working_data = glob(os.path.join(working_dir,'*','*.fif'))
-array_dir = '../../results/EEG/LOO_CV_chance_subjects'
+array_dir = f'../../results/EEG/{target_name}'
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
-figure_dir = '../../figures/EEG/LOO_CV_chance_subjects'
+figure_dir = f'../../figures/EEG/{target_name}'
 if not os.path.exists(figure_dir):
     os.mkdir(figure_dir)
 def load_epochs(f,conscious_state,sub = 0):
@@ -68,15 +69,11 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     X,y = shuffle(X,y)
     groups = epochs.events[:,1]
     
-    cv = LeaveOneGroupOut()
+    cv = LeavePGroupsOut(2)
     idxs_train, idxs_test = [],[]
     for idx_train,idx_test in cv.split(X,y,groups):
-        for _ in range(2):
-            idx_ = np.random.choice(idx_train,
-                                    size = int(len(idx_train) * .8),
-                                    replace = False)
-            idxs_train.append(idx_)
-            idxs_test.append(idx_test)
+        idxs_train.append(idx_train)
+        idxs_test.append(idx_test)
     clf         = make_pipeline(
                                 StandardScaler(),
                                 clone(logistic))
@@ -145,6 +142,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     saving_name     = os.path.join(array_dir,f'temporal_generalization_{conscious_state}.npy')
     if saving_name in glob(os.path.join(array_dir,'*.npy')):
         scores_gen = np.load(saving_name)
+        scores_chance = np.load(saving_name.replace('.npy','_chance.npy'))
     else:
         time_gen    = GeneralizingEstimator(
                                             clf, 
@@ -159,7 +157,16 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                                             n_jobs              = n_jobs,
                                             groups              = groups,
                                             )
+        scores_chance = cross_val_multiscore(
+                                            time_gen, 
+                                            X,
+                                            shuffle(y),
+                                            cv                  = zip(idxs_train,idxs_test), 
+                                            n_jobs              = n_jobs,
+                                            groups              = groups,
+                                            )
         np.save(saving_name,scores_gen)
+        np.save(saving_name.replace('.npy','_chance.npy'),scores_chance)
     
     scores_gen_ = []
     for s_gen,s in zip(scores_gen,scores):
@@ -216,7 +223,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
         threshold_tfce = dict(start=0, step=0.2)
         T_obs, clusters, cluster_p_values, H0   = clu \
                     = mne.stats.permutation_cluster_1samp_test(
-                            scores_gen_ - 0.5,#np.median(conscious),
+                            scores_gen_ - scores_chance,#np.median(conscious),
                             threshold           = threshold_tfce,
                             stat_fun            = stat_fun_hat,
                             tail                = 1, # find clusters that are greater than the chance level

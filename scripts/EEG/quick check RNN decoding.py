@@ -10,28 +10,50 @@ import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
+sns.set_style('white')
+sns.set_context('poster')
+from glob import glob
+from matplotlib import pyplot as plt
+
+folder_name1 = "RNN"
+working_dir1 = f'../../results/EEG/{folder_name1}'
+working_data1 = glob(os.path.join(working_dir1,'*.csv'))
+
+folder_name2 = 'decode_premask_baseline_ICA'
+working_dir2 = f'../../results/EEG/{folder_name2}/*/'
+working_data2 = glob(os.path.join(working_dir2,'whole_seg*.npy'))
 
 df = []
-for ii,f in enumerate(os.listdir(os.getcwd())):
+for ii,f in enumerate(working_data1):
     temp = pd.read_csv(f)
     temp['sub'] = ii + 1
     df.append(temp)
 df = pd.concat(df)
-
+df['chance'] = df['initial']
+df['RNN'] = df['score']
 df_plot = df.groupby(['sub','conscious_state']).mean().reset_index()
 
-g = sns.factorplot(x = 'conscious_state',
-                   y = 'score',
-                   kind = 'violin',
-                   data = df_plot,
-                   aspect = 1.5,
-                   **dict(cut = 0,
-                          inner = 'quartile',))
-g.set(ylim=(0.4,0.7))
-g.axes[0][0].axhline(0.5)
-g.savefig('temp.png',dpi = 400)
+temp = []
+for conscious_state in pd.unique(df_plot['conscious_state']):
+    picked = [item for item in working_data2 if(f'_{conscious_state}' in item)]
+    data = np.array([np.load(item) for item in picked])
+    temp.append(data.mean(1))
+temp = np.concatenate(temp)
 
-a = df_plot[df_plot['conscious_state'] == 'unconscious']['score'].values
-null = a - a.mean() + 0.5
-null_dist = np.random.choice(null,size = (a.shape[0],10000),replace = True).mean(0)
-p = (np.sum(null_dist >= a.mean()) + 1) / (10000 + 1)
+df_plot['logistic'] = temp
+
+df_plot_ = pd.melt(df_plot,id_vars = ['sub','conscious_state'],value_vars = ['RNN','logistic'])
+
+fig,ax = plt.subplots(figsize=(8,6))
+ax = sns.violinplot(x = 'conscious_state',
+                 y = 'value',
+                 hue = 'variable',
+                 data = df_plot_,
+                 split = True,
+                 cut = 0,
+                 inner = 'quartile',
+                 ax = ax,
+                 )
+ax.axhline(0.5,linestyle = '--',color = 'black',alpha = 0.5)
+
+

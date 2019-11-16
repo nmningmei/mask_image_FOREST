@@ -26,9 +26,10 @@ all_subjects = ['aingere_5_16_2019',
                 'xabier_5_15_2019',
                 ]
 all_subjects = np.sort(all_subjects)
-cores               = 10
-mem                 = 2 * cores
-time_               = 60 * cores
+nodes               = 1
+cores               = 16
+mem                 = 8 * cores * nodes
+time_               = 60 * cores * nodes
 
 
 for ii,subject in enumerate(all_subjects):
@@ -53,10 +54,11 @@ for ii,subject in enumerate(all_subjects):
 #PBS -N RNN{ii+1}
 #PBS -o bash/out_{subject}.txt
 #PBS -e bash/err_{subject}.txt
-source .bashrc
+#source .bashrc
+
 cd $PBS_O_WORKDIR
-#export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
-source activate keras_tensorflow-1.13.1
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+source activate keras-2.1.6_tensorflow-1.14.0
 pwd
 python RNN_tf_decoding_{ii+1}.py
     """

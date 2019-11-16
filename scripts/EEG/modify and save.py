@@ -27,53 +27,54 @@ all_subjects = ['aingere_5_16_2019',
                 ]
 all_subjects = np.sort(all_subjects)
 
-preprocessing_template = 'preprocessing EEG and get match events details.py'
-TD_template = 'temporal_decoding_finalized_DIPC.py'
+preprocessing_template = 'preprocessing EEG with adjust onsets.py'
+TD_template = 'temporal_generalization_of_visibility.py'
 TD_resposne_template = 'temporal decoding (response).py'
 
 bash_dir = 'bash'
 if not os.path.exists(bash_dir):
     os.mkdir(bash_dir)
-    if not os.path.exists(os.path.join(bash_dir,'outputs')):
-        os.mkdir(os.path.join(bash_dir,'outputs'))
+if not os.path.exists(os.path.join(bash_dir,'outputs')):
+    os.mkdir(os.path.join(bash_dir,'outputs'))
 else:
     try:
         [os.remove(item) for item in glob(os.path.join(bash_dir,'outputs','*.txt'))]
     except:
         print('it is empty')
 core = 16
-mem = core * 10
+mem = core * 5
 cput = 12 * core
 for ii,subject in enumerate(all_subjects):
-    with open(os.path.join(bash_dir,preprocessing_template.replace('.py',f' ({subject}).py')),
-              'w') as new_file:
-        with open(preprocessing_template,'r') as old_file:
-            for line in old_file:
-                if "subject = " in line:
-                    line = f"subject = '{subject}'"
-                elif "'../../" in line:
-#                    print(line)
-                    line = line.replace("../../","../../../")
-                elif "copyfile('../utils.py','utils.py')" in line:
-                    line = "copyfile('../../utils.py','utils.py')\n"
-                new_file.write(line)
-            old_file.close()
-        new_file.close()
+#    with open(os.path.join(bash_dir,preprocessing_template.replace('.py',f' ({subject}).py')),
+#              'w') as new_file:
+#        with open(preprocessing_template,'r') as old_file:
+#            for line in old_file:
+#                if "subject = " in line:
+##                    print(line)
+#                    line = f"subject = '{subject}'\n"
+#                elif "'../../" in line:
+##                    print(line)
+#                    line = line.replace("../../","../../../")
+#                elif "copyfile('../utils.py','utils.py')" in line:
+#                    line = "copyfile('../../utils.py','utils.py')\n"
+#                new_file.write(line)
+#            old_file.close()
+#        new_file.close()
     
     with open(os.path.join(bash_dir,TD_template.replace('.py',f'_{subject}.py')),
               'w') as new_file:
         with open(TD_template,'r') as old_file:
             for line in old_file:
-                if "subject             = " in line:
-                    line = f"subject = '{subject}'"
+                if "subject             =" in line:
+                    line = f"subject = '{subject}'\n"
                 elif "'../../" in line:
                     line = line.replace("../../","../../../")
                 elif "verbose             = True" in line:
                     line = line.replace("verbose             = True","verbose             = False")
-                elif "copyfile('../utils.py','utils.py')" in line:
-                    line = "copyfile('../../utils.py','utils.py')\n"
-                elif "n_jobs =" in line:
-                    line = f"n_jobs = {core}\n"
+                elif "copyfile(os.path.abspath('../utils.py'),'utils.py')" in line:
+                    line = "copyfile(os.path.abspath('../../utils.py'),'utils.py')\n"
+#                elif "n_jobs =" in line:
+#                    line = f"n_jobs = {core}\n"
                 new_file.write(line)
             old_file.close()
         new_file.close()

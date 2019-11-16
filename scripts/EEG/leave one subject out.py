@@ -33,13 +33,14 @@ logistic = LogisticRegression(
                               random_state  = 12345
                               )
 n_jobs = 6
-
-working_dir = '../../data/clean EEG'
+folder_name = "clean_EEG_premask_baseline_ICA"
+target_name = "LOO_CV_mask_baseline_ICA"
+working_dir = f'../../data/{folder_name}'
 working_data = glob(os.path.join(working_dir,'*','*.fif'))
-array_dir = '../../results/EEG/LOO_CV'
+array_dir = f'../../results/EEG/{target_name}'
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
-figure_dir = '../../figures/EEG/LOO_CV'
+figure_dir = f'../../figures/EEG/{target_name}'
 if not os.path.exists(figure_dir):
     os.mkdir(figure_dir)
 def load_epochs(f,conscious_state,sub = 0):
@@ -128,11 +129,72 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                              f'temporal decoding of {conscious_state}.png'),
     dpi = 400,
     bbox_inches = 'tight',)
+    
+    # temporal decoding
+    print('temporal decoding')
+    saving_name     = os.path.join(array_dir,f'temporal_decoding_{conscious_state}.npy')
+    if saving_name in glob(os.path.join(array_dir,'*.npy')):
+        scores = np.load(saving_name)
+    else:
+        time_decod  = SlidingEstimator(
+                                            clf, 
+                                            n_jobs              = 1, 
+                                            scoring             = scorer, 
+                                            verbose             = False
+                                            )
+        scores      = cross_val_multiscore(
+                                            time_decod, 
+                                            X,
+                                            y,
+                                            cv                  = cv, 
+                                            n_jobs              = n_jobs,
+                                            groups              = groups,
+                                            )
+        np.save(saving_name,scores)
+    
+    n_splits = scores.shape[0]
+    times = epochs.times
+    scores_mean = scores.mean(0)
+    scores_se   = scores.std(0) / np.sqrt(n_splits)
+    
+    fig,ax      = plt.subplots(figsize=(16,8))
+    ax.plot(times,scores_mean,
+            color = 'k',
+            alpha = .9,
+            label = f'Average across {n_splits} folds',
+            )
+    ax.fill_between(times,
+                    scores_mean + scores_se,
+                    scores_mean - scores_se,
+                    color = 'red',
+                    alpha = 0.4,
+                    label = 'Standard Error',)
+    ax.axhline(0.5,
+               linestyle    = '--',
+               color        = 'k',
+               alpha        = 0.7,
+               label        = 'Chance level')
+    ax.axvline(0,
+               linestyle    = '--',
+               color        = 'blue',
+               alpha        = 0.7,
+               label        = 'Probe onset',)
+    ax.set(xlim     = (times.min(),
+                       times.max()),
+           ylim     = (0.425,0.575),
+           title    = f'Temporal decoding of {conscious_state}',
+           )
+    ax.legend()
+    fig.savefig(os.path.join(figure_dir,
+                             f'temporal decoding of {conscious_state}.png'),
+    dpi = 400,
+    bbox_inches = 'tight',)
     # temporal generalization
     print('temporal generalization')
     saving_name     = os.path.join(array_dir,f'temporal_generalization_{conscious_state}.npy')
     if saving_name in glob(os.path.join(array_dir,'*.npy')):
         scores_gen = np.load(saving_name)
+        scores_chance = np.load(saving_name.replace('.npy','_chance.npy'))
     else:
         time_gen    = GeneralizingEstimator(
                                             clf, 
@@ -147,7 +209,16 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
                                             n_jobs              = n_jobs,
                                             groups              = groups,
                                             )
+        scores_chance = cross_val_multiscore(
+                                            time_gen, 
+                                            X,
+                                            shuffle(y),
+                                            cv                  = cv, 
+                                            n_jobs              = n_jobs,
+                                            groups              = groups,
+                                            )
         np.save(saving_name,scores_gen)
+        np.save(saving_name.replace('.npy','_chance.npy'),scores_chance)
     
     scores_gen_ = []
     for s_gen,s in zip(scores_gen,scores):
@@ -192,7 +263,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     if saving_name in glob(os.path.join(array_dir,'*.npy')):
         T_obs = np.load(saving_name)
         clusters = np.load(saving_name.replace('T_obs','clusters'))
-        cluster_p_values = np.load(saving_name.replace('T_obs','clustre_p_values'))
+        cluster_p_values = np.load(saving_name.replace('T_obs','cluster_p_values'))
     else:
         alpha           = 0.0001
         sigma           = 1e-3
@@ -204,7 +275,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
         threshold_tfce = dict(start=0, step=0.2)
         T_obs, clusters, cluster_p_values, H0   = clu \
                     = mne.stats.permutation_cluster_1samp_test(
-                            scores_gen_ - 0.5,#np.median(conscious),
+                            scores_gen_ - scores_chance,#np.median(conscious),
                             threshold           = threshold_tfce,
                             stat_fun            = stat_fun_hat,
                             tail                = 1, # find clusters that are greater than the chance level
