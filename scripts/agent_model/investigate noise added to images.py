@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 13 13:14:27 2019
+Created on Tue Nov 19 11:04:28 2019
 
 @author: nmei
 """
@@ -71,7 +71,7 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
 
 working_dir         = '../../data'
 # define some hyperparameters for training
-batch_size          = 8
+batch_size          = 96
 image_resize        = 128
 drop_rate           = 0.25
 model_name          = 'VGG19'
@@ -82,6 +82,7 @@ loss_func           = losses.binary_crossentropy
 colorful            = 'experiment_images_tilted'
 black_and_white     = 'greyscaled'
 noisy               = 'bw_bc_bl'
+grayscaled          = 'experiment_images_grayscaled'
 
 model_loaded    = model_pretrained(weights      = 'imagenet',
                                    include_top  = False,
@@ -116,98 +117,59 @@ print(classifier.summary())
 classifier.compile(optimizers.Adam(lr = 1e-4,),
                    loss_func,
                    metrics = ['categorical_accuracy'])
-
-gen             = ImageDataGenerator(
-                                     preprocessing_function = preprocess_input, # scaling function (-1,1)
-                                     )
-gen_train       = gen.flow_from_directory(os.path.join(working_dir,noisy), 
-                                          target_size       = (image_resize,image_resize),  # resize the image
-                                          batch_size        = batch_size,                   # batch size
-                                          class_mode        = 'categorical',                # get the labels from the folders
-                                          shuffle           = False,                         # shuffle for different epochs
-                                          seed              = 12345,                        # replication purpose
-                                          )
-predictions = classifier.predict_generator(gen_train,steps = np.ceil(gen_train.n/batch_size),verbose = 1)
-targets = gen_train.classes
-
-
-perfect_score = roc_auc_score(targets,predictions[:,-1])
-print(f'score = {perfect_score:.4f}')
-
-# train the errors
-fig,axes = plt.subplots(figsize = (18,18),nrows = 3,sharey = True)
-noise_level = ['medium','high','very high']
-for idx_ax,var in enumerate(np.logspace(5,7,3)):
-    def process_func(x,var = var):
-        row,col,ch= x.shape
-        mean = 0
-        var = var
-        sigma = var**0.5
-        gauss = np.random.normal(mean,sigma,(row,col,ch))
-        gauss = gauss.reshape(row,col,ch)
-        noise = x + gauss
-        noise = preprocess_input(noise)
-        return noise
-    
-    gen             = ImageDataGenerator(
-                                         preprocessing_function = process_func, # scaling function (-1,1)
-                                         )
-    gen_train       = gen.flow_from_directory(os.path.join(working_dir,noisy),
+def process_func(x,var = 7e5):
+    row,col,ch= x.shape
+    mean = 0
+    var = var
+    sigma = var**0.5
+    gauss = np.random.normal(mean,sigma,(row,col,ch))
+    gauss = gauss.reshape(row,col,ch)
+    noise = x + gauss
+    noise = preprocess_input(noise)
+    return noise
+gen = ImageDataGenerator(
+                        featurewise_center=False,
+                        samplewise_center=False,
+                        featurewise_std_normalization=False,
+                        samplewise_std_normalization=False,
+                        zca_whitening=False,
+                        zca_epsilon=1e-06,
+                        rotation_range=45,
+                        width_shift_range=0,
+                        height_shift_range=0,
+                        brightness_range=None,
+                        shear_range=0.01,
+                        zoom_range=-0.02,
+                        channel_shift_range=0.0,
+                        fill_mode='nearest',
+                        cval=0.0,
+                        horizontal_flip=True,
+                        vertical_flip=True, # change from experiment
+                        preprocessing_function=process_func,
+                        data_format=None,
+                        validation_split=0.0
+                    )
+images_flow = gen.flow_from_directory(os.path.join(working_dir,grayscaled),
                                               target_size       = (image_resize,image_resize),  # resize the image
                                               batch_size        = batch_size,                   # batch size
                                               class_mode        = 'categorical',                # get the labels from the folders
-                                              shuffle           = False,                        # shuffle for different epochs
+                                              shuffle           = True,                        # shuffle for different epochs
                                               seed              = 12345,                        # replication purpose
                                               )
-    #print(classifier.evaluate_generator(gen_train,steps = np.ceil(gen_train.n/batch_size),verbose=1))
-    predictions = classifier.predict_generator(gen_train,steps = np.ceil(gen_train.n/batch_size),verbose = 1)
-    targets = gen_train.classes
-    roc_score = roc_auc_score(targets,predictions[:,-1])
-    print(f'{roc_score:.4f}')
+results = dict(session = [],
+               score = [],
+               )
+for session in range(100):
     
-    rep_func = models.Model(classifier.inputs,classifier.layers[-2].output)
-    reps = rep_func.predict_generator(gen_train,steps = np.ceil(gen_train.n/batch_size),verbose = 1)
-    labels = gen_train.classes
-    
-    np.random.seed(12345)
-    reps,labels = shuffle(reps,labels)
-    
-    
-    np.random.seed(12345)
-    svm = LinearSVC(penalty = 'l2', # default
-                    dual = True, # default
-                    tol = 1e-3, # not default
-                    random_state = 12345, # not default
-                    max_iter = int(1e3), # default
-                    class_weight = 'balanced', # not default
-                    )
-    svm = CalibratedClassifierCV(base_estimator = svm,
-                                 method = 'sigmoid',
-                                 cv = 8)
-    pipeline = make_pipeline(MinMaxScaler(),
-                             svm)
-    cv = StratifiedShuffleSplit(n_splits = 48 * 48,test_size = 0.2,random_state = 12345)
-    
-    res = cross_validate(pipeline,reps,labels,cv = cv,scoring = 'roc_auc',return_estimator = True,n_jobs = -1,verbose = 1)
-    
-    random_labels = shuffle(labels)
-    chance = cross_validate(pipeline,reps,random_labels,cv = cv,scoring = 'roc_auc',return_estimator = True,n_jobs = -1,verbose = 1)
-    
-    ax = axes[idx_ax]
-    ax.hist(res['test_score'],label = 'decoding',color = 'red',alpha = 0.6)
-    ax.hist(chance['test_score'],label = 'chance',color = 'blue',alpha = 0.6)
-    ax.set(title = f'nosiy level added to the image is {noise_level[idx_ax]}, behavioral score = {roc_score:.4f}')
-    ax.legend()
+    image_array,labels = images_flow.next()
+    predictions = classifier.predict(image_array,batch_size = 32,verbose = 1)
+    score = roc_auc_score(labels,predictions)
+    results['session'].append(session + 1)
+    results['score'].append(score)
+#    classifier.evaluate_generator(images_flow,steps = np.ceil(images_flow.n / batch_size),verbose = 1)
 
-fig.savefig('../../figures/MRI/nilearn/collection_of_results/agent_model.png',dpi = 400,bbox_inches = 'tight')
-
-
-
-
-
-
-
-
+results = pd.DataFrame(results)
+print(results['score'].describe())
 
 
 
