@@ -143,6 +143,7 @@ for idx_ax,var in enumerate(np.logspace(5,7,3)):
         mean = 0
         var = var
         sigma = var**0.5
+        np.random.seed(int(x.var(1).sum(0)[0]))
         gauss = np.random.normal(mean,sigma,(row,col,ch))
         gauss = gauss.reshape(row,col,ch)
         noise = x + gauss
