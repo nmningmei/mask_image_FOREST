@@ -65,11 +65,18 @@ copyfile('../utils_deep.py','utils_deep.py')
 
 """
 collections = []
+first_GPU,second_GPU = [],[]
+replace = False # change to second GPU
 for ii,row in df.iterrows():
+    
     src = '_{}_{}_{}_{}_{}'.format(*list(row.to_dict().values()))
     
     new_scripts_name = os.path.join(scripts_folder,template.replace('.py',f'{src}.py').replace('7.simulation','simulation'))
-    
+    if ii > df.shape[0]/2 :
+        replace = True
+        second_GPU.append(new_scripts_name)
+    else:
+        first_GPU.append(new_scripts_name)
     with open(new_scripts_name,'w') as new_file:
         with open(template,'r') as old_file:
             for line in old_file:
@@ -95,6 +102,9 @@ for ii,row in df.iterrows():
                     line = f"verbose             = {verbose}\n"
                 elif "batch_size          = " in line:
                     line = f"batch_size          = {batch_size}\n"
+                elif "/device:GPU:0" in line:
+                    if replace:
+                        line = line.replace('0','1')
                 new_file.write(line)
             old_file.close()
         new_file.close()
@@ -134,6 +144,7 @@ with open(f'{scripts_folder}/qsub_jobs.py','a') as f:
 
 from glob import glob
 all_scripts = glob(os.path.join(scripts_folder,'simulation*.py'))
+
 with open(os.path.join(scripts_folder,'run_all.py'),'w') as f:
     f.write('import os\n')
     for files in all_scripts:
@@ -141,7 +152,19 @@ with open(os.path.join(scripts_folder,'run_all.py'),'w') as f:
         f.write(f'os.system("python {file_name}")\n')
     f.close()
 
+with open(os.path.join(scripts_folder,'run_all_0.py'),'w') as f:
+    f.write('import os\n')
+    for files in first_GPU:
+        file_name = files.split('bash/')[-1]
+        f.write(f'os.system("python {file_name}")\n')
+    f.close()
 
+with open(os.path.join(scripts_folder,'run_all_1.py'),'w') as f:
+    f.write('import os\n')
+    for files in second_GPU:
+        file_name = files.split('bash/')[-1]
+        f.write(f'os.system("python {file_name}")\n')
+    f.close()
 
 
 
