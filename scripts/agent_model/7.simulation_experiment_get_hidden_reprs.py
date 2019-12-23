@@ -29,7 +29,7 @@ from functools  import partial
 #sns.set_style('whitegrid')
 #sns.set_context('talk')
 
-with tf.device('/physical_device:GPU:0'):
+with tf.device('/device:GPU:0'):
     working_dir         = '../../data'
     # define some hyperparameters for training
     batch_size          = 16

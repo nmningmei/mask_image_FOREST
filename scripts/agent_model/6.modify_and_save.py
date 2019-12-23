@@ -85,23 +85,23 @@ for ii,row in df.iterrows():
                 elif "import utils_deep" in line:
                     line = "{}\n{}".format(add_on,line)
                 elif "hidden_units        = " in line:
-                    line = f"hidden_units        = {row['hidden_units']}" + "\n"
+                    line = f"    hidden_units        = {row['hidden_units']}" + "\n"
                 elif "drop_rate           = " in line:
-                    line = f"drop_rate           = {row['dropouts']}" + "\n"
+                    line = f"    drop_rate           = {row['dropouts']}" + "\n"
                 elif "model_name          = " in line:
-                    line = f"model_name          = '{row['model_names']}'" + "\n"
+                    line = f"    model_name          = '{row['model_names']}'" + "\n"
                 elif "model_pretrained    = " in line:
-                    line = f"model_pretrained    = applications.{row['model_names']}" + "\n"
+                    line = f"    model_pretrained    = applications.{row['model_names']}" + "\n"
                 elif "hidden_activation   = " in line:
-                    line = f"hidden_activation   = '{row['hidden_activations']}'" + "\n"
+                    line = f"    hidden_activation   = '{row['hidden_activations']}'" + "\n"
                 elif "output_activation   = " in line:
-                    line = f"output_activation   = '{row['output_activations']}'" + "\n"
+                    line = f"    output_activation   = '{row['output_activations']}'" + "\n"
                 elif "preprocess_input           = " in line:
-                    line = f"preprocess_input           = applications.{row['preprocess_input']}.preprocess_input" + "\n"
+                    line = f"    preprocess_input           = applications.{row['preprocess_input']}.preprocess_input" + "\n"
                 elif "verbose             = " in line:
-                    line = f"verbose             = {verbose}\n"
+                    line = f"    verbose             = {verbose}\n"
                 elif "batch_size          = " in line:
-                    line = f"batch_size          = {batch_size}\n"
+                    line = f"    batch_size          = {batch_size}\n"
                 elif "/device:GPU:0" in line:
                     if replace:
                         line = line.replace('0','1')
@@ -152,20 +152,31 @@ with open(os.path.join(scripts_folder,'run_all.py'),'w') as f:
         f.write(f'os.system("python {file_name}")\n')
     f.close()
 
+
 with open(os.path.join(scripts_folder,'run_all_0.py'),'w') as f:
     f.write('import os\n')
-    for files in first_GPU:
+    for files in first_GPU[:int(len(first_GPU)/2)]:
         file_name = files.split('bash/')[-1]
         f.write(f'os.system("python {file_name}")\n')
     f.close()
-
 with open(os.path.join(scripts_folder,'run_all_1.py'),'w') as f:
     f.write('import os\n')
-    for files in second_GPU:
+    for files in first_GPU[int(len(first_GPU)/2):]:
         file_name = files.split('bash/')[-1]
         f.write(f'os.system("python {file_name}")\n')
     f.close()
-
+with open(os.path.join(scripts_folder,'run_all_2.py'),'w') as f:
+    f.write('import os\n')
+    for files in second_GPU[:int(len(second_GPU)/2)]:
+        file_name = files.split('bash/')[-1]
+        f.write(f'os.system("python {file_name}")\n')
+    f.close()
+with open(os.path.join(scripts_folder,'run_all_3.py'),'w') as f:
+    f.write('import os\n')
+    for files in second_GPU[int(len(second_GPU)/2):]:
+        file_name = files.split('bash/')[-1]
+        f.write(f'os.system("python {file_name}")\n')
+    f.close()
 
 
 
