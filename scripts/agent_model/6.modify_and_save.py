@@ -13,7 +13,7 @@ import pandas as pd
 from shutil import rmtree
 
 verbose = 1
-batch_size = 16
+batch_size = 32
 node = 2
 core = 16
 mem = 2 * node * core
