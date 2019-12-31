@@ -47,7 +47,7 @@ for f in working_data:
     df.append(df_temp)
 df                  = pd.concat(df)
 
-n_sim = int(1e5)
+n_sim = int(5e5)
 n_sample = int(2e3)
 results = dict(pval         = [],
                sub          = [],
@@ -116,6 +116,7 @@ ax = sns.swarmplot(
                  ax     = ax,)
 ax.set(xlabel = 'Conscious State',
        ylabel = 'ROC AUC')
+ax.get_legend().set_title("")
 fig.savefig(os.path.join(figure_dir,
                          'behaviroal.png'),
             dpi = 400,
