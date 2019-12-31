@@ -13,6 +13,7 @@ The statistical significance is estimated by a permutation test
 """
 
 import os
+import gc
 from glob import glob
 
 import numpy  as np
@@ -21,9 +22,10 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.utils   import shuffle
 from matplotlib      import pyplot as plt
+from joblib          import Parallel,delayed
 import seaborn as sns
 sns.set_style('whitegrid')
-sns.set_context('poster')
+sns.set_context('paper')
 
 from shutil import copyfile
 copyfile('../../utils.py','utils.py')
@@ -45,6 +47,8 @@ for f in working_data:
     df.append(df_temp)
 df                  = pd.concat(df)
 
+n_sim = int(1e5)
+n_sample = int(2e3)
 results = dict(pval         = [],
                sub          = [],
                accuracy     = [],
@@ -63,22 +67,24 @@ for sub,df_sub in df.groupby(['sub']):
         
         experiment      = score
         np.random.seed(12345)
-        chance_level    = []
-        for _ in range(1000):
+        gc.collect()
+        def _chance(responses,correct_ans):
             idx_        = np.random.choice(np.arange(len(responses)),
-                                           int(len(responses) * 0.8),
-                                           replace = False)
+                                           n_sample,
+                                           replace = True)
             random_responses = shuffle(responses)
-            
-            chance      = roc_auc_score(correct_ans[idx_],random_responses[idx_])
-            chance_level.append(chance)
+            return roc_auc_score(correct_ans[idx_],random_responses[idx_])
+        
+        chance_level          = Parallel(n_jobs = -1,verbose = 1)(delayed(_chance)(**{
+                            'responses':responses,
+                            'correct_ans':correct_ans}) for i in range(n_sim))
         chance_level    = np.array(chance_level)
-        pval            = (np.sum(chance_level > experiment) + 1) / (1000 + 1)
-        results['sub'           ].append(f.split('_')[0])
+        pval            = (np.sum(chance_level > experiment) + 1) / (n_sim + 1)
+        results['sub'           ].append(sub)
         results['pval'          ].append(pval)
         results['accuracy'      ].append(experiment)
         results['chance_mean'   ].append(chance_level.mean())
-        results['chance_std'    ].append(chance_level.std() / np.sqrt(1000))
+        results['chance_std'    ].append(chance_level.std() / np.sqrt(n_sim))
         results['visibility'    ].append(visibility)
 
 results = pd.DataFrame(results)
@@ -105,10 +111,11 @@ ax = sns.swarmplot(
                  x      = 'visibility',
                  y      = 'accuracy',
                  hue    = 'Behavioral',
+                 size   = 12,
                  data   = df_plot,
                  ax     = ax,)
 ax.set(xlabel = 'Conscious State',
-       ylabel = 'Accuracy')
+       ylabel = 'ROC AUC')
 fig.savefig(os.path.join(figure_dir,
                          'behaviroal.png'),
             dpi = 400,
