@@ -13,7 +13,7 @@ import pandas as pd
 from shutil import rmtree
 
 verbose = 1
-batch_size = 32
+batch_size = 16
 node = 2
 core = 16
 mem = 2 * node * core
@@ -102,9 +102,9 @@ for ii,row in df.iterrows():
                     line = f"    verbose             = {verbose}\n"
                 elif "batch_size          = " in line:
                     line = f"    batch_size          = {batch_size}\n"
-                elif "/device:GPU:0" in line:
+                elif "idx_GPU = 0" in line:
                     if replace:
-                        line = line.replace('0','1')
+                        line = line.replace('0','-1')
                 new_file.write(line)
             old_file.close()
         new_file.close()

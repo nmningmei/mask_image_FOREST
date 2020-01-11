@@ -408,6 +408,7 @@ def decode_hidden(decoder_name,
                               labels,
                               cv        = cv,
                               n_jobs    = -1,
+                              scoring   = 'roc_auc',
                               verbose   = verbose,
                               )
     return res,permu_scores,pval
