@@ -51,7 +51,7 @@ preproc_func = {'DenseNet169':'densenet',
                 }
 df['preprocess_input'] = df['model_names'].map(preproc_func)
 
-template = '7.simulation_experiment_get_hidden_reprs.py'
+template = '7.1.simulation_experiment_get_hidden_reprs.py'
 scripts_folder = 'bash'
 if not os.path.exists(scripts_folder):
     os.mkdir(scripts_folder)
@@ -71,7 +71,7 @@ for ii,row in df.iterrows():
     
     src = '_{}_{}_{}_{}_{}'.format(*list(row.to_dict().values()))
     
-    new_scripts_name = os.path.join(scripts_folder,template.replace('.py',f'{src}.py').replace('7.simulation','simulation'))
+    new_scripts_name = os.path.join(scripts_folder,template.replace('.py',f'{src}.py').replace('7.1.simulation','simulation'))
     if ii > df.shape[0]/2 :
         replace = True
         second_GPU.append(new_scripts_name)
