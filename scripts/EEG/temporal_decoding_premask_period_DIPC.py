@@ -50,7 +50,7 @@ from utils                   import (get_frames,
                                      plot_p_values)
 
 # use more than 1 CPU to parallize the training
-n_jobs = 8 
+n_jobs = -1
 # customized scoring function
 func                = partial(roc_auc_score,average = 'micro')
 func.__name__       = 'micro_AUC'
@@ -68,7 +68,7 @@ else:
     new             = False
 # define lots of path for data, outputs, etc
 folder_name         = "clean_EEG_premask_baseline_ICA"
-target_name         = 'decode_premask_baseline_ICA'
+target_name         = 'decode_premask_baseline_ICA_on_premask_period'
 working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
@@ -108,7 +108,7 @@ for epoch_file in working_data:
         epochs
         # resample at 100 Hz to fasten the decoding process
         print('resampling...')
-        epoch_temp = epochs.copy().resample(100)
+        epoch_temp = epochs.crop(-.2,0).copy().resample(100)
         
         ################ decode the whole segment ##################
         print('cross val scoring')
@@ -120,7 +120,6 @@ for epoch_file in working_data:
                                              n_splits       = n_splits, 
                                              test_size      = 0.2, 
                                              random_state   = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
             groups = epoch_temp.events[:,1]
             pipeline    = make_pipeline(
 #                                     Scaler(epochs.info,),
@@ -138,7 +137,6 @@ for epoch_file in working_data:
                                      pipeline,
                                      X,
                                      y,
-                                     groups = groups,
                                      scoring                = scorer,
                                      cv                     = cv,
                                      n_jobs                 = n_jobs,
@@ -167,7 +165,6 @@ for epoch_file in working_data:
                                         n_splits            = n_splits, 
                                         test_size           = 0.2, 
                                         random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
             groups = epochs.events[:,1]
             clf         = make_pipeline(
 #                                        Scaler(epochs.info,),
@@ -194,7 +191,6 @@ for epoch_file in working_data:
                                         time_decod, 
                                         X,
                                         y,
-                                        groups = groups,
                                         cv                  = cv, 
                                         n_jobs              = n_jobs,
                                         )
@@ -219,7 +215,6 @@ for epoch_file in working_data:
                                         n_splits            = n_splits, 
                                         test_size           = 0.2, 
                                         random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
             groups = epochs.events[:,1]
             clf         = make_pipeline(
 #                                        Scaler(epochs.info,),
@@ -242,7 +237,6 @@ for epoch_file in working_data:
                                         time_gen, 
                                         X,
                                         y,
-                                        groups = groups,
                                         cv                  = cv, 
                                         n_jobs              = n_jobs
                                         )

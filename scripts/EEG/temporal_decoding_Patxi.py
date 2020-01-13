@@ -3,7 +3,7 @@
 """
 Created on Sat Mar  2 15:04:58 2019
 
-@author: nmei
+@author: pelosegi
 """
 
 import mne
@@ -32,8 +32,7 @@ from sklearn.linear_model    import (
 from sklearn.pipeline        import make_pipeline
 from sklearn.model_selection import (
                                         StratifiedShuffleSplit,
-                                        cross_val_score,
-                                        LeavePGroupsOut
+                                        cross_val_score
                                         )
 from sklearn.utils           import shuffle
 from sklearn.base            import clone
@@ -50,7 +49,7 @@ from utils                   import (get_frames,
                                      plot_p_values)
 
 # use more than 1 CPU to parallize the training
-n_jobs = 8 
+n_jobs = -1 
 # customized scoring function
 func                = partial(roc_auc_score,average = 'micro')
 func.__name__       = 'micro_AUC'
@@ -67,8 +66,9 @@ if date > breakPoint:
 else:
     new             = False
 # define lots of path for data, outputs, etc
-folder_name         = "clean_EEG_premask_baseline_ICA"
-target_name         = 'decode_premask_baseline_ICA'
+folder_name         = "clean_EEG_premask_baseline"
+#target_name         = 'decode_premask_baseline_all'
+target_name         = 'decode_GaussNB_ElecSelect'
 working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
@@ -82,12 +82,77 @@ if not os.path.exists(array_dir):
 # define the number of cross validation we want to do.
 n_splits            = 300
 
-logistic = LogisticRegression(
-                              solver        = 'lbfgs',
+#Logistic regression classifiers: L1, L2 
+'''logistic_L1 = LogisticRegression(
+                              solver        = 'liblinear',
+                              penalty       = 'l1',
                               max_iter      = int(1e3),
                               random_state  = 12345
-                              )
+                              )'''
 
+'''logistic_L2 = LogisticRegression(
+                              solver        = 'lbfgs',
+                              penalty       = 'l2',
+                              max_iter      = int(1e3),
+                              random_state  = 12345
+                              )'''
+
+#support vector machines: L1, L2
+'''from sklearn.svm import LinearSVC 
+from sklearn.calibration import CalibratedClassifierCV
+
+SVC_L1 = LinearSVC(
+                class_weight = 'balanced',
+                penalty = 'l1',
+                dual = False, 
+                random_state = 123,
+                tol = 1e-3
+                )
+SVC_L1 = CalibratedClassifierCV(base_estimator = SVC_L1,
+                             method = 'sigmoid', #other options: isotonic
+                             cv = 8)'''
+
+'''SVC_L2 = LinearSVC(
+                class_weight = 'balanced',
+                penalty = 'l2',
+                random_state = 123,
+                tol = 1e-3
+                )
+SVC_L2 = CalibratedClassifierCV(base_estimator = SVC_L2,
+                             method = 'sigmoid',
+                             cv = 8)'''
+
+#Lineaer discriminant anaysis --> 
+'''from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+LDA = LinearDiscriminantAnalysis(solver = 'lsqr',
+                                 shrinkage = 'auto')'''
+
+
+#K-Nearest neighbors
+'''from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier()'''
+
+#Random forest 
+'''from xgboost import XGBClassifier  
+RanFor = XGBClassifier(
+                        learning_rate              = 0.1, # not default
+                        max_depth                  = 3, # not default
+                        n_estimators               = 100, # not default
+                        objective                  = 'binary:logistic', # default
+                        booster                    = 'gbtree', # default
+                        subsample                  = 0.9, # not default
+                        colsample_bytree           = 0.9, # not default
+                        reg_alpha                  = 0, # default
+                        reg_lambda                 = 1, # default
+                        random_state               = 12345, # not default
+                        importance_type            = 'gain', # default
+                        n_jobs                     = 1,# default to be 1 
+                        )'''
+
+#Naive_bayes Bernoulli: 
+from sklearn.naive_bayes import GaussianNB
+GaNB = GaussianNB()
+                                
 
 
 for epoch_file in working_data:
@@ -106,6 +171,20 @@ for epoch_file in working_data:
                                                       'glimpse',
                                                       'conscious'])):
         epochs
+        
+        ##################Electrode selection #####################
+        channels = ['Iz', 'Oz', 'POz', 
+                    'Pz', 'CPz', 'O1',
+                    'O2', 'PO3', 'PO4', 
+                    'PO7', 'PO8','P1', 
+                    'P2', 'P3', 'P4', 
+                    'P5', 'P6', 'P7',
+                    'P8', 'CP1','CP2',
+                    'CP3','CP4','CP5', 
+                    'CP6','TP7','TP8']
+
+        epochs = epochs.pick_channels(channels)
+        
         # resample at 100 Hz to fasten the decoding process
         print('resampling...')
         epoch_temp = epochs.copy().resample(100)
@@ -120,13 +199,11 @@ for epoch_file in working_data:
                                              n_splits       = n_splits, 
                                              test_size      = 0.2, 
                                              random_state   = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
-            groups = epoch_temp.events[:,1]
             pipeline    = make_pipeline(
 #                                     Scaler(epochs.info,),
                                      Vectorizer(),
                                      StandardScaler(),
-                                     clone(logistic),
+                                     clone(GaNB),
                                      )
             
             X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
@@ -138,7 +215,6 @@ for epoch_file in working_data:
                                      pipeline,
                                      X,
                                      y,
-                                     groups = groups,
                                      scoring                = scorer,
                                      cv                     = cv,
                                      n_jobs                 = n_jobs,
@@ -167,12 +243,10 @@ for epoch_file in working_data:
                                         n_splits            = n_splits, 
                                         test_size           = 0.2, 
                                         random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
-            groups = epochs.events[:,1]
             clf         = make_pipeline(
 #                                        Scaler(epochs.info,),
                                         StandardScaler(),
-                                        clone(logistic))
+                                        clone(GaNB))
             
             time_decod  = SlidingEstimator(
                                         clf, 
@@ -194,7 +268,6 @@ for epoch_file in working_data:
                                         time_decod, 
                                         X,
                                         y,
-                                        groups = groups,
                                         cv                  = cv, 
                                         n_jobs              = n_jobs,
                                         )
@@ -206,7 +279,7 @@ for epoch_file in working_data:
                     dpi         = 400)
         plt.close(fig)
         plt.clf()
-        plt.close('all')
+        plt.close('all') 
         
         ####################### temporal generalization ########################
         print('temporal generalization')
@@ -219,12 +292,10 @@ for epoch_file in working_data:
                                         n_splits            = n_splits, 
                                         test_size           = 0.2, 
                                         random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
-            groups = epochs.events[:,1]
             clf         = make_pipeline(
 #                                        Scaler(epochs.info,),
                                         StandardScaler(),
-                                        clone(logistic))
+                                        clone(GaNB))
             time_gen    = GeneralizingEstimator(
                                         clf, 
                                         n_jobs              = 1, 
@@ -242,7 +313,6 @@ for epoch_file in working_data:
                                         time_gen, 
                                         X,
                                         y,
-                                        groups = groups,
                                         cv                  = cv, 
                                         n_jobs              = n_jobs
                                         )

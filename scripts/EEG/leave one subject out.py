@@ -22,7 +22,14 @@ from functools import partial
 from matplotlib import pyplot as plt
 from scipy import stats
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+from shutil                  import copyfile
+copyfile(os.path.abspath('../utils.py'),'utils.py')
+from utils                   import (get_frames,
+                                     LOO_partition,
+                                     plot_temporal_decoding,
+                                     plot_temporal_generalization,
+                                     plot_t_stats,
+                                     plot_p_values)
 func   = partial(roc_auc_score,average = 'micro')
 func.__name__ = 'micro_AUC'
 scorer = make_scorer(func,needs_proba = True)
@@ -32,7 +39,7 @@ logistic = LogisticRegression(
                               max_iter      = int(1e3),
                               random_state  = 12345
                               )
-n_jobs = 6
+n_jobs = -1
 folder_name = "clean_EEG_premask_baseline_ICA"
 target_name = "LOO_CV_mask_baseline_ICA"
 working_dir = f'../../data/{folder_name}'
@@ -97,34 +104,7 @@ for conscious_state in ['unconscious','glimpse',' conscious']:
     scores_mean = scores.mean(0)
     scores_se   = scores.std(0) / np.sqrt(n_splits)
     
-    fig,ax      = plt.subplots(figsize=(16,8))
-    ax.plot(times,scores_mean,
-            color = 'k',
-            alpha = .9,
-            label = f'Average across {n_splits} folds',
-            )
-    ax.fill_between(times,
-                    scores_mean + scores_se,
-                    scores_mean - scores_se,
-                    color = 'red',
-                    alpha = 0.4,
-                    label = 'Standard Error',)
-    ax.axhline(0.5,
-               linestyle    = '--',
-               color        = 'k',
-               alpha        = 0.7,
-               label        = 'Chance level')
-    ax.axvline(0,
-               linestyle    = '--',
-               color        = 'blue',
-               alpha        = 0.7,
-               label        = 'Probe onset',)
-    ax.set(xlim     = (times.min(),
-                       times.max()),
-           ylim     = (0.425,0.575),
-           title    = f'Temporal decoding of {conscious_state}',
-           )
-    ax.legend()
+    fig,ax = plot_temporal_decoding()
     fig.savefig(os.path.join(figure_dir,
                              f'temporal decoding of {conscious_state}.png'),
     dpi = 400,

@@ -11,6 +11,7 @@ import os
 print(os.getcwd())
 import re
 import numpy as np
+import pandas as pd
 from glob                    import glob
 from datetime                import datetime
 
@@ -21,7 +22,8 @@ from mne.decoding            import (
                                      cross_val_multiscore,
                                      GeneralizingEstimator
                                      )
-from sklearn.preprocessing   import StandardScaler
+from sklearn.preprocessing   import Normalizer
+from sklearn.dummy           import DummyClassifier
 #from sklearn.calibration     import CalibratedClassifierCV
 #from sklearn.svm             import LinearSVC
 from sklearn.linear_model    import (
@@ -31,9 +33,8 @@ from sklearn.linear_model    import (
                                         )
 from sklearn.pipeline        import make_pipeline
 from sklearn.model_selection import (
-                                        StratifiedShuffleSplit,
                                         cross_val_score,
-                                        LeavePGroupsOut
+#                                        cross_validate
                                         )
 from sklearn.utils           import shuffle
 from sklearn.base            import clone
@@ -44,13 +45,14 @@ from functools               import partial
 from shutil                  import copyfile
 copyfile(os.path.abspath('../utils.py'),'utils.py')
 from utils                   import (get_frames,
+                                     LOO_partition,
                                      plot_temporal_decoding,
                                      plot_temporal_generalization,
                                      plot_t_stats,
                                      plot_p_values)
 
 # use more than 1 CPU to parallize the training
-n_jobs = 8 
+n_jobs = -1
 # customized scoring function
 func                = partial(roc_auc_score,average = 'micro')
 func.__name__       = 'micro_AUC'
@@ -67,8 +69,8 @@ if date > breakPoint:
 else:
     new             = False
 # define lots of path for data, outputs, etc
-folder_name         = "clean_EEG_premask_baseline_ICA"
-target_name         = 'decode_premask_baseline_ICA'
+folder_name         = "clean_EEG_mask_baseline_with_session_info"
+target_name         = 'decode_massive_CV'
 working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
@@ -80,71 +82,82 @@ array_dir           = os.path.abspath(f'../../results/EEG/{target_name}/{subject
 if not os.path.exists(array_dir):
     os.makedirs(array_dir)
 # define the number of cross validation we want to do.
-n_splits            = 300
+n_splits            = -1
 
 logistic = LogisticRegression(
                               solver        = 'lbfgs',
                               max_iter      = int(1e3),
                               random_state  = 12345
                               )
-
-
+dummy = DummyClassifier(strategy = 'stratified',
+                        random_state = 12345)
 
 for epoch_file in working_data:
-    epochs  = mne.read_epochs(epoch_file)
-    
-    
-    conscious   = mne.concatenate_epochs([epochs[name] for name in epochs.event_id.keys() if (' conscious' in name)])
-    see_maybe   = mne.concatenate_epochs([epochs[name] for name in epochs.event_id.keys() if ('glimpse' in name)])
-    unconscious = mne.concatenate_epochs([epochs[name] for name in epochs.event_id.keys() if ('unconscious' in name)])
-    del epochs
-    
-    for ii,(epochs,conscious_state) in enumerate(zip([unconscious.copy(),
-                                                      see_maybe.copy(),
-                                                      conscious.copy()],
-                                                     ['unconscious',
-                                                      'glimpse',
-                                                      'conscious'])):
-        epochs
+    epochs_loaded  = mne.read_epochs(epoch_file)
+    behavioral_dir = os.path.join('/'.join(epoch_file.split('/')[:-3]),
+                                  'clean behavioral',
+                                  subject,
+                                  'concat.csv')
+    df = pd.read_csv(behavioral_dir)
+    df['conscious_state'] = df['visible.keys_raw'].astype('int').map({1:'unconscious',
+                                                                      2:'glimpse',
+                                                                      3:'conscious'})
+    events = epochs_loaded.events
+    event_id = epochs_loaded.event_id
+    for ii,conscious_state in enumerate(['unconscious','glimpse','conscious']):
+        idx_ = df['conscious_state'] == conscious_state
+        epochs = epochs_loaded.copy()[idx_]
+        
         # resample at 100 Hz to fasten the decoding process
         print('resampling...')
         epoch_temp = epochs.copy().resample(100)
-        
+        df_data = df[df['conscious_state'] == conscious_state].reset_index()
+        if speed:
+            X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
+            y = y //100 - 2
+            times       = epoch_temp.times
+        else:
+            X,y = epochs.get_data(),epochs.events[:,-1]
+            y = y //100 - 2
+            times       = epochs.times
+        np.random.seed(12345)
+        idx_shuffle = shuffle(np.arange(X.shape[0]))
+        X,y = X[idx_shuffle], y[idx_shuffle]
+        df_data = df_data.iloc[idx_shuffle,:].reset_index()
+        df_data['targets'] = df_data['category']
+        print('preparing cv folds...')
+        idxs_train,idxs_test = LOO_partition(df_data,target_column = 'label')
+        cv = zip(idxs_train,idxs_test)
+        print(f'{len(idxs_train)} folds')
+#        n_splits = len(idxs_train)
+#        for idx_test in idxs_test:
+#            from collections import Counter
+#            if len(Counter(y[idx_test])) < 2:
+#                print(y[idx_test])
         ################ decode the whole segment ##################
         print('cross val scoring')
         saving_name     = os.path.join(array_dir,f'whole_segment_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
             plscores    = np.load(saving_name)
         else:
-            cv          = StratifiedShuffleSplit(
-                                             n_splits       = n_splits, 
-                                             test_size      = 0.2, 
-                                             random_state   = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
-            groups = epoch_temp.events[:,1]
+            
             pipeline    = make_pipeline(
-#                                     Scaler(epochs.info,),
                                      Vectorizer(),
-                                     StandardScaler(),
+                                     Normalizer(),
                                      clone(logistic),
                                      )
-            
-            X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
-            X = mne.decoding.Scaler(epochs.info).fit_transform(X)
-            y = y //100 - 2
-            X,y = shuffle(X,y)
             
             scores      = cross_val_score(
                                      pipeline,
                                      X,
                                      y,
-                                     groups = groups,
                                      scoring                = scorer,
-                                     cv                     = cv,
+                                     cv                     = zip(idxs_train,idxs_test),
                                      n_jobs                 = n_jobs,
                                      )
             plscores = scores.copy()
             np.save(saving_name,plscores)
+        print(plscores.shape)
         print(f'decode {conscious_state} = {plscores.mean():.4f}+/-{plscores.std():.4f}')
         
         ####################### temporal decoding ##########################
@@ -152,50 +165,23 @@ for epoch_file in working_data:
         saving_name     = os.path.join(array_dir,f'temporal_decoding_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
             scores = np.load(saving_name)
-            if speed:
-                X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
-                times       = epoch_temp.times
-            else:
-                X,y = epochs.get_data(),epochs.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
-                times       = epochs.times
-        else:
-            cv          = StratifiedShuffleSplit(
-                                        n_splits            = n_splits, 
-                                        test_size           = 0.2, 
-                                        random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
-            groups = epochs.events[:,1]
-            clf         = make_pipeline(
-#                                        Scaler(epochs.info,),
-                                        StandardScaler(),
-                                        clone(logistic))
             
+        else:
+            
+            clf         = make_pipeline(
+                                        Normalizer(),
+                                        clone(logistic))
             time_decod  = SlidingEstimator(
                                         clf, 
                                         n_jobs              = 1, 
                                         scoring             = scorer, 
                                         verbose             = True
                                         )
-            if speed:
-                X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
-                times       = epoch_temp.times
-            else:
-                X,y = epochs.get_data(),epochs.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
-                times       = epochs.times
             scores      = cross_val_multiscore(
                                         time_decod, 
                                         X,
                                         y,
-                                        groups = groups,
-                                        cv                  = cv, 
+                                        cv                  = zip(idxs_train,idxs_test), 
                                         n_jobs              = n_jobs,
                                         )
             np.save(saving_name,scores)
@@ -213,47 +199,40 @@ for epoch_file in working_data:
         saving_name     = os.path.join(array_dir,f'temporal_generalization_{conscious_state}.npy')
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
             scores_gen = np.load(saving_name)
-            scores_chance = np.load(saving_name.replace('.npy','_chance.npy'))
+#            scores_chance = np.load(saving_name.replace('.npy','_chance.npy'))
         else:
-            cv          = StratifiedShuffleSplit(
-                                        n_splits            = n_splits, 
-                                        test_size           = 0.2, 
-                                        random_state        = 12345)
-            cv = LeavePGroupsOut(n_groups = 2)
             groups = epochs.events[:,1]
             clf         = make_pipeline(
-#                                        Scaler(epochs.info,),
-                                        StandardScaler(),
+                                        Normalizer(),
                                         clone(logistic))
             time_gen    = GeneralizingEstimator(
                                         clf, 
                                         n_jobs              = 1, 
                                         scoring             = scorer,
                                         verbose             = True)
-            if speed:
-                X,y = epoch_temp.get_data(),epoch_temp.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
-            else:
-                X,y = epochs.get_data(),epochs.events[:,-1]
-                y = y //100 - 2
-                X,y = shuffle(X,y)
             scores_gen  = cross_val_multiscore(
                                         time_gen, 
                                         X,
                                         y,
-                                        groups = groups,
-                                        cv                  = cv, 
+                                        cv                  = zip(idxs_train,idxs_test), 
                                         n_jobs              = n_jobs
                                         )
             np.save(saving_name,scores_gen)
             
-            y_ = shuffle(y)
+            clf         = make_pipeline(
+                                        Normalizer(),
+                                        clone(dummy))
+            time_gen    = GeneralizingEstimator(
+                                        clf, 
+                                        n_jobs              = 1, 
+                                        scoring             = scorer,
+                                        verbose             = True)
+            
             scores_chance = cross_val_multiscore(
                                         time_gen,
                                         X,
-                                        y_,
-                                        cv = cv,
+                                        y,
+                                        cv = zip(idxs_train,idxs_test),
                                         n_jobs = n_jobs,
                                         )
             np.save(saving_name.replace('.npy','_chance.npy'),scores_chance)
@@ -280,7 +259,7 @@ for epoch_file in working_data:
             clusters = np.load(saving_name.replace('T_obs','clusters'))
             cluster_p_values = np.load(saving_name.replace('T_obs','cluster_p_values'))
         else:
-            alpha           = 0.0001
+            alpha           = 1e-5
             sigma           = 1e-3
             stat_fun_hat    = partial(mne.stats.ttest_1samp_no_p, sigma=sigma)
             ## perform nonparametric t test to find clusters in the conscious state

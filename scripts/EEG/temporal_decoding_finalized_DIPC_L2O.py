@@ -31,7 +31,7 @@ from sklearn.linear_model    import (
                                         )
 from sklearn.pipeline        import make_pipeline
 from sklearn.model_selection import (
-                                        StratifiedShuffleSplit,
+#                                        StratifiedShuffleSplit,
                                         cross_val_score,
                                         LeavePGroupsOut
                                         )
@@ -50,7 +50,7 @@ from utils                   import (get_frames,
                                      plot_p_values)
 
 # use more than 1 CPU to parallize the training
-n_jobs = 8 
+n_jobs = -1 
 # customized scoring function
 func                = partial(roc_auc_score,average = 'micro')
 func.__name__       = 'micro_AUC'
@@ -67,8 +67,8 @@ if date > breakPoint:
 else:
     new             = False
 # define lots of path for data, outputs, etc
-folder_name         = "clean_EEG_premask_baseline_ICA"
-target_name         = 'decode_premask_baseline_ICA'
+folder_name         = "clean_EEG_mask_baseline_with_session_info"
+target_name         = 'decode_Leave2out'
 working_dir         = os.path.abspath(f'../../data/{folder_name}/{subject}')
 working_data        = glob(os.path.join(working_dir,'*-epo.fif'))
 frames,_            = get_frames(directory = os.path.abspath(f'../../data/behavioral/{subject}'),new = new)
@@ -116,10 +116,10 @@ for epoch_file in working_data:
         if saving_name in glob(os.path.join(array_dir,'*.npy')):
             plscores    = np.load(saving_name)
         else:
-            cv          = StratifiedShuffleSplit(
-                                             n_splits       = n_splits, 
-                                             test_size      = 0.2, 
-                                             random_state   = 12345)
+#            cv          = StratifiedShuffleSplit(
+#                                             n_splits       = n_splits, 
+#                                             test_size      = 0.2, 
+#                                            random_state   = 12345)
             cv = LeavePGroupsOut(n_groups = 2)
             groups = epoch_temp.events[:,1]
             pipeline    = make_pipeline(
@@ -163,10 +163,10 @@ for epoch_file in working_data:
                 X,y = shuffle(X,y)
                 times       = epochs.times
         else:
-            cv          = StratifiedShuffleSplit(
-                                        n_splits            = n_splits, 
-                                        test_size           = 0.2, 
-                                        random_state        = 12345)
+#            cv          = StratifiedShuffleSplit(
+#                                        n_splits            = n_splits, 
+#                                        test_size           = 0.2, 
+#                                        random_state        = 12345)
             cv = LeavePGroupsOut(n_groups = 2)
             groups = epochs.events[:,1]
             clf         = make_pipeline(
@@ -215,10 +215,10 @@ for epoch_file in working_data:
             scores_gen = np.load(saving_name)
             scores_chance = np.load(saving_name.replace('.npy','_chance.npy'))
         else:
-            cv          = StratifiedShuffleSplit(
-                                        n_splits            = n_splits, 
-                                        test_size           = 0.2, 
-                                        random_state        = 12345)
+#            cv          = StratifiedShuffleSplit(
+#                                        n_splits            = n_splits, 
+#                                        test_size           = 0.2, 
+#                                        random_state        = 12345)
             cv = LeavePGroupsOut(n_groups = 2)
             groups = epochs.events[:,1]
             clf         = make_pipeline(
@@ -253,6 +253,7 @@ for epoch_file in working_data:
                                         time_gen,
                                         X,
                                         y_,
+                                        groups = groups,
                                         cv = cv,
                                         n_jobs = n_jobs,
                                         )
@@ -290,7 +291,7 @@ for epoch_file in working_data:
             threshold_tfce = dict(start=0, step=0.1)
             T_obs, clusters, cluster_p_values, H0   = clu \
                         = mne.stats.permutation_cluster_1samp_test(
-                                scores_gen_ - scores_chance,
+                                scores_gen_ - 0.5,
                                 threshold           = threshold_tfce,
                                 stat_fun            = stat_fun_hat,
                                 tail                = 1, # find clusters that are greater than the chance level

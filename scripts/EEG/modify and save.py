@@ -9,6 +9,8 @@ import os
 from glob import glob
 import numpy as np
 
+from shutil import copyfile
+
 all_subjects = ['aingere_5_16_2019',
                 'alba_6_10_2019',
                 'alvaro_5_16_2019',
@@ -25,13 +27,15 @@ all_subjects = ['aingere_5_16_2019',
                 'pedro_5_14_2019',
                 'xabier_5_15_2019',
                 ]
+
 all_subjects = np.sort(all_subjects)
 
-preprocessing_template = 'preprocessing EEG with adjust onsets.py'
-TD_template = 'temporal_generalization_of_visibility.py'
-TD_resposne_template = 'temporal decoding (response).py'
+#preprocessing_template = 'preprocessing EEG with adjust onsets.py'
+TD_template = 'temporal_decoding_massive_CV_DIPC.py'
+TD_resposne_template = 'temporal decoding(response).py'
+experiment = 'LOO'
 
-bash_dir = 'bash'
+bash_dir = 'decode_LOO_large'
 if not os.path.exists(bash_dir):
     os.mkdir(bash_dir)
 if not os.path.exists(os.path.join(bash_dir,'outputs')):
@@ -41,9 +45,10 @@ else:
         [os.remove(item) for item in glob(os.path.join(bash_dir,'outputs','*.txt'))]
     except:
         print('it is empty')
+node = 2
 core = 16
-mem = core * 5
-cput = 12 * core
+mem = node * core * 3
+cput = 12 * core * node
 for ii,subject in enumerate(all_subjects):
 #    with open(os.path.join(bash_dir,preprocessing_template.replace('.py',f' ({subject}).py')),
 #              'w') as new_file:
@@ -94,35 +99,35 @@ for ii,subject in enumerate(all_subjects):
 #                new_file.write(line)
 #            old_file.close()
 #        new_file.close()
-    with open(os.path.join(bash_dir,f'preprocess_{subject}'),'w') as f:
-        file_name = preprocessing_template.replace('.py',f' ({subject}).py')
-        content = f'''
-#!/bin/bash
-# This is a script to send preprocessing scrips as a batch job.
-        
-#$ -cwd
-#$ -o outputs/out_{subject}.txt
-#$ -e outputs/err_{subject}.txt
-#$ -m be
-#$ -q fsl.q
-#$ -M nmei@bcbl.eu
-#$ -N "EEG{ii}"
-#$ -S /bin/bash
-
-module load rocks-python-3.6
-python "{file_name}"
-        '''
-        f.write(content)
-        f.close()
+#    with open(os.path.join(bash_dir,f'preprocess_{subject}'),'w') as f:
+#        file_name = preprocessing_template.replace('.py',f' ({subject}).py')
+#        content = f'''
+##!/bin/bash
+## This is a script to send preprocessing scrips as a batch job.
+#        
+##$ -cwd
+##$ -o outputs/out_{subject}.txt
+##$ -e outputs/err_{subject}.txt
+##$ -m be
+##$ -q fsl.q
+##$ -M nmei@bcbl.eu
+##$ -N "EEG{ii}"
+##$ -S /bin/bash
+#
+#module load rocks-python-3.6
+#python "{file_name}"
+#        '''
+#        f.write(content)
+#        f.close()
     with open(os.path.join(bash_dir,f'process_{subject}'),'w') as f:
         file_name = TD_template.replace('.py',f'_{subject}.py')
         content = f"""
 #!/bin/bash
 #PBS -q bcbl
-#PBS -l nodes=1:ppn={core}
+#PBS -l nodes={node}:ppn={core}
 #PBS -l mem={mem}gb
 #PBS -l cput={cput}:00:00
-#PBS -N EEG{ii}
+#PBS -N {experiment}{ii}
 #PBS -o outputs/out_{subject}.txt
 #PBS -e outputs/err_{subject}.txt
 cd $PBS_O_WORKDIR
@@ -147,24 +152,6 @@ with open(f'{bash_dir}/qsub_jobs.py','a') as f:
             f.write(f'\nos.system("qsub process_{subject}")\n')
         else:
             f.write(f'time.sleep(3)\nos.system("qsub process_{subject}")\n')
-    f.close()
-
-with open(f'{bash_dir}/qsub_pre_jobs.py','w') as f:
-    f.write(content)
-
-with open(f'{bash_dir}/qsub_pre_jobs.py','a') as f:
-    for ii, subject in enumerate(all_subjects):
-        if ii == 0:
-            f.write(f'\nos.system("qsub preprocess_{subject}")\n')
-        else:
-            f.write(f'time.sleep(15)\nos.system("qsub process_{subject}")\n')
-    f.close()
-
-with open(f'{bash_dir}/prepro.py','w') as f:
-    f.write('import os\n')
-    for ii,subject in enumerate(all_subjects):
-        script_name = '"{}"'.format(preprocessing_template.replace('.py',f' ({subject}).py'))
-        f.write(f"os.system('python {script_name}')\n")
     f.close()
 
 
