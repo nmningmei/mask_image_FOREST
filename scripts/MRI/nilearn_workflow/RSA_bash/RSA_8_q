@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=64gb
+#PBS -l cput=512:00:00
+#PBS -N S1R8RSA
+#PBS -o bash/out_18.txt
+#PBS -e bash/err_18.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-precuneus"
+
+python RSA_correlation_8.py
+

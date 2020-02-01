@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R15
-#PBS -o bash/out_115.txt
-#PBS -e bash/err_115.txt
+#PBS -N S7R15L
+#PBS -o bash/out_715.txt
+#PBS -e bash/err_715.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

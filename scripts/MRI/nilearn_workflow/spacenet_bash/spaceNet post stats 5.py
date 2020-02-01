@@ -12,6 +12,8 @@ in the strcutural space and standard space
 """
 
 import os
+import gc
+gc.collect()
 
 import pandas   as pd
 import numpy    as np
@@ -33,6 +35,7 @@ from utils              import standard_MNI_coordinate_for_plot
 # define working path, mask, brain, transformation matrices and saving paths
 working_dir             = '../../../../results/MRI/nilearn/spacenet'
 sub                     = 'sub-05'
+print(f'{sub}')
 masks                   = glob(
         os.path.join('../../../../data/MRI/{}/anat/ROI_BOLD/*.nii.gz'.format(sub))
                                 )
@@ -52,6 +55,7 @@ if not os.path.exists(figure_dir):
 coordinates = standard_MNI_coordinate_for_plot()
 
 for conscious_state,df_sub in df.groupby(['conscious_state']):
+    print(conscious_state)
     working_item        = [item for item in working_data if (f"spaceNet_coef_{conscious_state}" in item)]
     scores              = df_sub['score'].values
     whole_brain_data    = glob(os.path.join('../../../../data',
@@ -65,6 +69,7 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
                                       standardize   = True,
                                       detrend       = True,
                                       )
+        print(roi_name)
         masker.fit(whole_brain_data[0])
         BOLD            = masker.transform(whole_brain_data[0])
         
@@ -75,14 +80,14 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
         # formula for computing patterns
         patterns            = np.array([X_cov.dot(w.T.dot(1)).T for w in weights])
         # normalize per fold
-        patterns_standard   = patterns / patterns.mean(0).std()
+        patterns_standard   = MinMaxScaler((-1,1)).fit_transform(patterns)#patterns / patterns.mean(0).std()
         patterns_to_plot    = masker.inverse_transform(patterns_standard.mean(0))
         
         patterns_to_plot.to_filename(os.path.join(working_dir,sub,f'patterns_{conscious_state}_{roi_name}.nii.gz'))
-        
+        print('start plotting')
         if not os.path.exists(os.path.join(figure_dir,sub)):
             os.mkdir(os.path.join(figure_dir,sub))
-        
+        gc.collect()
         # conver to structural space
         flt                         = fsl.FLIRT()
         flt.inputs.in_file          = os.path.abspath(os.path.join(working_dir,
@@ -99,7 +104,8 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
         res                         = flt.run()
         
         saving_name = os.path.join(figure_dir,sub,f'patterns_{conscious_state}_{roi_name}.png')
-        
+        gc.collect()
+        print('plot high res')
         fig,ax = plt.subplots(figsize = (12,6))
         plot_stat_map(res.outputs.out_file,
                       bg_img        = anat_brain[0],
@@ -114,7 +120,7 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
         fig.savefig(saving_name,
                     dpi = 400,
                     bbox_inches = 'tight')
-        
+        gc.collect()
         # convert to standard space
         flt                         = fsl.FLIRT()
         flt.inputs.in_file          = os.path.abspath(os.path.join(working_dir,
@@ -130,7 +136,8 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
         res                         = flt.run()
         
         saving_name = os.path.join(figure_dir,sub,f'patterns_standard_{conscious_state}_{roi_name}.png')
-        
+        gc.collect()
+        print('plot standard')
         fig,ax = plt.subplots(figsize = (12,6))
         plot_stat_map(res.outputs.out_file,
                       bg_img        = standard_brain,
@@ -148,6 +155,7 @@ for conscious_state,df_sub in df.groupby(['conscious_state']):
                     bbox_inches = 'tight')
         
         plt.close('all')
+        gc.collect()
 
 
 

@@ -47,7 +47,7 @@ for f in working_data:
     df.append(df_temp)
 df                  = pd.concat(df)
 
-n_sim = int(5e5)
+n_sim = int(1e5)
 n_sample = int(2e3)
 results = dict(pval         = [],
                sub          = [],

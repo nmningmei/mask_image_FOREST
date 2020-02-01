@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R15D
-#PBS -o bash/out_115_rh-inferiortemporal.txt
-#PBS -e bash/err_115_rh-inferiortemporal.txt
+#PBS -N S7R15D
+#PBS -o bash/out_715_rh-inferiortemporal.txt
+#PBS -e bash/err_715_rh-inferiortemporal.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

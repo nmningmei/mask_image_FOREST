@@ -3,9 +3,9 @@
 #PBS -q bcbl
 #PBS -l nodes=2:ppn=16
 #pBS -l ncpus=32
-#PBS -l mem=96gb
-#PBS -l cput=768:00:00
-#PBS -N S1R18
+#PBS -l mem=112gb
+#PBS -l cput=512:00:00
+#PBS -N S1R18EN
 #PBS -o bash/out_118.txt
 #PBS -e bash/err_118.txt
 cd $PBS_O_WORKDIR

@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R14D
-#PBS -o bash/out_114_rh-inferiorparietal.txt
-#PBS -e bash/err_114_rh-inferiorparietal.txt
+#PBS -N S7R14D
+#PBS -o bash/out_714_rh-inferiorparietal.txt
+#PBS -e bash/err_714_rh-inferiorparietal.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R21D
-#PBS -o bash/out_121_rh-rostralmiddlefrontal.txt
-#PBS -e bash/err_121_rh-rostralmiddlefrontal.txt
+#PBS -N S7R21D
+#PBS -o bash/out_721_rh-rostralmiddlefrontal.txt
+#PBS -e bash/err_721_rh-rostralmiddlefrontal.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

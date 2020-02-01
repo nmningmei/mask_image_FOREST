@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=384:00:00
+#PBS -N S3SLOO13
+#PBS -o bash/out_313.txt
+#PBS -e bash/err_313.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-fusiform"
+
+python "LOO_13.py"

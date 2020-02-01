@@ -2468,6 +2468,9 @@ def customized_partition(df_data,groupby_column = ['id','labels'],n_splits = 100
         else:
             idxs_test.append(idx_test)
 def check_train_test_splits(idxs_test):
+    """
+    check if we get repeated test sets
+    """
     temp = []
     for ii,item1 in enumerate(idxs_test):
         for jj,item2 in enumerate(idxs_test):
@@ -2480,6 +2483,12 @@ def check_train_test_splits(idxs_test):
     temp = np.array(temp)
     return any(temp)
 def check_train_balance(df,idx_train,keys):
+    """
+    check the balance of the training set.
+    if only one of the classes has more 2 instances than the other
+    we will randomly take out those 'extra instances' from the major
+    class
+    """
     Counts = dict(Counter(df.iloc[idx_train]['targets'].values))
     if np.abs(Counts[keys[0]] - Counts[keys[1]]) > 2:
         if Counts[keys[0]] > Counts[keys[1]]:
@@ -2668,6 +2677,7 @@ def define_roi_category():
                 'rostralmiddlefrontal':'Working Memory',
                 'superiorfrontal':'Working Memory',
                 'ventrolateralPFC':'Working Memory',
+                'inferiorparietal':'Visual',
                 }
     
     return roi_dict
@@ -2680,6 +2690,13 @@ def stars(x):
         return '*'
     else:
         return 'n.s.'
+
+def get_fs(x):
+    return x.split(' + ')[0]
+def get_clf(x):
+    return x.split(' + ')[1]
+def rename_roi(x):
+    return x.split('-')[-1] + '-' + x.split('-')[1]
 
 def strip_interaction_names(df_corrected):
     results = []
@@ -2964,7 +2981,24 @@ def get_label_subcategory_mapping():
  'whale': 'Marine_creatures',
  'zebra': 'Animals'}
 
-
+def load_same_same(sub):
+    target_folder = 'decoding'
+    target_file = '*None*csv'
+    working_dir = '../../../../results/MRI/nilearn/{}/{}'.format(sub,target_folder)
+    working_data = glob(os.path.join(working_dir,target_file))
+    
+    df = pd.concat([pd.read_csv(f) for f in working_data])
+    if 'model_name' not in df.columns:
+        df['model_name'] = df['model']
+    df['feature_selector'] = df['model_name'].apply(get_fs)
+    df['estimator'] = df['model_name'].apply(get_clf)
+    if 'score' in df.columns:
+        df['roc_auc'] = df['score']
+    
+    temp = np.array([item.split('-') for item in df['roi'].values])
+    df['roi_name'] = temp[:,1]
+    df['side'] = temp[:,0]
+    return df
 
 
 

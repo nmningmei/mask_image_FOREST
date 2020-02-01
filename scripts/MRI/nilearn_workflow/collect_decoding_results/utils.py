@@ -2468,6 +2468,9 @@ def customized_partition(df_data,groupby_column = ['id','labels'],n_splits = 100
         else:
             idxs_test.append(idx_test)
 def check_train_test_splits(idxs_test):
+    """
+    check if we get repeated test sets
+    """
     temp = []
     for ii,item1 in enumerate(idxs_test):
         for jj,item2 in enumerate(idxs_test):
@@ -2480,6 +2483,12 @@ def check_train_test_splits(idxs_test):
     temp = np.array(temp)
     return any(temp)
 def check_train_balance(df,idx_train,keys):
+    """
+    check the balance of the training set.
+    if only one of the classes has more 2 instances than the other
+    we will randomly take out those 'extra instances' from the major
+    class
+    """
     Counts = dict(Counter(df.iloc[idx_train]['targets'].values))
     if np.abs(Counts[keys[0]] - Counts[keys[1]]) > 2:
         if Counts[keys[0]] > Counts[keys[1]]:

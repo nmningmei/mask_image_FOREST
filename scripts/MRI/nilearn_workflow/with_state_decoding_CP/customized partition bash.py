@@ -14,7 +14,7 @@ output_dir = '../customized_partition_bash'
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
-sub                 = 'sub-01'
+sub                 = 'sub-07'
 nodes               = 2
 cores               = 16
 mem                 = 2 * cores * nodes

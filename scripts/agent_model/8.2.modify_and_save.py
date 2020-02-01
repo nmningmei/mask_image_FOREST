@@ -13,11 +13,11 @@ from shutil import rmtree
 
 verbose = 1
 node = 2
-core = 16
-mem = 2 * node * core
-cput = 6 * node * core
+core = 12
+mem = 1 * node * core
+cput = 36 * node * core
 batch_show_name = 'DSIM'
-groupby = 40
+groupby = 100
 
 working_dir = '../../results/agent_models'
 working_data = np.sort(glob(os.path.join(working_dir,
@@ -96,13 +96,13 @@ collections = np.array_split(collections,len(collections) // groupby)
 script_names = np.array_split(script_names,len(script_names) // groupby)
 
 
-with open(f'{scripts_folder}/qsub_jobs.py','w') as f:
-    f.write("""import os\nimport time\n""")
-    f.close()
-
-for script_names_block,collections_block in zip(script_names,collections):
+for jj,(script_names_block,collections_block) in enumerate(zip(
+                script_names,collections)):
     script_names_block,collections_block
-    with open(f'{scripts_folder}/qsub_jobs.py','a') as f:
+    with open(f'{scripts_folder}/qsub_jobs_{jj}.py','w') as f:
+        f.write("""import os\nimport time\n""")
+        f.close()
+    with open(f'{scripts_folder}/qsub_jobs_{jj}.py','a') as f:
         for ii,line in enumerate(collections_block):
             if ii == 0:
                 f.write(f'os.system("{line}")\nprint("{line}")\n')
@@ -112,7 +112,7 @@ for script_names_block,collections_block in zip(script_names,collections):
                 f.write(f'time.sleep(1)\nos.system("{line}")\n')
         f.close()
 
-content = f"""#!/bin/bash
+    content = f"""#!/bin/bash
 #PBS -q bcbl
 #PBS -l nodes={1}:ppn={1}
 #PBS -l mem={1}gb
@@ -128,11 +128,10 @@ pwd
 echo qsub
 
 python "qsub_jobs.py"
-    """
-with open(f'{scripts_folder}/qsub_jobs','w') as f:
-    f.write(content)
-    f.close()
-
+        """
+    with open(f'{scripts_folder}/qsub_jobs','w') as f:
+        f.write(content)
+        f.close()
 
 
 

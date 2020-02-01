@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=64gb
+#PBS -l cput=512:00:00
+#PBS -N S1R18RSA
+#PBS -o bash/out_118.txt
+#PBS -e bash/err_118.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-parahippocampal"
+
+python RSA_correlation_18.py
+

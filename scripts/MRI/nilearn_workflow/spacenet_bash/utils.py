@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -60,9 +59,10 @@ from collections                                   import OrderedDict
 
 from scipy                                         import stats
 from collections                                   import Counter
-
+from mpl_toolkits.axes_grid1                       import make_axes_locatable
 import matplotlib.pyplot  as plt
 import matplotlib.patches as patches
+
 
 try:
     #from mvpa2.datasets.base                           import Dataset
@@ -80,7 +80,219 @@ try:
 except:
     print('why is tqdm not installed?')
 
-def preprocessing_conscious(
+def preprocessing_conscious(raw,
+                            events,
+                            session,
+                            tmin = -0,
+                            tmax = 1,
+                            notch_filter = 50,
+                            event_id = {'living':1,'nonliving':2},
+                            baseline = (None,None),
+                            perform_ICA = False,):
+    """
+    0. re-reference - explicitly
+    """
+    raw_ref ,_  = mne.set_eeg_reference(raw,
+                                        ref_channels     = 'average',
+                                        projection       = True,)
+    raw_ref.apply_proj() # it might tell you it already has been re-referenced, but do it anyway
+    
+    # everytime before filtering, explicitly pick the type of channels you want
+    # to perform the filters
+    picks = mne.pick_types(raw_ref.info,
+                           meg = False, # No MEG
+                           eeg = True,  # YES EEG
+                           eog = True,  # YES EOG
+                           )
+    # regardless the bandpass filtering later, we should always filter
+    # for wire artifacts and their oscillations
+    raw_ref.notch_filter(np.arange(notch_filter,241,notch_filter),
+                         picks = picks)
+    epochs      = mne.Epochs(raw_ref,
+                             events,    # numpy array
+                             event_id,  # dictionary
+                             tmin        = tmin,
+                             tmax        = tmax,
+                             baseline    = baseline, # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                             picks       = picks,
+                             detrend     = 1, # detrend
+                             preload     = True # must be true if we want to do further processing
+                             )
+    """
+    1. if necessary, perform ICA
+    """
+    if perform_ICA:
+        picks       = mne.pick_types(epochs.info,
+                               eeg          = True, # YES EEG
+                               eog          = False # NO EOG
+                               )
+        ar          = AutoReject(
+                        picks               = picks,
+                        random_state        = 12345,
+                        )
+        ar.fit(epochs)
+        _,reject_log = ar.transform(epochs,return_log=True)
+        # calculate the noise covariance of the epochs
+        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+                                             tmin                   = tmin,
+                                             tmax                   = 0,
+                                             method                 = 'empirical',
+                                             rank                   = None,)
+        # define an ica function
+        ica         = mne.preprocessing.ICA(n_components            = .99,
+                                            n_pca_components        = .99,
+                                            max_pca_components      = None,
+                                            method                  = 'extended-infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        ica.fit(epochs[~reject_log.bad_epochs],
+                picks   = picks,
+                start   = tmin,
+                stop    = tmax,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+                )
+        # search for artificial ICAs automatically
+        # most of these hyperparameters were used in a unrelated published study
+        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+                             eog_ch         = ['FT9','FT10','TP9','TP10'],
+                             eog_criterion  = 0.4, # arbitary choice
+                             skew_criterion = 2,   # arbitary choice
+                             kurt_criterion = 2,   # arbitary choice
+                             var_criterion  = 2,   # arbitary choice
+                             )
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+                                exclude    = ica.exclude,
+                                )
+        epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
+    clean_epochs = epochs.pick_types(eeg = True, eog = False)
+    
+    return clean_epochs
+
+def preprocessing_unconscious(raw,
+                              events,
+                              session,
+                              tmin = -0,
+                              tmax = 1,
+                              notch_filter = 50,
+                              event_id = {'living':1,'nonliving':2},
+                              baseline = (None,None),
+                              perform_ICA = False,
+                              eog_chs = [],
+                              ecg_chs = [],):
+    # everytime before filtering, explicitly pick the type of channels you want
+    # to perform the filters
+    picks = mne.pick_types(raw.info,
+                           meg = True,  # No MEG
+                           eeg = False, # NO EEG
+                           eog = True,  # YES EOG
+                           ecg = True,  # YES ECG
+                           )
+    # regardless the bandpass filtering later, we should always filter
+    # for wire artifacts and their oscillations
+    if type(notch_filter) is list:
+        for item in notch_filter:
+            raw.notch_filter(np.arange(item,301,item),
+                                 picks = picks)
+    else:
+        raw.notch_filter(np.arange(notch_filter,301,notch_filter),
+                             picks = picks)
+    # filter EOG and ECG channels
+    picks = mne.pick_types(raw.info,
+                           meg = False,
+                           eeg = True)
+    raw.filter(1,80,picks = picks,)
+    # epoch the data
+    picks = mne.pick_types(raw.info,
+                           meg = True,
+                           eog = True,
+                           ecg = True,
+                           )
+    epochs      = mne.Epochs(raw,
+                             events,    # numpy array
+                             event_id,  # dictionary
+                             tmin        = tmin,
+                             tmax        = tmax,
+                             baseline    = baseline, # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                             picks       = picks,
+                             detrend     = 1, # detrend
+                             preload     = True # must be true if we want to do further processing
+                             )
+    """
+    1. if necessary, perform ICA
+    """
+    if perform_ICA:
+        picks       = mne.pick_types(epochs.info,
+                               meg          = True,  # YES MEG
+                               eeg          = False, # NO EEG
+                               eog          = False, # NO EOG
+                               ecg          = False, # NO ECG
+                               )
+        ar          = AutoReject(
+                        picks               = picks,
+                        random_state        = 12345,
+                        )
+        ar.fit(epochs)
+        _,reject_log = ar.transform(epochs,return_log=True)
+        # calculate the noise covariance of the epochs
+        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+                                             tmin                   = tmin,
+                                             tmax                   = 0,
+                                             method                 = 'empirical',
+                                             rank                   = None,)
+        # define an ica function
+        ica         = mne.preprocessing.ICA(n_components            = .99,
+                                            n_pca_components        = .99,
+                                            max_pca_components      = None,
+                                            method                  = 'extended-infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        ica.fit(epochs[~reject_log.bad_epochs],
+                picks   = picks,
+                start   = tmin,
+                stop    = tmax,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+                )
+        # search for artificial ICAs automatically
+        # most of these hyperparameters were used in a unrelated published study
+        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+                             eog_ch         = eog_chs,
+                             ecg_ch         = ecg_chs,
+                             eog_criterion  = 0.4, # arbitary choice
+                             ecg_criterion  = 0.1, # arbitary choice
+                             skew_criterion = 1,   # arbitary choice
+                             kurt_criterion = 1,   # arbitary choice
+                             var_criterion  = 1,   # arbitary choice
+                             )
+        picks       = mne.pick_types(epochs.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                     ) 
+        epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
+                                exclude    = ica.exclude,
+                                )
+        epochs = epochs_ica.copy()
+    # pick the EEG channels for later use
+    clean_epochs = epochs.pick_types(eeg = True, eog = False)
+    
+    return clean_epochs
+def _preprocessing_conscious(
                   raw,events,session,
                   n_interpolates = np.arange(1,32,4),
                   consensus_pers = np.linspace(0,1.0,11),
@@ -92,7 +304,8 @@ def preprocessing_conscious(
                   notch_filter = 50,
                   fix = False,
                   ICA = False,
-                  logging = None):
+                  logging = None,
+                  filtering = False,):
     """
     Preprocessing pipeline for conscious trials
     
@@ -144,17 +357,18 @@ def preprocessing_conscious(
                            eeg = True,  # YES EEG
                            eog = False, # No EOG
                            )
-    raw_ref.filter(high_pass,
-                   None,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   l_trans_bandwidth= high_pass,
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
-    
+    if filtering:
+        raw_ref.filter(high_pass,
+                       None,
+                       picks            = picks,
+                       filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+                       l_trans_bandwidth= high_pass,
+                       method           = 'fir',     # overlap-add FIR filtering
+                       phase            = 'zero',    # the delay of this filter is compensated for
+                       fir_window       = 'hamming', # The window to use in FIR design
+                       fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+                       )
+        
     """
     2. epoch the data
     """
@@ -167,7 +381,7 @@ def preprocessing_conscious(
                              event_id,  # dictionary
                         tmin        = tmin,
                         tmax        = tmax,
-                        baseline    = (tmin,-0.2), # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
+                        baseline    = (tmin,- (1 / 60 * 20)), # range of time for computing the mean references for each channel and subtract these values from all the time points per channel
                         picks       = picks,
                         detrend     = 1, # linear detrend
                         preload     = True # must be true if we want to do further processing
@@ -263,15 +477,15 @@ def preprocessing_conscious(
         picks = mne.pick_types(epochs.info,
                                eeg = True,
                                eog = False,)
-        epochs.filter(None,
-                   low_pass,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
+#        epochs.filter(None,
+#                   low_pass,
+#                   picks            = picks,
+#                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+#                   method           = 'fir',     # overlap-add FIR filtering
+#                   phase            = 'zero',    # the delay of this filter is compensated for
+#                   fir_window       = 'hamming', # The window to use in FIR design
+#                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+#                   )
         if logging is not None:
             for key in epochs.event_id.keys():
                 evoked = epochs[key].average()
@@ -303,15 +517,15 @@ def preprocessing_conscious(
         picks = mne.pick_types(clean_epochs.info,
                                eeg = True,
                                eog = False,)
-        clean_epochs.filter(None,
-                   low_pass,
-                   picks            = picks,
-                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
-                   method           = 'fir',     # overlap-add FIR filtering
-                   phase            = 'zero',    # the delay of this filter is compensated for
-                   fir_window       = 'hamming', # The window to use in FIR design
-                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
-                   )
+#        clean_epochs.filter(None,
+#                   low_pass,
+#                   picks            = picks,
+#                   filter_length    = 'auto',    # the filter length is chosen based on the size of the transition regions (6.6 times the reciprocal of the shortest transition band for fir_window=’hamming’ and fir_design=”firwin2”, and half that for “firwin”)
+#                   method           = 'fir',     # overlap-add FIR filtering
+#                   phase            = 'zero',    # the delay of this filter is compensated for
+#                   fir_window       = 'hamming', # The window to use in FIR design
+#                   fir_design       = 'firwin2',  # a time-domain design technique that generally gives improved attenuation using fewer samples than “firwin2”
+#                   )
         if logging is not None:
             for key in clean_epochs.event_id.keys():
                 evoked = epochs[key].average()
@@ -320,6 +534,251 @@ def preprocessing_conscious(
                              bbox_inches = 'tight')
                 plt.close('all')
         return clean_epochs
+def plot_temporal_decoding(times,
+                           scores,
+                           frames,
+                           ii,
+                           conscious_state,
+                           plscores,
+                           n_splits,
+                           ylim = (0.2,0.8)):
+    scores_mean = scores.mean(0)
+    scores_se   = scores.std(0) / np.sqrt(n_splits)
+    fig,ax = plt.subplots(figsize = (16,8))
+    ax.plot(times,scores_mean,
+            color = 'k',
+            alpha = .9,
+            label = f'Average across {n_splits} folds',
+            )
+    ax.fill_between(times,
+                    scores_mean + scores_se,
+                    scores_mean - scores_se,
+                    color = 'red',
+                    alpha = 0.4,
+                    label = 'Standard Error',)
+    ax.axhline(0.5,
+               linestyle    = '--',
+               color        = 'k',
+               alpha        = 0.7,
+               label        = 'Chance level')
+    ax.axvline(0,
+               linestyle    = '--',
+               color        = 'blue',
+               alpha        = 0.7,
+               label        = 'Probe onset',)
+    if ii is not None:
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color        = 'blue',
+                   alpha        = 0.3,
+                   label        = 'probe offset ave +/- std',)
+    ax.set(xlim     = (times.min(),
+                       times.max()),
+           ylim     = ylim,#(0.4,0.6),
+           title    = f'Temporal decoding of {conscious_state} = {plscores.mean():.3f}+/-{plscores.std():.3f}',
+           )
+    ax.legend()
+    return fig,ax
+def plot_temporal_generalization(scores_gen_,
+                                 epochs,
+                                 ii,
+                                 conscious_state,
+                                 frames,
+                                 vmin = 0.4,
+                                 vmax = 0.6):
+    fig, ax = plt.subplots(figsize = (10,10))
+    im      = ax.imshow(
+                        scores_gen_, 
+                        interpolation       = 'lanczos', 
+                        origin              = 'lower', 
+                        cmap                = 'RdBu_r',
+                        extent              = epochs.times[[0, -1, 0, -1]], 
+                        vmin                = vmin, 
+                        vmax                = vmax,
+                        )
+    ax.set_xlabel('Testing Time (s)')
+    ax.set_ylabel('Training Time (s)')
+    ax.set_title(f'Temporal generalization of {conscious_state}')
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    plt.colorbar(im, ax = ax)
+    ax.legend()
+    return fig,ax
+
+def plot_t_stats(T_obs,
+                 clusters,
+                 cluster_p_values,
+                 times,
+                 ii,
+                 conscious_state,
+                 frames,):
+    
+    # since the p values of each cluster is corrected for multiple comparison, 
+    # we could directly use 0.05 as the threshold to filter clusters
+    T_obs_plot              = 0 * np.ones_like(T_obs)
+    k = np.array([np.sum(c) for c in clusters])
+    if np.max(k) > 1000:
+        c_thresh = 1000
+    elif 1000 > np.max(k) > 500:
+        c_thresh = 500
+    elif 500 > np.max(k) > 100:
+        c_thresh = 100
+    elif 100 > np.max(k) > 10:
+        c_thresh = 10
+    else:
+        c_thresh = 0
+    for c, p_val in zip(clusters, cluster_p_values):
+        if (p_val <= 0.01) and (np.sum(c) >= c_thresh):# and (distance.cdist(np.where(c ==  True)[0].reshape(1,-1),np.where(c ==  True)[1].reshape(1,-1))[0][0] < 200):# and (np.sum(c) >= c_thresh):
+            T_obs_plot[c]   = T_obs[c]
+    # defind the range of the colorbar
+    vmax = np.max(np.abs(T_obs))
+    vmin = -vmax# - 2 * t_threshold
+    plt.close('all')
+    fig,ax = plt.subplots(figsize=(10,10))
+    im      = ax.imshow(T_obs_plot,
+                   origin                   = 'lower',
+                   cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
+                   extent                   = times[[0, -1, 0, -1]],
+                   vmin                     = vmin,
+                   vmax                     = vmax,
+                   interpolation            = 'lanczos',
+                   )
+    divider = make_axes_locatable(ax)
+    cax     = divider.append_axes("right", 
+                                  size      = "5%", 
+                                  pad       = 0.2)
+    cb      = plt.colorbar(im, 
+                           cax              = cax,
+                           ticks            = np.linspace(vmin,vmax,3))
+    cb.ax.set(title = 'T Statistics')
+    ax.plot([times[0],times[-1]],[times[0],times[-1]],
+            linestyle                    = '--',
+            color                        = 'black',
+            alpha                        = 0.7,
+            )
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    ax.set(xlabel                           = 'Test time',
+           ylabel                           = 'Train time',
+           title                            = f'nonparametric t test of {conscious_state}')
+    ax.legend()
+    return fig,ax
+def plot_p_values(times,
+                  clusters,
+                  cluster_p_values,
+                  ii,
+                  conscious_state,
+                  frames):
+    width = len(times)
+    p_clust = np.ones((width, width))# * np.nan
+    k = np.array([np.sum(c) for c in clusters])
+    if np.max(k) > 1000:
+        c_thresh = 1000
+    elif 1000 > np.max(k) > 500:
+        c_thresh = 500
+    elif 500 > np.max(k) > 100:
+        c_thresh = 100
+    elif 100 > np.max(k) > 10:
+        c_thresh = 10
+    else:
+        c_thresh = 0
+    for c, p_val in zip(clusters, cluster_p_values):
+        if (np.sum(c) >= c_thresh):
+            p_val_ = p_val.copy()
+            if p_val_ > 0.05:
+                p_val_ = 1.
+            p_clust[c] = p_val_
+    
+    # defind the range of the colorbar
+    vmax = 1.
+    vmin = 0.
+    plt.close('all')
+    fig,ax = plt.subplots(figsize = (10,10))
+    im      = ax.imshow(p_clust,
+                   origin                   = 'lower',
+                   cmap                     = plt.cm.RdBu_r,# to emphasize the clusters
+                   extent                   = times[[0, -1, 0, -1]],
+                   vmin                     = vmin,
+                   vmax                     = vmax,
+                   interpolation            = 'hanning',
+                   )
+    divider = make_axes_locatable(ax)
+    cax     = divider.append_axes("right", 
+                                  size      = "5%", 
+                                  pad       = 0.2)
+    cb      = plt.colorbar(im, 
+                           cax              = cax,
+                           ticks            = [0,0.05,1])
+    cb.ax.set(title = 'P values')
+    ax.plot([times[0],times[-1]],[times[0],times[-1]],
+            linestyle                       = '--',
+            color                           = 'black',
+            alpha                           = 0.7,
+            )
+    ax.axhline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               label                        = 'Probe onset',)
+    ax.axvline(0.,
+               linestyle                    = '--',
+               color                        = 'black',
+               alpha                        = 0.7,
+               )
+    if ii is not None:
+        ax.axhspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   label                        = 'probe offset ave +/- std',)
+        ax.axvspan(frames[ii][1] * (1 / 100) - frames[ii][2] * (1 / 100),
+                   frames[ii][1] * (1 / 100) + frames[ii][2] * (1 / 100),
+                   color                        = 'black',
+                   alpha                        = 0.2,
+                   )
+    ax.set(xlabel                           = 'Test time',
+           ylabel                           = 'Train time',
+           title                            = f'p value map of {conscious_state}')
+    ax.legend()
+    return fig,ax
 def plot_EEG_autoreject_log(autoreject_object,):
     ar = autoreject_object
     loss = ar.loss_['eeg'].mean(axis=-1)  # losses are stored by channel type.
@@ -353,6 +812,8 @@ def simple_load(f,idx):
 def get_frames(directory,new = True,EEG = True):
     if EEG:
         files = glob(os.path.join(directory,'*trials.csv'))
+#    elif EEG == 'fMRI':
+#        files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
     empty_temp = ''
@@ -383,7 +844,7 @@ def get_frames(directory,new = True,EEG = True):
             df[col] = df[col].apply(str2int)
             
         df["probeFrames_raw"] = df["probe_Frames_raw"]
-    
+    df = df[df['probeFrames_raw'] != 999]
     df = df.sort_values(['run','order'])
     
     for vis,df_sub in df.groupby(['visible.keys_raw']):
@@ -440,6 +901,7 @@ def get_frames(directory,new = True,EEG = True):
             df.append(temp)
         df = pd.concat(df)
     df['probeFrames'] = df['probeFrames'].apply(str2int)
+    df = df[df['probeFrames'] != 999]
     results = []
     for vis,df_sub in df.groupby(['visible.keys_raw']):
         corrects = df_sub['response.corr_raw'].sum() / df_sub.shape[0]
@@ -499,8 +961,11 @@ def extract(x):
 #        return False
 def add_track(df_sub):
     n_rows = df_sub.shape[0]
-    temp = '+'.join(str(item + 10) for item in df_sub['index'].values)
-    df_sub = df_sub.iloc[1,:].to_frame().T
+    if len(df_sub.index.values) > 1:
+        temp = '+'.join(str(item + 10) for item in df_sub.index.values)
+    else:
+        temp = str(df_sub.index.values[0])
+    df_sub = df_sub.iloc[0,:].to_frame().T # why did I use 1 instead of 0?
     df_sub['n_volume'] = n_rows
     df_sub['time_indices'] = temp
     return df_sub
@@ -1652,9 +2117,9 @@ def registration_plotting(output_dir,
     except:
         print('you should not use python 2.7, update your python!!')
 
-def create_highpass_filter_workflow(workflow_name = 'highpassfiler',
-                                    HP_freq = 60,
-                                    TR = 0.85):
+def create_highpass_filter_workflow(workflow_name   = 'highpassfiler',
+                                    HP_freq         = 60,
+                                    TR              = 0.85):
     from nipype.workflows.fmri.fsl    import preprocess
     from nipype.interfaces            import fsl
     from nipype.pipeline              import engine as pe
@@ -1671,86 +2136,86 @@ def create_highpass_filter_workflow(workflow_name = 'highpassfiler',
                                       fields    = ['filtered_file']),
                                       name      = 'outputspec')
     
-    img2float = pe.MapNode(interface    = fsl.ImageMaths(out_data_type     = 'float',
-                                                         op_string         = '',
-                                                         suffix            = '_dtype'),
-                           iterfield    = ['in_file'],
-                           name         = 'img2float')
+    img2float               = pe.MapNode(interface     = fsl.ImageMaths(out_data_type     = 'float',
+                                                                        op_string         = '',
+                                                                        suffix            = '_dtype'),
+                                         iterfield     = ['in_file'],
+                                         name          = 'img2float')
     highpass_workflow.connect(inputnode,'ICAed_file',
                               img2float,'in_file')
     
-    getthreshold = pe.MapNode(interface     = fsl.ImageStats(op_string = '-p 2 -p 98'),
-                              iterfield     = ['in_file'],
-                              name          = 'getthreshold')
+    getthreshold            = pe.MapNode(interface     = fsl.ImageStats(op_string = '-p 2 -p 98'),
+                                         iterfield     = ['in_file'],
+                                         name          = 'getthreshold')
     highpass_workflow.connect(img2float,    'out_file',
                               getthreshold, 'in_file')
-    thresholding = pe.MapNode(interface     = fsl.ImageMaths(out_data_type  = 'char',
-                                                             suffix         = '_thresh',
-                                                             op_string      = '-Tmin -bin'),
-                                iterfield   = ['in_file','op_string'],
-                                name        = 'thresholding')
+    thresholding            = pe.MapNode(interface    = fsl.ImageMaths(out_data_type  = 'char',
+                                                                       suffix         = '_thresh',
+                                                                       op_string      = '-Tmin -bin'),
+                                         iterfield    = ['in_file','op_string'],
+                                         name         = 'thresholding')
     highpass_workflow.connect(img2float,    'out_file',
                               thresholding, 'in_file')
     highpass_workflow.connect(getthreshold,('out_stat',getthreshop),
                               thresholding,'op_string')
     
-    dilatemask = pe.MapNode(interface   = fsl.ImageMaths(suffix     = '_dil',
-                                                         op_string  = '-dilF'),
-                            iterfield   = ['in_file'],
-                            name        = 'dilatemask')
+    dilatemask              = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_dil',
+                                                                       op_string  = '-dilF'),
+                                         iterfield    = ['in_file'],
+                                         name         = 'dilatemask')
     highpass_workflow.connect(thresholding,'out_file',
                               dilatemask,'in_file')
     
-    maskfunc = pe.MapNode(interface     = fsl.ImageMaths(suffix     = '_mask',
-                                                         op_string  = '-mas'),
-                          iterfield     = ['in_file','in_file2'],
-                          name          = 'apply_dilatemask')
+    maskfunc                = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_mask',
+                                                                       op_string  = '-mas'),
+                                         iterfield    = ['in_file','in_file2'],
+                                         name         = 'apply_dilatemask')
     highpass_workflow.connect(img2float,    'out_file',
                               maskfunc,     'in_file')
     highpass_workflow.connect(dilatemask,   'out_file',
                               maskfunc,     'in_file2')
     
-    medianval = pe.MapNode(interface    = fsl.ImageStats(op_string = '-k %s -p 50'),
-                           iterfield    = ['in_file','mask_file'],
-                           name         = 'cal_intensity_scale_factor')
+    medianval               = pe.MapNode(interface    = fsl.ImageStats(op_string = '-k %s -p 50'),
+                                         iterfield    = ['in_file','mask_file'],
+                                         name         = 'cal_intensity_scale_factor')
     highpass_workflow.connect(img2float,    'out_file',
                               medianval,    'in_file')
     highpass_workflow.connect(thresholding, 'out_file',
                               medianval,    'mask_file')
     
-    meanscale = pe.MapNode(interface    = fsl.ImageMaths(suffix = '_intnorm'),
-                           iterfield    = ['in_file','op_string'],
-                           name         = 'meanscale')
+    meanscale               = pe.MapNode(interface    = fsl.ImageMaths(suffix    = '_intnorm'),
+                                         iterfield    = ['in_file','op_string'],
+                                         name         = 'meanscale')
     highpass_workflow.connect(maskfunc,     'out_file',
                               meanscale,    'in_file')
     highpass_workflow.connect(medianval,    ('out_stat',getmeanscale),
                               meanscale,    'op_string')
     
-    meanfunc = pe.MapNode(interface     = fsl.ImageMaths(suffix     = '_mean',
-                                                         op_string  = '-Tmean'),
-                           iterfield    = ['in_file'],
-                           name         = 'meanfunc')
+    meanfunc                = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_mean',
+                                                                       op_string  = '-Tmean'),
+                                         iterfield    = ['in_file'],
+                                         name         = 'meanfunc')
     highpass_workflow.connect(meanscale, 'out_file',
                               meanfunc,  'in_file')
     
     
-    hpf = pe.MapNode(interface  = fsl.ImageMaths(suffix     = '_tempfilt',
-                                                 op_string  = '-bptf %.10f -1' % (HP_freq/2/TR)),
-                     iterfield  = ['in_file'],
-                     name       = 'highpass_filering')
+    hpf                     = pe.MapNode(interface    = fsl.ImageMaths(suffix     = '_tempfilt',
+                                                                       op_string  = '-bptf %.10f -1' % (HP_freq/2/TR)),
+                                         iterfield    = ['in_file'],
+                                         name         = 'highpass_filering')
     highpass_workflow.connect(meanscale,'out_file',
                               hpf,      'in_file',)
     
-    addMean = pe.MapNode(interface  = fsl.BinaryMaths(operation = 'add'),
-                         iterfield  = ['in_file','operand_file'],
-                         name       = 'addmean')
+    addMean                 = pe.MapNode(interface    = fsl.BinaryMaths(operation = 'add'),
+                                         iterfield    = ['in_file','operand_file'],
+                                         name         = 'addmean')
     highpass_workflow.connect(hpf,      'out_file',
                               addMean,  'in_file')
     highpass_workflow.connect(meanfunc, 'out_file',
                               addMean,  'operand_file')
     
-    highpass_workflow.connect(addMean,      'out_file',
-                              outputnode,   'filtered_file')
+    highpass_workflow.connect(addMean,   'out_file',
+                              outputnode,'filtered_file')
     
     return highpass_workflow
 
@@ -1768,7 +2233,7 @@ def load_csv(f,print_ = False):
 
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
-                           remove_invariant = False,
+                           remove_invariant = True,
                            n_jobs = 1):
     np.random.seed(12345)
     svm = LinearSVC(penalty = 'l2', # default
@@ -2003,6 +2468,9 @@ def customized_partition(df_data,groupby_column = ['id','labels'],n_splits = 100
         else:
             idxs_test.append(idx_test)
 def check_train_test_splits(idxs_test):
+    """
+    check if we get repeated test sets
+    """
     temp = []
     for ii,item1 in enumerate(idxs_test):
         for jj,item2 in enumerate(idxs_test):
@@ -2015,6 +2483,12 @@ def check_train_test_splits(idxs_test):
     temp = np.array(temp)
     return any(temp)
 def check_train_balance(df,idx_train,keys):
+    """
+    check the balance of the training set.
+    if only one of the classes has more 2 instances than the other
+    we will randomly take out those 'extra instances' from the major
+    class
+    """
     Counts = dict(Counter(df.iloc[idx_train]['targets'].values))
     if np.abs(Counts[keys[0]] - Counts[keys[1]]) > 2:
         if Counts[keys[0]] > Counts[keys[1]]:
@@ -2049,7 +2523,7 @@ def check_train_balance(df,idx_train,keys):
         return idx_train
 
 
-def LOO_partition(data,df_data):
+def LOO_partition(df_data):
     temp = {'targets':[],'labels':[]}
     for (targets,labels),df_sub in df_data.groupby(['targets','labels']):
         temp['targets'].append(targets)
@@ -2067,76 +2541,77 @@ def LOO_partition(data,df_data):
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False):
+
+def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
+                   n_jobs = 12, verbose = 0):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
+    https://www.tau.ac.il/~saharon/StatisticsSeminar_files/Hypothesis.pdf
     Inputs:
     ----------
     x: numpy array vector, the data that is to be compared
     baseline: the single point that we compare the data with
     n_ps: number of p values we want to estimate
-    n_permutation: number of permutation we want to perform, the more the further it could detect the strong effects, but it is so unnecessary
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    experiment      = np.mean(x) # the mean of the observations in the experiment
-    experiment_diff = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
-    # newexperiment = np.mean(experiment_diff) # just look at the new mean and make sure it is at the baseline
-    # simulate/bootstrap null hypothesis distribution
-    # 1st-D := within one permutation resamping, we perform resampling same as the experimental samples,
-    # but also repeat this one sampling n_permutation times
-    # 2nd-D := repeat 2nd-D n_ps times to obtain a distribution of p values later
-    temp            = np.random.choice(experiment_diff,size=(n_permutation,n_ps),replace=True)
-    # along each row of the matrix (n_row = n_permutation), we count instances that are greater than the observed mean of the experiment
-    # compute the proportion, and we get our p values
+    # t statistics with the original data distribution
+    t_experiment = (np.mean(x) - baseline) / (np.std(x) / np.sqrt(x.shape[0]))
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    from joblib import Parallel,delayed
+    import gc
+    gc.collect()
+    def t_statistics(null,size,):
+        """
+        null: shifted data distribution
+        size: tuple of 2 integers (n_for_averaging,n_permutation)
+        """
+        null_dist = np.random.choice(null,size = size,replace = True)
+        t_null = (np.mean(null_dist,0) - baseline) / (np.std(null_dist,0) / np.sqrt(null_dist.shape[0]))
+        if one_tail:
+            return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
+        else:
+            return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
+    ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                    'null':null,
+                    'size':(null.shape[0],int(n_permutation)),}) for i in range(n_ps))
     
-    if one_tail:
-        ps = (np.sum(temp >= experiment,axis=0)+1.) / (n_permutation + 1.)
-    else:
-        ps = (np.sum(np.abs(temp) >= np.abs(experiment),axis=0)+1.) / (n_permutation + 1.)
-    return ps
-def resample_ttest_2sample(a,b,n_ps=100,n_permutation=5000,one_tail=False,match_sample_size = True,):
-    # when the N is matched just simply test the pairwise difference against 0
+    return np.array(ps)
+def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
+                           one_tail=False,
+                           match_sample_size = True,
+                           n_jobs = 6,
+                           verbose = 0):
+    # when the samples are dependent just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
-        ps          = resample_ttest(difference,baseline=0,n_ps=n_ps,n_permutation=n_permutation,one_tail=one_tail)
+        ps          = resample_ttest(difference,baseline=0,
+                                     n_ps=n_ps,n_permutation=n_permutation,
+                                     one_tail=one_tail,
+                                     n_jobs=n_jobs,
+                                     verbose=verbose,)
         return ps
-    else: # when the N is not matched
-        difference              = np.mean(a) - np.mean(b)
-        concatenated            = np.concatenate([a,b])
-        np.random.shuffle(concatenated)
-        temp                    = np.zeros((n_permutation,n_ps))
-        # the next part of the code is to estimate the "randomized situation" under the given data's distribution
-        # by randomized the items in each group (a and b), we can compute the chance level differences
-        # and then we estimate the probability of the chance level exceeds the true difference 
-        # as to represent the "p value"
-        try:
-            iterator            = tqdm(range(n_ps),desc='ps')
-        except:
-            iterator            = range(n_ps)
-        for n_p in iterator:
-            for n_permu in range(n_permutation):
-                idx_a           = np.random.choice(a    = [0,1],
-                                                   size = (len(a)+len(b)),
-                                                   p    = [float(len(a))/(len(a)+len(b)),
-                                                           float(len(b))/(len(a)+len(b))]
-                                                   ).astype(np.bool)
-                idx_b           = np.logical_not(idx_a)
-                d               = np.mean(concatenated[idx_a]) - np.mean(concatenated[idx_b])
-                if np.isnan(d):
-                    idx_a       = np.random.choice(a        = [0,1],
-                                                   size     = (len(a)+len(b)),
-                                                   p        = [float(len(a))/(len(a)+len(b)),
-                                                               float(len(b))/(len(a)+len(b))]
-                                                   ).astype(np.bool)
-                    idx_b       = np.logical_not(idx_a)
-                    d           = np.mean(concatenated[idx_a]) - np.mean(concatenated[idx_b])
-                temp[n_permu,n_p] = d
-        if one_tail:
-            ps = (np.sum(temp >= difference,axis=0)+1.) / (n_permutation + 1.)
-        else:
-            ps = (np.sum(np.abs(temp) >= np.abs(difference),axis=0)+1.) / (n_permutation + 1.)
+    else: # when the samples are independent
+        t_experiment,_ = stats.ttest_ind(a,b,equal_var = False)
+        def t_statistics(a,b):
+            group = np.random.choice(np.concatenate([a,b]),size = int(len(a) + len(b)),replace = True)
+            new_a = group[:a.shape[0]]
+            new_b = group[a.shape[0]:]
+            t_null,_ = stats.ttest_ind(new_a,new_b,equal_var = False)
+            return t_null
+        from joblib import Parallel,delayed
+        import gc
+        gc.collect()
+        ps = np.zeros(n_ps)
+        for ii in range(n_ps):
+            t_null_null = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                            'a':a,
+                            'b':b}) for i in range(n_permutation))
+            if one_tail:
+                ps[ii] = ((np.sum(t_null_null >= t_experiment)) + 1) / (n_permutation + 1)
+            else:
+                ps[ii] = ((np.sum(np.abs(t_null_null) >= np.abs(t_experiment))) + 1) / (n_permutation + 1) / 2
         return ps
 
 class MCPConverter(object):
@@ -2202,6 +2677,7 @@ def define_roi_category():
                 'rostralmiddlefrontal':'Working Memory',
                 'superiorfrontal':'Working Memory',
                 'ventrolateralPFC':'Working Memory',
+                'inferiorparietal':'Visual',
                 }
     
     return roi_dict
@@ -2303,8 +2779,200 @@ def bootstrap_behavioral_estimation(df_sub,n_bootstrap = int(1e2)):
                                    match_sample_size = True)
     return pvals,scores,chance
 
-
-
+def get_label_category_mapping():
+    return {'Chest-of-drawers': 'Nonliving_Things',
+ 'armadillo': 'Living_Things',
+ 'armchair': 'Nonliving_Things',
+ 'axe': 'Nonliving_Things',
+ 'barn-owl': 'Living_Things',
+ 'bed': 'Nonliving_Things',
+ 'bedside-table': 'Nonliving_Things',
+ 'boat': 'Nonliving_Things',
+ 'bookcase': 'Nonliving_Things',
+ 'bus': 'Nonliving_Things',
+ 'butterfly': 'Living_Things',
+ 'car': 'Nonliving_Things',
+ 'castle': 'Nonliving_Things',
+ 'cat': 'Living_Things',
+ 'cathedral': 'Nonliving_Things',
+ 'chair': 'Nonliving_Things',
+ 'cheetah': 'Living_Things',
+ 'church': 'Nonliving_Things',
+ 'coking-pot': 'Nonliving_Things',
+ 'couch': 'Nonliving_Things',
+ 'cow': 'Living_Things',
+ 'crab': 'Living_Things',
+ 'cup': 'Nonliving_Things',
+ 'dolphin': 'Living_Things',
+ 'dragonfly': 'Living_Things',
+ 'drum': 'Nonliving_Things',
+ 'duck': 'Living_Things',
+ 'elephant': 'Living_Things',
+ 'factory': 'Nonliving_Things',
+ 'filling-cabinet': 'Nonliving_Things',
+ 'fondue': 'Nonliving_Things',
+ 'frying-pan': 'Nonliving_Things',
+ 'giraffe': 'Living_Things',
+ 'goldfinch': 'Living_Things',
+ 'goose': 'Living_Things',
+ 'granary': 'Nonliving_Things',
+ 'guitar': 'Nonliving_Things',
+ 'hammer': 'Nonliving_Things',
+ 'hen': 'Living_Things',
+ 'hippopotamus': 'Living_Things',
+ 'horse': 'Living_Things',
+ 'house': 'Nonliving_Things',
+ 'hummingbird': 'Living_Things',
+ 'killer-whale': 'Living_Things',
+ 'kiwi': 'Living_Things',
+ 'ladybird': 'Living_Things',
+ 'lamp': 'Nonliving_Things',
+ 'lectern': 'Nonliving_Things',
+ 'lioness': 'Living_Things',
+ 'lobster': 'Living_Things',
+ 'lynx': 'Living_Things',
+ 'magpie': 'Living_Things',
+ 'manatee': 'Living_Things',
+ 'mill': 'Nonliving_Things',
+ 'motorbike': 'Nonliving_Things',
+ 'narwhal': 'Living_Things',
+ 'ostrich': 'Living_Things',
+ 'owl': 'Living_Things',
+ 'palace': 'Nonliving_Things',
+ 'partridge': 'Living_Things',
+ 'pelican': 'Living_Things',
+ 'penguin': 'Living_Things',
+ 'piano': 'Nonliving_Things',
+ 'pigeon': 'Living_Things',
+ 'plane': 'Nonliving_Things',
+ 'pomfret': 'Living_Things',
+ 'pot': 'Nonliving_Things',
+ 'raven': 'Living_Things',
+ 'rhino': 'Living_Things',
+ 'rocking-chair': 'Nonliving_Things',
+ 'rooster': 'Living_Things',
+ 'saucepan': 'Nonliving_Things',
+ 'saxophone': 'Nonliving_Things',
+ 'scorpion': 'Living_Things',
+ 'seagull': 'Living_Things',
+ 'shark': 'Living_Things',
+ 'ship': 'Nonliving_Things',
+ 'small-saucepan': 'Nonliving_Things',
+ 'sofa': 'Nonliving_Things',
+ 'sparrow': 'Living_Things',
+ 'sperm-whale': 'Living_Things',
+ 'table': 'Nonliving_Things',
+ 'tapir': 'Living_Things',
+ 'teapot': 'Nonliving_Things',
+ 'tiger': 'Living_Things',
+ 'toucan': 'Living_Things',
+ 'tractor': 'Nonliving_Things',
+ 'train': 'Nonliving_Things',
+ 'trumpet': 'Nonliving_Things',
+ 'tuba': 'Nonliving_Things',
+ 'turtle': 'Living_Things',
+ 'van': 'Nonliving_Things',
+ 'violin': 'Nonliving_Things',
+ 'wardrobe': 'Nonliving_Things',
+ 'whale': 'Living_Things',
+ 'zebra': 'Living_Things'}
+def get_label_subcategory_mapping():
+    return {'Chest-of-drawers': 'Furniture',
+ 'armadillo': 'Animals',
+ 'armchair': 'Furniture',
+ 'axe': 'Tools',
+ 'barn-owl': 'Birds',
+ 'bed': 'Furniture',
+ 'bedside-table': 'Furniture',
+ 'boat': 'Vehicles',
+ 'bookcase': 'Furniture',
+ 'bus': 'Vehicles',
+ 'butterfly': 'Insects',
+ 'car': 'Vehicles',
+ 'castle': 'Buildings',
+ 'cat': 'Animals',
+ 'cathedral': 'Buildings',
+ 'chair': 'Furniture',
+ 'cheetah': 'Animals',
+ 'church': 'Buildings',
+ 'coking-pot': 'Kitchen_Uten',
+ 'couch': 'Furniture',
+ 'cow': 'Animals',
+ 'crab': 'Marine_creatures',
+ 'cup': 'Kitchen_Uten',
+ 'dolphin': 'Marine_creatures',
+ 'dragonfly': 'Insects',
+ 'drum': 'Musical_Inst',
+ 'duck': 'Birds',
+ 'elephant': 'Animals',
+ 'factory': 'Buildings',
+ 'filling-cabinet': 'Furniture',
+ 'fondue': 'Kitchen_Uten',
+ 'frying-pan': 'Kitchen_Uten',
+ 'giraffe': 'Animals',
+ 'goldfinch': 'Birds',
+ 'goose': 'Birds',
+ 'granary': 'Buildings',
+ 'guitar': 'Musical_Inst',
+ 'hammer': 'Tools',
+ 'hen': 'Birds',
+ 'hippopotamus': 'Animals',
+ 'horse': 'Animals',
+ 'house': 'Buildings',
+ 'hummingbird': 'Birds',
+ 'killer-whale': 'Marine_creatures',
+ 'kiwi': 'Birds',
+ 'ladybird': 'Insects',
+ 'lamp': 'Furniture',
+ 'lectern': 'Furniture',
+ 'lioness': 'Animals',
+ 'lobster': 'Marine_creatures',
+ 'lynx': 'Animals',
+ 'magpie': 'Birds',
+ 'manatee': 'Marine_creatures',
+ 'mill': 'Buildings',
+ 'motorbike': 'Vehicles',
+ 'narwhal': 'Marine_creatures',
+ 'ostrich': 'Birds',
+ 'owl': 'Birds',
+ 'palace': 'Buildings',
+ 'partridge': 'Birds',
+ 'pelican': 'Birds',
+ 'penguin': 'Birds',
+ 'piano': 'Musical_Inst',
+ 'pigeon': 'Birds',
+ 'plane': 'Vehicles',
+ 'pomfret': 'Marine_creatures',
+ 'pot': 'Kitchen_Uten',
+ 'raven': 'Birds',
+ 'rhino': 'Animals',
+ 'rocking-chair': 'Furniture',
+ 'rooster': 'Birds',
+ 'saucepan': 'Kitchen_Uten',
+ 'saxophone': 'Musical_Inst',
+ 'scorpion': 'Insects',
+ 'seagull': 'Birds',
+ 'shark': 'Marine_creatures',
+ 'ship': 'Vehicles',
+ 'small-saucepan': 'Kitchen_Uten',
+ 'sofa': 'Furniture',
+ 'sparrow': 'Birds',
+ 'sperm-whale': 'Marine_creatures',
+ 'table': 'Furniture',
+ 'tapir': 'Animals',
+ 'teapot': 'Kitchen_Uten',
+ 'tiger': 'Animals',
+ 'toucan': 'Birds',
+ 'tractor': 'Vehicles',
+ 'train': 'Vehicles',
+ 'trumpet': 'Musical_Inst',
+ 'tuba': 'Musical_Inst',
+ 'turtle': 'Animals',
+ 'van': 'Vehicles',
+ 'violin': 'Musical_Inst',
+ 'wardrobe': 'Furniture',
+ 'whale': 'Marine_creatures',
+ 'zebra': 'Animals'}
 
 
 

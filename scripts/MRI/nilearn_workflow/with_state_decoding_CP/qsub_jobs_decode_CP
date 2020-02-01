@@ -1,15 +1,14 @@
-
 #!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=12
+#PBS -l mem=80gb
+#PBS -l cput=368:00:00
+#PBS -N stat
+#PBS -o out_stat.txt
+#PBS -e err_stat.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 
-# This is a script to send qsub_jobs_decode (CP).py as a batch job.
+pwd
 
-#$ -cwd
-#$ -o bash/out_q.txt
-#$ -e bash/err_q.txt
-#$ -m be
-#$ -M nmei@bcbl.eu
-#$ -N "qsubjobs"
-#$ -S /bin/bash
-
-module load rocks-python-3.6
-python "../customized partition bash/qsub_jobs_decode (CP).py"
+python "post stats.py"

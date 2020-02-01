@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R10D
-#PBS -o bash/out_110_lh-superiorfrontal.txt
-#PBS -e bash/err_110_lh-superiorfrontal.txt
+#PBS -N S7R10D
+#PBS -o bash/out_710_lh-superiorfrontal.txt
+#PBS -e bash/err_710_lh-superiorfrontal.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

@@ -24,6 +24,7 @@ from tensorflow.keras.preprocessing.image       import ImageDataGenerator
 import utils_deep
 
 from functools  import partial
+from shutil import rmtree
 #from matplotlib import pyplot as plt
 #from matplotlib import ticker as mtick
 #sns.set_style('whitegrid')
@@ -45,7 +46,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     preprocess_input    = applications.densenet.preprocess_input
     patience            = 5
     n_splits            = 50 # n_split for decoding the hidden layer
-    n_permutations      = 200 
+    n_permutations      = int(1e3) # for computation speed
     n_sessions          = int(2e2) # n_permutations for CNN performance
     loss_func           = losses.binary_crossentropy
     hidden_units        = 10
@@ -157,7 +158,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                                        frequency               = 1)
     
     if not os.path.exists(saving_model_name):
-        print(f'training {model_name} ...')
+        print(f'training {model_name}_{drop_rate}_{hidden_units}_{hidden_activation}_{output_activation} ...')
         classifier.fit_generator(gen_train,
                                  steps_per_epoch                            = np.ceil(gen_train.n / batch_size),
                                  epochs                                     = max_epochs,
@@ -167,7 +168,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                  verbose                                    = verbose,
                                  )
     else:
-        print(f'loading {model_name}')
+        print(f'loading {model_name}_{drop_rate}_{hidden_units}_{hidden_activation}_{output_activation}')
         if tf.__version__ == "2.0.0":# in tf 2.0
             del classifier
             classifier = tf.keras.models.load_model(saving_model_name)
@@ -176,7 +177,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     classifier.trainable = False
     for layer in classifier.layers:
         layer.trainable = False
-    if not os.path.exists(os.path.join(model_dir,f'{1*10**4:.0e}')):
+    if True:#not os.path.exists(os.path.join(model_dir,f'{1*10**4:.0e}')):
         # test on clear images to estimate the "best performance"
         gen = ImageDataGenerator(
                                 featurewise_center              = False,
@@ -200,7 +201,10 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                 data_format                     = None,
                                 validation_split                = 0.0
                             )
-        
+        print(os.listdir(model_dir))
+        items = [item for item in os.listdir(model_dir) if ('h5' not in item) and ('csv' not in item)]
+        [rmtree(os.path.join(model_dir,item)) for item in items]
+        print(os.listdir(model_dir))
         behavioral,beha_chance,ps = utils_deep.performance_of_CNN_and_get_hidden_features(
                        classifier,
                        gen,
@@ -213,6 +217,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                        verbose      = verbose,
                        n_jobs       = -1,
                        )
+        
         print(f'test on clear images, performance = {behavioral.mean():.3f}+/-{behavioral.std():.0e} vs {np.mean(beha_chance):.3f}+/-{np.std(beha_chance):.0e},p = {ps:.3f}')
     else:
         print('have done it')
@@ -224,7 +229,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     # add noise to the images
     noise_levels = np.concatenate([[a * 10 ** b for a in np.arange(1,10) for b in np.arange(4,10)]]) #[1e2,1e3],
     noise_levels = np.sort(noise_levels)
-    if not os.path.exists(simulation_saving_name):
+    if True:#not os.path.exists(simulation_saving_name):
         df_temp = dict(noise_level      = [],
                        decoder          = [],
                        performance_mean = [],
@@ -246,13 +251,13 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     else:
         temp = pd.read_csv(simulation_saving_name)
         df_temp = {col_name:list(temp[col_name]) for col_name in temp.columns}
-        
+    res_temp = []
     for var in (noise_levels):
-        if var not in df_temp['noise_level']:
+        if True:#var not in df_temp['noise_level']:
             noise_folder = os.path.join(model_dir,f'{var:.0e}')
             if not os.path.exists(noise_folder):
                 os.mkdir(noise_folder)
-            if not os.path.exists(os.path.join(noise_folder,'features.npy')):
+            if True:#not os.path.exists(os.path.join(noise_folder,'features.npy')):
                 noise_func = partial(utils_deep.process_func,preprocess_input = preprocess_input,var = var)
                 gen = ImageDataGenerator(
                                         featurewise_center              = False,
@@ -326,6 +331,10 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                 
                 df_to_save = pd.DataFrame(df_temp)
                 df_to_save.to_csv(simulation_saving_name,index = False)
+                
+                res_temp.append(behavioral.mean())
+                if np.abs(np.mean(res_temp[-8:]) - .5) < 1e-2:
+                    break
         else:
             idx_ = np.where(df_temp['noise_level'] == var)[0][0]
             a = df_temp['performance_mean'][idx_]

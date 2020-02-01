@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=384:00:00
+#PBS -N S3SLOO22
+#PBS -o bash/out_322.txt
+#PBS -e bash/err_322.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-superiorfrontal"
+
+python "LOO_22.py"

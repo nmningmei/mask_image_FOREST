@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=12
+#PBS -l mem=80gb
+#PBS -l cput=368:00:00
+#PBS -N stat7
+#PBS -o out_stat7.txt
+#PBS -e err_stat7.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+
+pwd
+
+python "post_stats7.py"

@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=64gb
+#PBS -l cput=512:00:00
+#PBS -N S1R24RSA
+#PBS -o bash/out_124.txt
+#PBS -e bash/err_124.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-ventrolateralPFC"
+
+python RSA_correlation_24.py
+

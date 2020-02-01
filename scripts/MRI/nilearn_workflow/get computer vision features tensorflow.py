@@ -50,7 +50,7 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
                                  monitor          = monitor,# saving criterion
                                  save_best_only   = True,# save only the best model
                                  mode             = mode,# saving criterion
-#                                 save_freq        = 'epoch',# frequency of check the update 
+                                 save_weights_only= True,
                                  verbose          = verbose,# print out (>1) or not (0)
 #                                 load_weights_on_restart = True,
                                  )
@@ -66,15 +66,36 @@ def make_CallBackList(model_name,monitor='val_loss',mode='min',verbose=0,min_del
 # define tons of directories
 saving_dir  = '../../../data/computer_vision_features'
 untun_dir   = '../../../data/computer_vision_raw'
+untun_back_d= '../../../data/computer_vision_raw_background'
+chan_dir    = '../../../data/computer_vision_chance'
+back_dir    = '../../../data/computer_vision_background'
 model_dir   = '../../../data/computer_vision_weights'
 figure_dir  = '../../../figures/computer_vision_features'
 report_dir  = '../../../results/computer_vision_features'
-for d in [saving_dir,untun_dir,model_dir,figure_dir,report_dir]:
+for d in [
+          saving_dir,
+          untun_dir,
+          model_dir,
+          figure_dir,
+          report_dir,
+          chan_dir,
+          back_dir,
+          untun_back_d,
+          ]:
     if not os.path.exists(d):
         os.mkdir(d)
 # where are the images we will use for passing through the trained models
-working_dir     = '../../../data/greyscaled'
+working_dir     = '../../../data/'
+fine_tune_at    = '101_ObjectCategories_grayscaled'
+working_fold    = 'bw_bc_bl'
+background_fold = 'experiment_background'
 working_data    = np.sort(glob(os.path.join(working_dir,
+                                            working_fold,
+                                            "*",
+                                            "*",
+                                            "*.jpg")))
+working_background = np.sort(glob(os.path.join(working_dir,
+                                            background_fold,
                                             "*",
                                             "*",
                                             "*.jpg")))
@@ -84,7 +105,7 @@ model_names     = ['DenseNet169',           # 1024
                    'InceptionResNetV2',     # 1536
                    'InceptionV3',           # 2048
                    'MobileNetV2',           # 1280
-                   'NASNetMobile',          # 1024
+#                   'NASNetMobile',          # 1024
                    'ResNet50',              # 1536
                    'VGG19',                 # 2048
                    'Xception',              # 1280
@@ -94,24 +115,26 @@ pretrained_models = [applications.DenseNet169,
                      applications.InceptionResNetV2,
                      applications.InceptionV3,
                      applications.MobileNetV2,
-                     applications.NASNetMobile,
+#                     applications.NASNetMobile,
                      applications.ResNet50,
                      applications.VGG19,
-                     applications.Xception,]
+                     applications.Xception,
+                     ]
 
 preprcessing_funcs = [applications.densenet.preprocess_input,
                       applications.inception_resnet_v2.preprocess_input,
                       applications.inception_v3.preprocess_input,
                       applications.mobilenet_v2.preprocess_input,
-                      applications.nasnet.preprocess_input,
+#                      applications.nasnet.preprocess_input,
                       applications.resnet50.preprocess_input,
                       applications.vgg19.preprocess_input,
-                      applications.xception.preprocess_input,]
+                      applications.xception.preprocess_input,
+                      ]
 
 # define some hyperparameters for training
-batch_size      = 32
-image_resize    = 224
-
+batch_size      = 8
+image_resize    = 128
+dropout         = False
 
 
 for model_name,model,preprocess_input in zip(model_names,pretrained_models,preprcessing_funcs):
@@ -126,22 +149,24 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
                                          horizontal_flip        = True,             # 
                                          vertical_flip          = True,             # 
                                          preprocessing_function = preprocess_input, # scaling function (-1,1)
+                                         validation_split       = 0.1,
                                          )
-    gen_train       = gen.flow_from_directory('../../../data/bw_bc_bl_sub',
+    gen_train       = gen.flow_from_directory(os.path.join(working_dir,fine_tune_at),
                                               target_size       = (image_resize,image_resize),  # resize the image
                                               batch_size        = batch_size,                   # batch size
                                               class_mode        = 'categorical',                # get the labels from the folders
                                               shuffle           = True,                         # shuffle for different epochs
                                               seed              = 12345,                        # replication purpose
+                                              subset            = 'training',
                                               )
     
-    gen_            = ImageDataGenerator(preprocessing_function = preprocess_input)
-    gen_valid       = gen_.flow_from_directory('../../../data/greyscaled_sub',
+    gen_valid       = gen.flow_from_directory(os.path.join(working_dir,fine_tune_at),
                                                target_size       = (image_resize,image_resize),  # resize the image
                                                batch_size        = batch_size,                   # batch size
                                                class_mode        = 'categorical',                # get the labels from the folders
                                                shuffle           = True,                         # shuffle for different epochs
                                                seed              = 12345,                        # replication purpose
+                                               subset            = 'validation',
                                                )
     tf.keras.backend.clear_session()
     
@@ -157,50 +182,74 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
     # now, adding 2 more layers: CNN --> 300 --> discriminative prediction
     drop_rate = 0.5
     fine_tune_model = model_loaded.output
-    fine_tune_model = layers.GlobalAveragePooling2D(name            = 'Globalave')(fine_tune_model)
+    fine_tune_model = layers.GlobalAveragePooling2D(name = 'Globalave')(fine_tune_model)
     r = models.Model(model_loaded.inputs,fine_tune_model)
     
-    for image_name in tqdm(working_data,desc='raw features'):
-        label_      = image_name.split('/')[-1].split('_')[0]
-        image_save_name     = image_name.split('/')[-1].replace('.jpg','.npy')
-        image_loaded        = load_img(image_name,target_size = (image_resize,image_resize,3))
-        image_data          = preprocess_input(img_to_array(image_loaded)[np.newaxis,])
-        feature_            = r.predict(image_data)
-        if not os.path.exists(os.path.join(untun_dir,model_name)):
-            os.mkdir(os.path.join(untun_dir,model_name))
-        np.save(os.path.join(untun_dir,model_name,image_save_name),np.squeeze(feature_) - np.mean(feature_))
-        
-#    fine_tune_model = layers.Dropout(drop_rate,
-#                                     seed                           = 12345,
-#                                     name                           = 'drop2'
-#                                     )(fine_tune_model)
-    fine_tune_model = layers.Dense(300,
+#    # get outputs from the last convolutional layer
+#    for image_name in tqdm(working_data,desc='raw features'):
+#        label_              = image_name.split('/')[-1].split('_')[0]
+#        image_save_name     = image_name.split('/')[-1].replace('.jpg','.npy')
+#        image_loaded        = load_img(image_name,target_size = (image_resize,image_resize,3))
+#        image_data          = preprocess_input(img_to_array(image_loaded)[np.newaxis,])
+#        feature_            = r.predict(image_data)
+#        if not os.path.exists(os.path.join(untun_dir,model_name)):
+#            os.mkdir(os.path.join(untun_dir,model_name))
+#        np.save(os.path.join(untun_dir,model_name,image_save_name),np.squeeze(feature_))
+#    # get outputs of the backgrounds from the last convolutional layer
+#    for image_name in tqdm(working_background,desc='raw background'):
+#        label_              = image_name.split('/')[-1].split('_')[0]
+#        image_save_name     = image_name.split('/')[-1].replace('.jpg','.npy')
+#        image_loaded        = load_img(image_name,target_size = (image_resize,image_resize,3))
+#        image_data          = preprocess_input(img_to_array(image_loaded)[np.newaxis,])
+#        feature_            = r.predict(image_data)
+#        if not os.path.exists(os.path.join(untun_back_d,model_name)):
+#            os.mkdir(os.path.join(untun_back_d,model_name))
+#        np.save(os.path.join(untun_back_d,model_name,image_save_name),np.squeeze(feature_))
+    if dropout:
+        fine_tune_model = layers.Dropout(drop_rate,
+                                         seed                       = 12345,
+                                         name                       = 'drop_c2d'
+                                         )(fine_tune_model)
+    hidden_layer = layers.Dense(300,
                                    activation                       = tf.keras.activations.selu, # SOTA activation function
                                    kernel_initializer               = 'lecun_normal', # seggested in documentation
                                    kernel_regularizer               = regularizers.l2(),
                                    activity_regularizer             = regularizers.l1(),
                                    name                             = 'feature'
                                    )(fine_tune_model)
-#    find_tune_model = layers.AlphaDropout(drop_rate,
-#                                          seed                      = 12345,
-#                                          name                      = 'drop3'
-#                                          )(fine_tune_model) # suggested in documentation
+    if dropout:
+        hidden_layer = layers.AlphaDropout(drop_rate,
+                                              seed                  = 12345,
+                                              name                  = 'drop_d2o'
+                                              )(hidden_layer) # suggested in documentation
     fine_tune_model = layers.Dense(len(gen_train.class_indices),
                                    activation                       = 'softmax',
                                    kernel_regularizer               = regularizers.l2(),
                                    activity_regularizer             = regularizers.l1(),
                                    name                             = 'predict'
-                                   )(fine_tune_model)
+                                   )(hidden_layer)
     clf             = models.Model(model_loaded.inputs,fine_tune_model)
     # compile the model with an optimizer, a loss function
-    clf.compile(optimizers.Adam(lr = 1e-4,),
+    clf.compile(optimizers.Adam(lr = 1e-3,),
                 losses.categorical_crossentropy,
                 metrics = ['categorical_accuracy'])
-    
-    saving_model_name   = os.path.join(model_dir,f'{model_name}.h5')
+    # make the output of the new layer as the embedding features
+    print(clf.layers[-2].output)
+    feature_extractor = models.Model(model_loaded.inputs,clf.layers[-2].output)
+    for image_name in tqdm(working_data,desc='before fine-tuning'):
+        label_      = image_name.split('/')[-1].split('_')[0]
+        image_save_name     = image_name.split('/')[-1].replace('.jpg','.npy')
+        image_loaded        = load_img(image_name,target_size = (image_resize,image_resize,3))
+        image_data          = preprocess_input(img_to_array(image_loaded)[np.newaxis,])
+        feature_            = feature_extractor.predict(image_data)
+        if not os.path.exists(os.path.join(chan_dir,model_name)):
+            os.mkdir(os.path.join(chan_dir,model_name))
+        np.save(os.path.join(chan_dir,model_name,image_save_name),np.squeeze(feature_))
+        
+    saving_model_name   = os.path.join(model_dir,f'{model_name}_fine_tune.h5')
     callbacks           = make_CallBackList(saving_model_name,
-                                            monitor                 = 'val_{}'.format(clf.metrics_names[-1]),
-                                            mode                    = 'max',
+                                            monitor                 = 'val_{}'.format(clf.metrics_names[-2]),
+                                            mode                    = 'min',
                                             verbose                 = 0,
                                             min_delta               = 1e-4,
                                             patience                = 2,
@@ -212,14 +261,32 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
         ###############################################################################################################
         clf.fit_generator(gen_train,
                           steps_per_epoch                           = np.ceil(gen_train.n / batch_size),
-                          epochs                                    = 18, # arbitrary choice
+                          epochs                                    = 1000, # arbitrary choice
                           validation_data                           = gen_valid,
                           callbacks                                 = callbacks,
                           )
     
-    clf.load_weights(os.path.join(saving_model_name))
+    if tf.__version__ == "2.0.0":# in tf 2.0
+        try:
+            clf.load_weights(saving_model_name)
+        except:
+            del clf
+            clf = tf.keras.models.load_model(saving_model_name)
+        print(clf.summary())
+    else: # in tf 1.0
+        clf.load_weights(saving_model_name)
     # make the output of the new layer as the embedding features
-    feature_extractor = models.Model(model_loaded.inputs,clf.get_layer('feature').output)
+    feature_extractor = models.Model(model_loaded.inputs,clf.layers[-2].output)
+    for image_name in tqdm(working_background,desc='background'):
+        label_      = image_name.split('/')[-1].split('_')[0]
+        image_save_name     = image_name.split('/')[-1].replace('.jpg','.npy')
+        image_loaded        = load_img(image_name,target_size = (image_resize,image_resize,3))
+        image_data          = preprocess_input(img_to_array(image_loaded)[np.newaxis,])
+        feature_            = feature_extractor.predict(image_data)
+        if not os.path.exists(os.path.join(back_dir,model_name)):
+            os.mkdir(os.path.join(back_dir,model_name))
+        np.save(os.path.join(back_dir,model_name,image_save_name),np.squeeze(feature_))
+        
     # get the features of all the images
     features        = []
     target_labels   = []
@@ -236,7 +303,7 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
         feature_            = feature_extractor.predict(image_data)
         if not os.path.exists(os.path.join(saving_dir,model_name)):
             os.mkdir(os.path.join(saving_dir,model_name))
-        np.save(os.path.join(saving_dir,model_name,image_save_name),np.squeeze(feature_) - np.mean(feature_))
+        np.save(os.path.join(saving_dir,model_name,image_save_name),np.squeeze(feature_))
         features.append(feature_)
         
     features        = np.squeeze(np.array(features),1)
@@ -276,7 +343,7 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
     RDM = distance.squareform(distance.pdist(temp,'cosine'))
     np.fill_diagonal(RDM,np.nan)
     
-    fig,ax = plt.subplots(figsize = (25,25))
+    fig,ax = plt.subplots(figsize = (30,30))
     im = ax.imshow(RDM,
                    cmap = plt.cm.RdBu_r,
                    vmin = 0,
@@ -284,13 +351,13 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
                    alpha = 0.9)
     ax.set(xticks   = np.arange(96),
            yticks   = np.arange(96),
-           title    = f'Metasema, image2vec RDM\n10 images per word\nimage resize to {image_resize} by {image_resize}, pretrained model: {model_name}')
+           title    = f'Representational Dissimilarity Matrix\n96 unique items\nimage resize to {image_resize} by {image_resize}, pretrained model: {model_name}')
     ax.set_xticklabels(labels,rotation = 90)
     ax.set_yticklabels(labels)
     ax.axhline(95/2,linestyle='--',alpha=1.,color='black')
     ax.axvline(95/2,linestyle='--',alpha=1.,color='black')
     plt.colorbar(im)
-    fig.savefig(os.path.join(figure_dir,f'RDM {model_name}.png'),
+    fig.savefig(os.path.join(figure_dir,f'RDM {model_name}.jpeg'),
                 dpi = 500,
                 bbox_inches = 'tight',)
     

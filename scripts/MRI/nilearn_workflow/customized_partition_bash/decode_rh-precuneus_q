@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R20D
-#PBS -o bash/out_120_rh-precuneus.txt
-#PBS -e bash/err_120_rh-precuneus.txt
+#PBS -N S7R20D
+#PBS -o bash/out_720_rh-precuneus.txt
+#PBS -e bash/err_720_rh-precuneus.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

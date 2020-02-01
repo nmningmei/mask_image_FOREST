@@ -14,7 +14,7 @@ output_dir = '../LOO_bash_cross_state'
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 
-sub                 = 'sub-01'
+sub                 = 'sub-07'
 nodes               = 2
 cores               = 16
 mem                 = 2 * cores * nodes
@@ -61,7 +61,7 @@ for ii, BOLD_data_file in enumerate(BOLD_data):
 #PBS -l nodes={nodes}:ppn={cores}
 #PBS -l mem={mem}gb
 #PBS -l cput={time_}:00:00
-#PBS -N S{sub[-1]}R{ii+1}
+#PBS -N S{sub[-1]}R{ii+1}L
 #PBS -o bash/out_{sub[-1]}{ii+1}.txt
 #PBS -e bash/err_{sub[-1]}{ii+1}.txt
 cd $PBS_O_WORKDIR

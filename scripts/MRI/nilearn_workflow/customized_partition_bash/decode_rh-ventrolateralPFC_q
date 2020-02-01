@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R24D
-#PBS -o bash/out_124_rh-ventrolateralPFC.txt
-#PBS -e bash/err_124_rh-ventrolateralPFC.txt
+#PBS -N S7R24D
+#PBS -o bash/out_724_rh-ventrolateralPFC.txt
+#PBS -e bash/err_724_rh-ventrolateralPFC.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

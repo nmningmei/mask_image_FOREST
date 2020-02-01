@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=384:00:00
+#PBS -N S3SLOO4
+#PBS -o bash/out_34.txt
+#PBS -e bash/err_34.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-lateraloccipital"
+
+python "LOO_4.py"

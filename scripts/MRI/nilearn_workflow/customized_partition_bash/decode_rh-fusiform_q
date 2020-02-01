@@ -4,9 +4,9 @@
 #PBS -l nodes=2:ppn=16
 #PBS -l mem=64gb
 #PBS -l cput=1536:00:00
-#PBS -N S1R13D
-#PBS -o bash/out_113_rh-fusiform.txt
-#PBS -e bash/err_113_rh-fusiform.txt
+#PBS -N S7R13D
+#PBS -o bash/out_713_rh-fusiform.txt
+#PBS -e bash/err_713_rh-fusiform.txt
 cd $PBS_O_WORKDIR
 export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
 pwd

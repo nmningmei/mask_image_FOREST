@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=768:00:00
+#PBS -N S1R2
+#PBS -o bash/out_12.txt
+#PBS -e bash/err_12.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-inferiorparietal"
+
+python "LPO_2.py"

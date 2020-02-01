@@ -1,0 +1,17 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=2:ppn=16
+#pBS -l ncpus=32
+#PBS -l mem=64gb
+#PBS -l cput=512:00:00
+#PBS -N S1R19RSA
+#PBS -o bash/out_119.txt
+#PBS -e bash/err_119.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-pericalcarine"
+
+python RSA_correlation_19.py
+

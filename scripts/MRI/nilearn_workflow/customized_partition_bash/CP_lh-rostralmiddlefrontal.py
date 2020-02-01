@@ -35,7 +35,7 @@ from sklearn.utils.testing   import ignore_warnings
 from collections             import OrderedDict
 
 
-sub                 = 'sub-01'
+sub                 = 'sub-07'
 stacked_data_dir    = '../../../../data/BOLD_average/{}/'.format(sub)
 output_dir          = '../../../../results/MRI/nilearn/{}/decoding'.format(sub)
 if not os.path.exists(output_dir):

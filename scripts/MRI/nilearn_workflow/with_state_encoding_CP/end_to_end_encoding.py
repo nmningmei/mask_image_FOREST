@@ -137,20 +137,20 @@ all_images          = glob(os.path.join(f'../../../data/{image_fold}',
 model_names     = ['DenseNet169',           # 1024
 #                   'InceptionResNetV2',     # 1536
 #                   'InceptionV3',           # 2048
-                   'MobileNetV2',           # 1280
+#                   'MobileNetV2',           # 1280
 #                   'NASNetMobile',          # 1024
 #                   'ResNet50',              # 1536
-                   'VGG19',                 # 2048
+#                   'VGG19',                 # 2048
 #                   'Xception',              # 1280
                    ]
 
 pretrained_models = [applications.DenseNet169,
 #                     applications.InceptionResNetV2,
 #                     applications.InceptionV3,
-                     applications.MobileNetV2,
+#                     applications.MobileNetV2,
 #                     applications.NASNetMobile,
 #                     applications.ResNet50,
-                     applications.VGG19,
+#                     applications.VGG19,
 #                     applications.Xception,
                      ]
 
