@@ -511,7 +511,7 @@ def performance_of_CNN_and_get_hidden_features(
     gc.collect()
     def behaviroal_measure(shuffle_ = True):
         idxs = np.random.choice(np.arange(y_true.shape[0]),
-                               size = (100,int(y_true.shape[0] * .8)),
+                               size = (100,int(y_true.shape[0])),
                                replace = True,)
         if shuffle_:
             return np.array([roc_auc_score(y_true[idx],sk_shuffle(y_pred[idx])) for idx in idxs])

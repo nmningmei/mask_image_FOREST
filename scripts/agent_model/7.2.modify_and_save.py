@@ -24,7 +24,7 @@ working_data = np.sort(glob(os.path.join(working_dir,
                                  '*.npy')))
 working_data = working_data.reshape(-1,2)
 
-template = '8.simulation_experiment_decode_hidden_reprs.py'
+template = '7.1.simulation_experiment_decode_hidden_reprs.py'
 scripts_folder = 'decode_bash'
 if not os.path.exists(scripts_folder):
     os.mkdir(scripts_folder)

@@ -33,7 +33,7 @@ from shutil import rmtree
 idx_GPU = 0
 GPUs = [0,1]
 
-with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
+if True:
     working_dir         = '../../data'
     # define some hyperparameters for training
     batch_size          = 16
@@ -83,7 +83,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                                                 shuffle                 = [True,True],
                                                                 less_intense_validation = False,)
     tf.keras.backend.clear_session()
-    print(f'\nbuild pre-trained {model_name} ...\n')
+    print(f'\nbuild pre-trained {model_name}_{drop_rate}_{hidden_units}_{hidden_activation}_{output_activation} ...\n')
     clf = utils_deep.build_computer_vision_model(model_pretrained,
                                                  image_resize       = image_resize,
                                                  hidden_units       = hidden_units,
@@ -92,18 +92,18 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                                  drop_rate          = drop_rate,
                                                  hidden_activation  = hidden_activation,
                                                  )
-    #print(clf.trainable_weights)
-    clf.compile(optimizers.Adam(lr = 1e-4,),
-                loss_func,
-                metrics = ['categorical_accuracy'])
-    saving_model_name   = os.path.join(model_dir,f'{model_name}_{hidden_units}_caltech101.h5')
-    callbacks           = utils_deep.make_CallBackList(saving_model_name,
-                                                       monitor                 = 'val_{}'.format(clf.metrics_names[-2]),
-                                                       mode                    = 'min',
-                                                       verbose                 = 0,
-                                                       min_delta               = 1e-4,
-                                                       patience                = patience,
-                                                       frequency               = 1)
+#    #print(clf.trainable_weights)
+#    clf.compile(optimizers.Adam(lr = 1e-4,),
+#                loss_func,
+#                metrics = ['categorical_accuracy'])
+#    saving_model_name   = os.path.join(model_dir,f'{model_name}_{hidden_units}_caltech101.h5')
+#    callbacks           = utils_deep.make_CallBackList(saving_model_name,
+#                                                       monitor                 = 'val_{}'.format(clf.metrics_names[-2]),
+#                                                       mode                    = 'min',
+#                                                       verbose                 = 0,
+#                                                       min_delta               = 1e-4,
+#                                                       patience                = patience,
+#                                                       frequency               = 1)
     
 #    if not os.path.exists(saving_model_name):
 #        print(f'training {model_name} ...')
@@ -150,7 +150,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                        metrics = ['categorical_accuracy'])
     saving_model_name   = os.path.join(model_dir,f'{model_name}_{hidden_units}_binary.h5')
     callbacks           = utils_deep.make_CallBackList(saving_model_name,
-                                                       monitor                 = 'val_{}'.format(clf.metrics_names[-2]),
+                                                       monitor                 = 'val_{}'.format(classifier.metrics_names[-2]),
                                                        mode                    = 'min',
                                                        verbose                 = 0,
                                                        min_delta               = 1e-4,
@@ -177,7 +177,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     classifier.trainable = False
     for layer in classifier.layers:
         layer.trainable = False
-    if True:#not os.path.exists(os.path.join(model_dir,f'{1*10**4:.0e}')):
+    if not os.path.exists(os.path.join(model_dir,f'{1*10**4:.0e}')):
         # test on clear images to estimate the "best performance"
         gen = ImageDataGenerator(
                                 featurewise_center              = False,
@@ -201,10 +201,12 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                                 data_format                     = None,
                                 validation_split                = 0.0
                             )
+        ##########################################
         print(os.listdir(model_dir))
         items = [item for item in os.listdir(model_dir) if ('h5' not in item) and ('csv' not in item)]
         [rmtree(os.path.join(model_dir,item)) for item in items]
         print(os.listdir(model_dir))
+        ##########################################
         behavioral,beha_chance,ps = utils_deep.performance_of_CNN_and_get_hidden_features(
                        classifier,
                        gen,
@@ -227,9 +229,9 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
     simulation_saving_name = os.path.join(model_dir,'scores as a function of decoder and noise.csv')
     
     # add noise to the images
-    noise_levels = np.concatenate([[a * 10 ** b for a in np.arange(1,10) for b in np.arange(4,10)]]) #[1e2,1e3],
+    noise_levels = np.concatenate([[float(f'{a}e{b}') for a in np.arange(1,10) for b in np.arange(4,21)]]) #[1e2,1e3],
     noise_levels = np.sort(noise_levels)
-    if True:#not os.path.exists(simulation_saving_name):
+    if (not os.path.exists(simulation_saving_name)) or (pd.read_csv(simulation_saving_name).shape[0] < 8):
         df_temp = dict(noise_level      = [],
                        decoder          = [],
                        performance_mean = [],
@@ -253,11 +255,11 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
         df_temp = {col_name:list(temp[col_name]) for col_name in temp.columns}
     res_temp = []
     for var in (noise_levels):
-        if True:#var not in df_temp['noise_level']:
+        if var not in df_temp['noise_level']:
             noise_folder = os.path.join(model_dir,f'{var:.0e}')
             if not os.path.exists(noise_folder):
                 os.mkdir(noise_folder)
-            if True:#not os.path.exists(os.path.join(noise_folder,'features.npy')):
+            if not os.path.exists(os.path.join(noise_folder,'features.npy')):
                 noise_func = partial(utils_deep.process_func,preprocess_input = preprocess_input,var = var)
                 gen = ImageDataGenerator(
                                         featurewise_center              = False,
@@ -333,7 +335,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
                 df_to_save.to_csv(simulation_saving_name,index = False)
                 
                 res_temp.append(behavioral.mean())
-                if np.abs(np.mean(res_temp[-8:]) - .5) < 1e-2:
+                if (np.abs(np.mean(res_temp[-8:]) - .5) < 1e-3) and (len(res_temp) > 8):
                     break
         else:
             idx_ = np.where(df_temp['noise_level'] == var)[0][0]
@@ -342,6 +344,7 @@ with tf.device(f'/device:GPU:{GPUs[idx_GPU]}'):
             c = df_temp['chance_mean'][idx_]
             d = df_temp['chance_std'][idx_]
             e = df_temp['pval'][idx_]
+            res_temp.append(a)
             print(f'test on {var:.0e}, performance = {a:.3f}+/-{b:.0e} vs {c:.3f}+/-{d:.0e},p = {e:.3f}')
 
 
