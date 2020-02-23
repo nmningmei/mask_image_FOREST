@@ -15,6 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 import pickle
+#import faster # https://gist.github.com/wmvanvliet/d883c3fe1402c7ced6fc
 
 from sklearn.metrics                               import roc_auc_score,roc_curve
 from sklearn.metrics                               import (
@@ -60,7 +61,13 @@ from collections                                   import OrderedDict
 from scipy                                         import stats
 from collections                                   import Counter
 from mpl_toolkits.axes_grid1                       import make_axes_locatable
-import matplotlib.pyplot  as plt
+from matplotlib                                    import pyplot as plt
+from matplotlib.pyplot                             import cm
+from nilearn.plotting.img_plotting                 import (_load_anat,
+                                                           _utils,
+                                                           _plot_img_with_bg,
+                                                           _get_colorbar_and_data_ranges,
+                                                           _safe_get_data)
 import matplotlib.patches as patches
 
 
@@ -88,7 +95,9 @@ def preprocessing_conscious(raw,
                             notch_filter = 50,
                             event_id = {'living':1,'nonliving':2},
                             baseline = (None,None),
-                            perform_ICA = False,):
+                            perform_ICA = False,
+                            lowpass = None,
+                            interpolate_bad_channels = True,):
     """
     0. re-reference - explicitly
     """
@@ -102,12 +111,14 @@ def preprocessing_conscious(raw,
     picks = mne.pick_types(raw_ref.info,
                            meg = False, # No MEG
                            eeg = True,  # YES EEG
-                           eog = True,  # YES EOG
+                           eog = perform_ICA,  # depends on ICA
                            )
     # regardless the bandpass filtering later, we should always filter
     # for wire artifacts and their oscillations
     raw_ref.notch_filter(np.arange(notch_filter,241,notch_filter),
                          picks = picks)
+    if lowpass is not None:
+        raw_ref.filter(None,lowpass,)
     epochs      = mne.Epochs(raw_ref,
                              events,    # numpy array
                              event_id,  # dictionary
@@ -126,23 +137,28 @@ def preprocessing_conscious(raw,
                                eeg          = True, # YES EEG
                                eog          = False # NO EOG
                                )
-        ar          = AutoReject(
-                        picks               = picks,
-                        random_state        = 12345,
-                        )
-        ar.fit(epochs)
-        _,reject_log = ar.transform(epochs,return_log=True)
+        if interpolate_bad_channels:
+            interpolation_list = faster_bad_channels(epochs,picks=picks)
+            for ch_name in interpolation_list:
+                epochs.info['bads'].append(ch_name)
+            epochs = epochs.interpolate_bads()
+#        ar          = AutoReject(
+#                        picks               = picks,
+#                        random_state        = 12345,
+#                        )
+#        ar.fit(epochs)
+#        _,reject_log = ar.transform(epochs,return_log=True)
         # calculate the noise covariance of the epochs
-        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
-                                             tmin                   = tmin,
-                                             tmax                   = 0,
+        noise_cov   = mne.compute_covariance(epochs,#[~reject_log.bad_epochs],
+                                             tmin                   = baseline[0],
+                                             tmax                   = baseline[1],
                                              method                 = 'empirical',
                                              rank                   = None,)
         # define an ica function
         ica         = mne.preprocessing.ICA(n_components            = .99,
                                             n_pca_components        = .99,
                                             max_pca_components      = None,
-                                            method                  = 'extended-infomax',
+                                            method                  = 'infomax',
                                             max_iter                = int(3e3),
                                             noise_cov               = noise_cov,
                                             random_state            = 12345,)
@@ -150,7 +166,7 @@ def preprocessing_conscious(raw,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
-        ica.fit(epochs[~reject_log.bad_epochs],
+        ica.fit(epochs,#[~reject_log.bad_epochs],
                 picks   = picks,
                 start   = tmin,
                 stop    = tmax,
@@ -159,12 +175,12 @@ def preprocessing_conscious(raw,
                 )
         # search for artificial ICAs automatically
         # most of these hyperparameters were used in a unrelated published study
-        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+        ica.detect_artifacts(epochs,#[~reject_log.bad_epochs],
                              eog_ch         = ['FT9','FT10','TP9','TP10'],
                              eog_criterion  = 0.4, # arbitary choice
-                             skew_criterion = 2,   # arbitary choice
-                             kurt_criterion = 2,   # arbitary choice
-                             var_criterion  = 2,   # arbitary choice
+                             skew_criterion = 1,   # arbitary choice
+                             kurt_criterion = 1,   # arbitary choice
+                             var_criterion  = 1,   # arbitary choice
                              )
         picks       = mne.pick_types(epochs.info,
                                      eeg = True, # YES EEG
@@ -174,6 +190,16 @@ def preprocessing_conscious(raw,
                                 exclude    = ica.exclude,
                                 )
         epochs = epochs_ica.copy()
+    else:
+        picks       = mne.pick_types(epochs.info,
+                               eeg          = True, # YES EEG
+                               eog          = False # NO EOG
+                               )
+        if interpolate_bad_channels:
+            interpolation_list = faster_bad_channels(epochs,picks=picks)
+            for ch_name in interpolation_list:
+                epochs.info['bads'].append(ch_name)
+            epochs = epochs.interpolate_bads()
     # pick the EEG channels for later use
     clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
@@ -210,8 +236,10 @@ def preprocessing_unconscious(raw,
     # filter EOG and ECG channels
     picks = mne.pick_types(raw.info,
                            meg = False,
-                           eeg = True)
-    raw.filter(1,80,picks = picks,)
+                           eeg = False,
+                           eog = True,
+                           ecg = True,)
+    raw.filter(1,12,picks = picks,)
     # epoch the data
     picks = mne.pick_types(raw.info,
                            meg = True,
@@ -238,14 +266,14 @@ def preprocessing_unconscious(raw,
                                eog          = False, # NO EOG
                                ecg          = False, # NO ECG
                                )
-        ar          = AutoReject(
-                        picks               = picks,
-                        random_state        = 12345,
-                        )
-        ar.fit(epochs)
-        _,reject_log = ar.transform(epochs,return_log=True)
+#        ar          = AutoReject(
+#                        picks               = picks,
+#                        random_state        = 12345,
+#                        )
+#        ar.fit(epochs)
+#        _,reject_log = ar.transform(epochs,return_log=True)
         # calculate the noise covariance of the epochs
-        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+        noise_cov   = mne.compute_covariance(epochs,#[~reject_log.bad_epochs],
                                              tmin                   = tmin,
                                              tmax                   = 0,
                                              method                 = 'empirical',
@@ -262,7 +290,7 @@ def preprocessing_unconscious(raw,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
-        ica.fit(epochs[~reject_log.bad_epochs],
+        ica.fit(epochs,#[~reject_log.bad_epochs],
                 picks   = picks,
                 start   = tmin,
                 stop    = tmax,
@@ -271,25 +299,21 @@ def preprocessing_unconscious(raw,
                 )
         # search for artificial ICAs automatically
         # most of these hyperparameters were used in a unrelated published study
-        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+        ica.detect_artifacts(epochs,#[~reject_log.bad_epochs],
                              eog_ch         = eog_chs,
-                             ecg_ch         = ecg_chs,
+                             ecg_ch         = ecg_chs[0],
                              eog_criterion  = 0.4, # arbitary choice
                              ecg_criterion  = 0.1, # arbitary choice
                              skew_criterion = 1,   # arbitary choice
                              kurt_criterion = 1,   # arbitary choice
                              var_criterion  = 1,   # arbitary choice
                              )
-        picks       = mne.pick_types(epochs.info,
-                                     eeg = True, # YES EEG
-                                     eog = False # NO EOG
-                                     ) 
         epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
                                 exclude    = ica.exclude,
                                 )
         epochs = epochs_ica.copy()
     # pick the EEG channels for later use
-    clean_epochs = epochs.pick_types(eeg = True, eog = False)
+    clean_epochs = epochs.pick_types(meg = True, eeg = True, eog = False)
     
     return clean_epochs
 def _preprocessing_conscious(
@@ -580,19 +604,21 @@ def plot_temporal_decoding(times,
     ax.legend()
     return fig,ax
 def plot_temporal_generalization(scores_gen_,
-                                 epochs,
+                                 times,
                                  ii,
                                  conscious_state,
                                  frames,
                                  vmin = 0.4,
                                  vmax = 0.6):
     fig, ax = plt.subplots(figsize = (10,10))
+    if len(scores_gen_.shape) > 2:
+        scores_gen_ = scores_gen_.mean(0)
     im      = ax.imshow(
                         scores_gen_, 
-                        interpolation       = 'lanczos', 
+                        interpolation       = 'hamming', 
                         origin              = 'lower', 
                         cmap                = 'RdBu_r',
-                        extent              = epochs.times[[0, -1, 0, -1]], 
+                        extent              = times[[0, -1, 0, -1]], 
                         vmin                = vmin, 
                         vmax                = vmax,
                         )
@@ -801,10 +827,10 @@ def plot_EEG_autoreject_log(autoreject_object,):
     plt.colorbar(im)
     return fig
 def str2int(x):
-    try:
+    if type(x) is str:
         return float(re.findall(r'\d+',x)[0])
-    except:
-        return 999
+    else:
+        return x
 def simple_load(f,idx):
     df = pd.read_csv(f)
     df['run'] = idx
@@ -2523,27 +2549,34 @@ def check_train_balance(df,idx_train,keys):
         return idx_train
 
 
-def LOO_partition(df_data):
-    temp = {'targets':[],'labels':[]}
-    for (targets,labels),df_sub in df_data.groupby(['targets','labels']):
+def LOO_partition(df_data,target_column = 'labels'):
+    temp = {'targets':[],target_column:[]}
+    for (targets,labels),df_sub in df_data.groupby(['targets',target_column]):
         temp['targets'].append(targets)
-        temp['labels'].append(labels)
+        temp[target_column].append(labels)
     temp = pd.DataFrame(temp)
-    temp = temp.sort_values(['targets','labels'])
-    living = temp[temp['targets'] == 'Living_Things']['labels'].values
-    nonliving = temp[temp['targets'] == 'Nonliving_Things']['labels'].values
+    temp = temp.sort_values(['targets',target_column])
+    living = temp[temp['targets'] == 'Living_Things'][target_column].values
+    nonliving = temp[temp['targets'] == 'Nonliving_Things'][target_column].values
     test_pairs = [[a,b] for a in living for b in nonliving]
     idxs_train,idxs_test = [],[]
     for test_pair in test_pairs:
-        idx_test = np.logical_or(df_data['labels'] == test_pair[0],
-                                 df_data['labels'] == test_pair[1])
+        idx_test = np.logical_or(df_data[target_column] == test_pair[0],
+                                 df_data[target_column] == test_pair[1])
         idx_train = np.invert(idx_test)
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
 
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
-                   n_jobs = 12, verbose = 0):
+def resample_ttest(x,
+                   baseline         = 0.5,
+                   n_ps             = 100,
+                   n_permutation    = 10000,
+                   one_tail         = False,
+                   n_jobs           = 12, 
+                   verbose          = 0,
+                   full_size        = True
+                   ):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
     https://www.tau.ac.il/~saharon/StatisticsSeminar_files/Hypothesis.pdf
@@ -2555,53 +2588,73 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    # t statistics with the original data distribution
-    t_experiment = (np.mean(x) - baseline) / (np.std(x) / np.sqrt(x.shape[0]))
-    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
-    from joblib import Parallel,delayed
     import gc
+    from joblib import Parallel,delayed
+    # statistics with the original data distribution
+    t_experiment    = np.mean(x)
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    
+    if null.shape[0] > int(1e4): # catch for big data
+        full_size   = False
+    if not full_size:
+        size        = int(1e3)
+    else:
+        size = null.shape[0]
+    
+    
     gc.collect()
     def t_statistics(null,size,):
         """
         null: shifted data distribution
         size: tuple of 2 integers (n_for_averaging,n_permutation)
         """
-        null_dist = np.random.choice(null,size = size,replace = True)
-        t_null = (np.mean(null_dist,0) - baseline) / (np.std(null_dist,0) / np.sqrt(null_dist.shape[0]))
+        null_dist   = np.random.choice(null,size = size,replace = True)
+        t_null      = np.mean(null_dist,0)
         if one_tail:
             return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
         else:
             return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
     ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
                     'null':null,
-                    'size':(null.shape[0],int(n_permutation)),}) for i in range(n_ps))
+                    'size':(size,int(n_permutation)),}) for i in range(n_ps))
     
     return np.array(ps)
-def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
-                           one_tail=False,
-                           match_sample_size = True,
-                           n_jobs = 6,
-                           verbose = 0):
+def resample_ttest_2sample(a,b,
+                           n_ps                 = 100,
+                           n_permutation        = 10000,
+                           one_tail             = False,
+                           match_sample_size    = True,
+                           n_jobs               = 6,
+                           verbose              = 0):
+    from joblib import Parallel,delayed
+    import gc
     # when the samples are dependent just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
-        ps          = resample_ttest(difference,baseline=0,
-                                     n_ps=n_ps,n_permutation=n_permutation,
-                                     one_tail=one_tail,
-                                     n_jobs=n_jobs,
-                                     verbose=verbose,)
+        ps          = resample_ttest(difference,
+                                     baseline       = 0,
+                                     n_ps           = n_ps,
+                                     n_permutation  = n_permutation,
+                                     one_tail       = one_tail,
+                                     n_jobs         = n_jobs,
+                                     verbose        = verbose,)
         return ps
     else: # when the samples are independent
-        t_experiment,_ = stats.ttest_ind(a,b,equal_var = False)
+        t_experiment        = np.mean(a) - np.mean(b)
+        if not one_tail:
+            t_experiment    = np.abs(t_experiment)
+            
         def t_statistics(a,b):
-            group = np.random.choice(np.concatenate([a,b]),size = int(len(a) + len(b)),replace = True)
-            new_a = group[:a.shape[0]]
-            new_b = group[a.shape[0]:]
-            t_null,_ = stats.ttest_ind(new_a,new_b,equal_var = False)
+            group           = np.concatenate([a,b])
+            np.random.shuffle(group)
+            new_a           = group[:a.shape[0]]
+            new_b           = group[a.shape[0]:]
+            t_null          = np.mean(new_a) - np.mean(new_b)
+            if not one_tail:
+                t_null      = np.abs(t_null)
             return t_null
-        from joblib import Parallel,delayed
-        import gc
+        
         gc.collect()
         ps = np.zeros(n_ps)
         for ii in range(n_ps):
@@ -2640,14 +2693,14 @@ class MCPConverter(object):
         methods = ["bonferroni", "holm", "bh", "lfdr"]
          (local FDR method needs 'statsmodels' package)
         """
-        if method is "bonferroni":
+        if method == "bonferroni":
             return [np.min([1, i]) for i in self.sorted_pvals * self.len]
-        elif method is "holm":
+        elif method == "holm":
             return [np.min([1, i]) for i in (self.sorted_pvals * (self.len - np.arange(1, self.len+1) + 1))]
-        elif method is "bh":
+        elif method == "bh":
             p_times_m_i = self.sorted_pvals * self.len / np.arange(1, self.len+1)
             return [np.min([p, p_times_m_i[i+1]]) if i < self.len-1 else p for i, p in enumerate(p_times_m_i)]
-        elif method is "lfdr":
+        elif method == "lfdr":
             if self.zscores is None:
                 raise ValueError("Z-scores were not provided.")
             return sms.stats.multitest.local_fdr(abs(self.sorted_zscores))
@@ -2662,7 +2715,7 @@ class MCPConverter(object):
         else:
             df = pd.DataFrame(self.sorted_pvals, columns=["p_values"])
             for method in methods:
-                if method is not "lfdr":
+                if method != "lfdr":
                     df[method] = self.adjust(method)
         return df
 def define_roi_category():
@@ -2690,6 +2743,13 @@ def stars(x):
         return '*'
     else:
         return 'n.s.'
+
+def get_fs(x):
+    return x.split(' + ')[0]
+def get_clf(x):
+    return x.split(' + ')[1]
+def rename_roi(x):
+    return x.split('-')[-1] + '-' + x.split('-')[1]
 
 def strip_interaction_names(df_corrected):
     results = []
@@ -2973,12 +3033,515 @@ def get_label_subcategory_mapping():
  'wardrobe': 'Furniture',
  'whale': 'Marine_creatures',
  'zebra': 'Animals'}
+    
+def make_df_axis(df_data):
+    label_category_map = get_label_category_mapping()
+    label_subcategory_map = get_label_subcategory_mapping()
+    df_axis = pd.DataFrame({'labels':pd.unique(df_data['labels'])})
+    df_axis['category'] = df_axis['labels'].map(label_category_map)
+    df_axis['subcategory'] = df_axis['labels'].map(label_subcategory_map)
+    df_axis = df_axis.sort_values(['category','subcategory','labels'])
+    return df_axis
+
+def load_same_same(sub,target_folder = 'decoding',target_file = '*None*csv'):
+    working_dir = '../../../../results/MRI/nilearn/{}/{}'.format(sub,target_folder)
+    working_data = glob(os.path.join(working_dir,target_file))
+    
+    df = pd.concat([pd.read_csv(f) for f in working_data])
+    if 'model_name' not in df.columns:
+        df['model_name'] = df['model']
+    df['feature_selector'] = df['model_name'].apply(get_fs)
+    df['estimator'] = df['model_name'].apply(get_clf)
+    if 'score' in df.columns:
+        df['roc_auc'] = df['score']
+    
+    temp = np.array([item.split('-') for item in df['roi'].values])
+    df['roi_name'] = temp[:,1]
+    df['side'] = temp[:,0]
+    return df
+
+def plot_stat_map(stat_map_img, 
+                  bg_img                    = '', 
+                  cut_coords                = None,
+                  output_file               = None, 
+                  display_mode              = 'ortho', 
+                  colorbar                  = True,
+                  figure                    = None, 
+                  axes                      = None, 
+                  title                     = None, 
+                  threshold                 = 1e-6,
+                  annotate                  = True, 
+                  draw_cross                = True, 
+                  black_bg                  = 'auto',
+                  cmap                      = cm.coolwarm, 
+                  symmetric_cbar            = "auto",
+                  dim                       = 'auto', vmin_ = None,vmax=None, 
+                  resampling_interpolation  = 'continuous',
+                  **kwargs):
+    
+    bg_img, black_bg, bg_vmin, bg_vmax      = _load_anat(
+                  bg_img, 
+                  dim                       = dim,
+                  black_bg                  = black_bg)
+
+    stat_map_img                            = _utils.check_niimg_3d(
+                  stat_map_img, 
+                  dtype                     = 'auto')
+
+    cbar_vmin, cbar_vmax, vmin, vmax        = _get_colorbar_and_data_ranges(
+                  _safe_get_data(
+                          stat_map_img, 
+                          ensure_finite     = True),
+                          vmax,
+                          symmetric_cbar,
+                          kwargs)
+    display                                 = _plot_img_with_bg(
+                  img                       = stat_map_img, 
+                  bg_img                    = bg_img, 
+                  cut_coords                = cut_coords,
+                  output_file               = output_file, 
+                  display_mode              = display_mode,
+                  figure                    = figure, 
+                  axes                      = axes, 
+                  title                     = title, 
+                  annotate                  = annotate,
+                  draw_cross                = draw_cross, 
+                  black_bg                  = black_bg, 
+                  threshold                 = threshold,
+                  bg_vmin                   = bg_vmin, 
+                  bg_vmax                   = bg_vmax, 
+                  cmap                      = cmap, 
+                  vmin                      = vmin_, 
+                  vmax                      = vmax,
+                  colorbar                  = colorbar, 
+                  cbar_vmin                 = vmin_, 
+                  cbar_vmax                 = cbar_vmax,
+                  resampling_interpolation  = resampling_interpolation, 
+                  **kwargs)
+
+    return display
+
+def cross_validation(feature_dir,
+                     encoding_model,
+                     custom_scorer,
+                     BOLD_sc_source,
+                     idxs_train_source,
+                     idxs_test_source,
+                     image_source,
+                     image_target,):
+    """
+    Encoding pipeline
+    """
+    from sklearn import linear_model
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import GridSearchCV,cross_validate
+    from sklearn.pipeline import make_pipeline
+    features_source         = np.array([np.load(os.path.join(feature_dir,
+                                                            encoding_model,
+                                                            item)) for item in image_source])
+    features_target         = np.array([np.load(os.path.join(feature_dir,
+                                                            encoding_model,
+                                                            item)) for item in image_target])
+    pca         = PCA(n_components = .99,random_state = 12345)
+    reg         = linear_model.Ridge(normalize      = True,
+                                     alpha          = 1,
+                                     random_state   = 12345)
+    reg         = GridSearchCV(make_pipeline(pca,reg),
+                               dict(ridge__alpha = np.logspace(1,12,12),
+                                    ),
+                               scoring  = custom_scorer,
+                               n_jobs   = 1,
+                               cv       = 5,
+#                               iid      = False,
+                               )
+    res = cross_validate(reg,
+                         features_source,
+                         BOLD_sc_source,
+                         scoring  = 'r2',
+                         cv = zip(idxs_train_source,idxs_test_source),
+                         return_estimator = True,
+                         n_jobs = -1,
+                         verbose = 1,)
+    return res,features_target,features_source
+
+def fill_results(scores,
+                 results,
+                 n_splits,
+                 conscious_source,
+                 conscious_target,
+                 roi_name,
+                 BOLD_sc_source,
+                 features_source,
+                 corr,):
+    mean_variance = scores.copy()
+    mean_variance = np.array([item[item > 0].mean() for item in mean_variance])
+    positive_voxels = np.array([np.sum(temp > 0) for temp in scores])
+    positive_voxel_indices = [','.join(str(item) for item in np.where(row > 0.)[0]) for row in scores]
+    
+    scores_to_save = mean_variance.copy()
+    scores_to_save = np.nan_to_num(scores_to_save,)
+    results['mean_variance'] = scores.mean(1)#scores_to_save
+    results['fold'] = np.arange(n_splits) + 1
+    results['conscious_source'] = [conscious_source] * n_splits
+    results['conscious_target'] = [conscious_target] * n_splits
+    results['roi_name'] = [roi_name] * n_splits
+    results['positive voxels'  ]= positive_voxels
+    results['n_parameters'] = [BOLD_sc_source.shape[1] * features_source.shape[1]] * n_splits
+    results['corr'] = corr
+    results['positive_voxel_indices'] = positive_voxel_indices
+    return scores.mean(1),results
+###################################################################################
+###################################################################################
+import numpy as np
+import scipy.signal
+from scipy.stats import kurtosis
+from mne.preprocessing import find_outliers
+from numpy import nanmean
+from mne.utils import logger
+#from mne.preprocessing.eog import _get_eog_channel_index
 
 
+def hurst(x):
+    """Estimate Hurst exponent on a timeseries.
+
+    The estimation is based on the second order discrete derivative.
+
+    Parameters
+    ----------
+    x : 1D numpy array
+        The timeseries to estimate the Hurst exponent for.
+
+    Returns
+    -------
+    h : float
+        The estimation of the Hurst exponent for the given timeseries.
+    """
+    y = np.cumsum(np.diff(x, axis=1), axis=1)
+
+    b1 = [1, -2, 1]
+    b2 = [1,  0, -2, 0, 1]
+
+    # second order derivative
+    y1 = scipy.signal.lfilter(b1, 1, y, axis=1)
+    y1 = y1[:, len(b1) - 1:-1]  # first values contain filter artifacts
+
+    # wider second order derivative
+    y2 = scipy.signal.lfilter(b2, 1, y, axis=1)
+    y2 = y2[:, len(b2) - 1:-1]  # first values contain filter artifacts
+
+    s1 = np.mean(y1 ** 2, axis=1)
+    s2 = np.mean(y2 ** 2, axis=1)
+
+    return 0.5 * np.log2(s2 / s1)
+
+def _freqs_power(data, sfreq, freqs):
+    fs, ps = scipy.signal.welch(data, sfreq,
+                                nperseg=2 ** int(np.log2(10 * sfreq) + 1),
+                                noverlap=0,
+                                axis=-1)
+    return np.sum([ps[..., np.searchsorted(fs, f)] for f in freqs], axis=0)
+
+def faster_bad_channels(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the first step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad EEG channels by performing
+    outlier detection. It operated on epoched data, to make sure only relevant
+    data is analyzed.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs for which bad channels need to be marked
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. A channel
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'variance', 'correlation', 'hurst', 'kurtosis', 'line_noise'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of str
+        The names of the bad EEG channels.
+    """
+    metrics = {
+        'variance':    lambda x: np.var(x, axis=1),
+        'correlation': lambda x: nanmean(
+                           np.ma.masked_array(
+                               np.corrcoef(x),
+                               np.identity(len(x), dtype=bool)
+                           ),
+                           axis=0),
+        'hurst':       lambda x: hurst(x),
+        'kurtosis':    lambda x: kurtosis(x, axis=1),
+        'line_noise':  lambda x: _freqs_power(x, epochs.info['sfreq'],
+                                              [50, 60]),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True, exclude=[])
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    # Concatenate epochs in time
+    data = epochs.get_data()
+    data = data.transpose(1, 0, 2).reshape(data.shape[1], -1)
+    data = data[picks]
+
+    # Find bad channels
+    bads = []
+    for m in use_metrics:
+        s = metrics[m](data)
+        b = [epochs.ch_names[picks[i]] for i in find_outliers(s, thres)]
+        logger.info('Bad by %s:\n\t%s' % (m, b))
+        bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def _deviation(data):
+    """Computes the deviation from mean for each channel in a set of epochs.
+
+    This is not implemented as a lambda function, because the channel means
+    should be cached during the computation.
+    
+    Parameters
+    ----------
+    data : 3D numpy array
+        The epochs (#epochs x #channels x #samples).
+
+    Returns
+    -------
+    dev : 1D numpy array
+        For each epoch, the mean deviation of the channels.
+    """
+    ch_mean = np.mean(data, axis=2)
+    return ch_mean - np.mean(ch_mean, axis=0)
+
+def faster_bad_epochs(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the second step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad epochs by performing
+    outlier detection.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs to analyze.
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. An epoch
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'amplitude', 'variance', 'deviation'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of int
+        The indices of the bad epochs.
+    """
+
+    metrics = {
+        'amplitude': lambda x: np.mean(np.ptp(x, axis=2), axis=1),
+        'deviation': lambda x: np.mean(_deviation(x), axis=1),
+        'variance':  lambda x: np.mean(np.var(x, axis=2), axis=1),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True,
+                               exclude='bads')
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    data = epochs.get_data()[:, picks, :]
+
+    bads = []
+    for m in use_metrics:
+        s = metrics[m](data)
+        b = find_outliers(s, thres)
+        logger.info('Bad by %s:\n\t%s' % (m, b))
+        bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def _power_gradient(ica, source_data):
+    # Compute power spectrum
+    f, Ps = scipy.signal.welch(source_data, ica.info['sfreq'])
+
+    # Limit power spectrum to upper frequencies
+    Ps = Ps[:, np.searchsorted(f, 25):np.searchsorted(f, 45)]
+
+    # Compute mean gradients
+    return np.mean(np.diff(Ps), axis=1)
 
 
+def faster_bad_components(ica, epochs, thres=3, use_metrics=None):
+    """Implements the third step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad ICA components by
+    performing outlier detection.
 
+    Parameters
+    ----------
+    ica : Instance of ICA
+        The ICA operator, already fitted to the supplied Epochs object.
+    epochs : Instance of Epochs
+        The untransformed epochs to analyze.
+    thres : float
+        The threshold value, in standard deviations, to apply. A component
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'eog_correlation', 'kurtosis', 'power_gradient', 'hurst',
+            'median_gradient'
+        Defaults to all of them.
 
+    Returns
+    -------
+    bads : list of int
+        The indices of the bad components.
+
+    See also
+    --------
+    ICA.find_bads_ecg
+    ICA.find_bads_eog
+    """
+    source_data = ica.get_sources(epochs).get_data().transpose(1,0,2)
+    source_data = source_data.reshape(source_data.shape[0], -1)
+
+    metrics = {
+        'eog_correlation': lambda x: x.find_bads_eog(epochs)[1],
+        'kurtosis':        lambda x: kurtosis(
+                               np.dot(
+                                   x.mixing_matrix_.T,
+                                   x.pca_components_[:x.n_components_]),
+                               axis=1),
+        'power_gradient':  lambda x: _power_gradient(x, source_data),
+        'hurst':           lambda x: hurst(source_data),
+        'median_gradient': lambda x: np.median(np.abs(np.diff(source_data)),
+                                               axis=1),
+        'line_noise':  lambda x: _freqs_power(source_data,
+                                              epochs.info['sfreq'], [50, 60]),
+    }
+
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    bads = []
+    for m in use_metrics:
+        scores = np.atleast_2d(metrics[m](ica))
+        for s in scores:
+            b = find_outliers(s, thres)
+            logger.info('Bad by %s:\n\t%s' % (m, b))
+            bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def faster_bad_channels_in_epochs(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the fourth step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad channels in each epochs by
+    performing outlier detection.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs to analyze.
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. An epoch
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'amplitude', 'variance', 'deviation', 'median_gradient'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of lists of int
+        For each epoch, the indices of the bad channels.
+    """
+
+    metrics = {
+        'amplitude':       lambda x: np.ptp(x, axis=2),
+        'deviation':       lambda x: _deviation(x),
+        'variance':        lambda x: np.var(x, axis=2),
+        'median_gradient': lambda x: np.median(np.abs(np.diff(x)), axis=2),
+        'line_noise':      lambda x: _freqs_power(x, epochs.info['sfreq'],
+                                                  [50, 60]),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True,
+                               exclude='bads')
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    
+    data = epochs.get_data()[:, picks, :]
+
+    bads = [[] for i in range(len(epochs))]
+    for m in use_metrics:
+        s_epochs = metrics[m](data)
+        for i, s in enumerate(s_epochs):
+            b = [epochs.ch_names[picks[j]] for j in find_outliers(s, thres)]
+            logger.info('Epoch %d, Bad by %s:\n\t%s' % (i, m, b))
+            bads[i].append(b)
+
+    for i, b in enumerate(bads):
+        if len(b) > 0:
+            bads[i] = np.unique(np.concatenate(b)).tolist()
+
+    return bads
+
+def run_faster(epochs, thres=3, copy=True):
+    """Run the entire FASTER pipeline on the data.
+    """
+    if copy:
+        epochs = epochs.copy()
+
+    # Step one
+    logger.info('Step 1: mark bad channels')
+    epochs.info['bads'] += faster_bad_channels(epochs, thres=5)
+
+    # Step two
+    logger.info('Step 2: mark bad epochs')
+    bad_epochs = faster_bad_epochs(epochs, thres=thres)
+    good_epochs = list(set(range(len(epochs))).difference(set(bad_epochs)))
+    epochs = epochs[good_epochs]
+
+    # Step three (using the build-in MNE functionality for this)
+    logger.info('Step 3: mark bad ICA components')
+    picks = mne.pick_types(epochs.info, meg=False, eeg=True, eog=True, exclude='bads')
+    ica = mne.preprocessing.run_ica(epochs, len(picks), picks=picks, eog_ch=['vEOG', 'hEOG'])
+    print(ica.exclude)
+    ica.apply(epochs)
+
+    # Step four
+    logger.info('Step 4: mark bad channels for each epoch')
+    bad_channels_per_epoch = faster_bad_channels_in_epochs(epochs, thres=thres)
+    for i, b in enumerate(bad_channels_per_epoch):
+        if len(b) > 0:
+            epoch = epochs[i]
+            epoch.info['bads'] += b
+            epoch.interpolate_bads_eeg()
+            epochs._data[i, :, :] = epoch._data[0, :, :]
+
+    # Now that the data is clean, apply average reference
+    epochs.info['custom_ref_applied'] = False
+    epochs, _ = mne.io.set_eeg_reference(epochs)
+    epochs.apply_proj()
+
+    # That's all for now
+    return epochs
+######################################################################################
+######################################################################################
 
 
 
