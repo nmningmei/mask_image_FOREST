@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1152:00:00
+#PBS -N S1SPT11unconscious
+#PBS -o bash/out_1unconscious11.txt
+#PBS -e bash/err_1unconscious11.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-superiorparietal unconscious"
+
+python "STP_unconscious_11.py"

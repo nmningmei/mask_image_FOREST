@@ -30,6 +30,8 @@ from sklearn.model_selection import (cross_validate,
 from sklearn                 import metrics
 from sklearn.exceptions      import ConvergenceWarning
 from sklearn.utils.testing   import ignore_warnings
+from sklearn.base            import clone
+from joblib                  import Parallel, delayed
 from collections             import OrderedDict
 
 
@@ -50,6 +52,7 @@ label_map           = {'Nonliving_Things':[0,1],
                        'Living_Things':   [1,0]}
 average             = True
 n_jobs              = -1
+n_permutations      = int(1e5)
 
 idx = 0
 np.random.seed(12345)
@@ -57,20 +60,19 @@ BOLD_name,df_name   = BOLD_data[idx],event_data[idx]
 BOLD                = np.load(BOLD_name)
 df_event            = pd.read_csv(df_name)
 roi_name            = df_name.split('/')[-1].split('_events')[0]
-for conscious_state in ['unconscious','glimpse','conscious']:
+#for conscious_state in ['unconscious','glimpse','conscious']:
+conscious_state     = 'unconscious' # condition_change <- making it for batch process
+if True: # meaningless
     idx_unconscious = df_event['visibility'] == conscious_state
     data            = BOLD[idx_unconscious]
     df_data         = df_event[idx_unconscious].reset_index(drop=True)
     df_data['id']   = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
     targets         = np.array([label_map[item] for item in df_data['targets'].values])[:,-1]
     
-    cv = LeavePGroupsOut(n_groups = int(pd.unique(df_data['session']).shape[0] / 2))
-    idxs_train,idxs_test = [],[]
-    for idx_train,idx_test in cv.split(data,targets,groups = df_data['session'].values):
-        idxs_train.append(idx_train)
-        idxs_test.append(idx_test)
     
-    n_splits = len(idxs_train)
+    cv = LeavePGroupsOut(n_groups = int(pd.unique(df_data['session']).shape[0] / 2))
+    
+    
     
     for model_name in model_names:
         file_name   = f'decoding {sub} {roi_name} {conscious_state} {model_name}.csv'
@@ -84,28 +86,64 @@ for conscious_state in ['unconscious','glimpse','conscious']:
             features    = data.copy()
             targets     = targets.copy()
             
-            with ignore_warnings(category = ConvergenceWarning):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ConvergenceWarning)
                 gc.collect()
+                # get the cross validation scores
                 res = cross_validate(pipeline,
                                      features,
                                      targets,
+                                     groups             = df_data['session'].values,
                                      scoring            = 'roc_auc',
-                                     cv                 = zip(idxs_train,idxs_test),
+                                     cv                 = cv,#zip(idxs_train,idxs_test),
                                      return_estimator   = True,
                                      n_jobs             = n_jobs,
                                      verbose            = 1,
                                      )
                 gc.collect()
-                ss,permutation,pval = permutation_test_score(
-                                     pipeline,
+                def _permutation(pipeline,
+                                 features,
+                                 targets,
+                                 groups,
+                                 cv = cv,
+                                 n_jobs = 1,):
+                    worker = clone(pipeline)
+                    y = shuffle(targets)
+                    k = cross_validate(worker,
                                      features,
-                                     targets,
-                                     n_permutations     = int(1e4),
+                                     y,
+                                     groups             = groups,
                                      scoring            = 'roc_auc',
-                                     cv                 = zip(idxs_train,idxs_test),
+                                     cv                 = cv,
                                      n_jobs             = n_jobs,
-                                     verbose            = 1,)
+                                     verbose            = 0,)
+                    return k['test_score']
+                
+                permutation_scores = []
+                for _ in range(n_permutations):
+                    gc.collect()
+                    temp = _permutation(pipeline,
+                                        shuffle(features),
+                                        targets,
+                                        groups = df_data['session'].values,
+                                        cv = cv,
+                                        n_jobs = n_jobs,
+                                        )
+                    gc.collect()
+                    permutation_scores.append(temp.mean())
+                
+#                permutation_scores = Parallel(n_jobs = n_jobs,verbose = 1)(delayed(_permutation)(**{
+#                        'pipeline':pipeline,
+#                        'features':features,
+#                        'targets':targets,
+#                        'groups':df_data['session'].values,
+#                        'cv':cv,}) for _ in range(n_permutations))
                 gc.collect()
+                
+            idxs_test = []
+            for _,idx_test in cv.split(features,targets,groups = df_data['session'].values):
+                idxs_test.append(idx_test)
+            n_splits = len(idxs_test)
             preds               = [estimator.predict_proba(  features[ii])[:,-1] for ii,estimator in zip(idxs_test,res['estimator'])]
             roc_auc             = [metrics.roc_auc_score(    targets[ii],y_pred,average = 'micro') for ii,y_pred in zip(idxs_test,preds)]
             threshold_          = [Find_Optimal_Cutoff(      targets[ii],y_pred) for ii,y_pred in zip(idxs_test,preds)]
@@ -115,6 +153,8 @@ for conscious_state in ['unconscious','glimpse','conscious']:
             
             temp                = np.array([metrics.confusion_matrix(targets[ii],y_pred > thres_).ravel() for ii,y_pred,thres_ in zip(idxs_test,preds,threshold_)])
             tn, fp, fn, tp      = temp[:,0],temp[:,1],temp[:,2],temp[:,3]
+            
+            pval = (np.sum(np.mean(roc_auc) > permutation_scores) + 1) / (n_permutations + 1)
             
             results                         = OrderedDict()
             results['fold']                 = np.arange(n_splits) + 1

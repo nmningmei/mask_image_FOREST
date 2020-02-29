@@ -118,6 +118,67 @@ ax.set(xlabel = 'Conscious State',
        ylabel = 'ROC AUC')
 ax.get_legend().set_title("")
 fig.savefig(os.path.join(figure_dir,
-                         'behaviroal.png'),
+                         'behaviroal.jpeg'),
             dpi = 400,
             bbox_inches = 'tight')
+
+
+# parsing RT based on correct incorrect
+df['visibility'] = df['visible.keys_raw'].apply(utils.str2int).map({
+        1:'Unconscious',
+        2:'Glimpse',
+        3:'Conscious',})
+df['x'] = df['visible.keys_raw'].apply(utils.str2int).apply(
+        lambda x: x + np.random.normal(0,0.1))
+
+df['rt'] = df['response.rt_raw']
+df['correct'] = df['response.corr_raw']
+
+fig,axes = plt.subplots(figsize = (12,12),
+                        nrows = 3,
+                        ncols = 3,
+                        sharex = True,
+                        sharey = True,
+                        )
+for ax,(sub,df_sub) in zip(axes.flatten(),df.groupby('sub')):
+    ax = sns.violinplot(x = 'visibility',
+                        y = 'response.rt_raw',
+                        hue = 'response.corr_raw',
+                        hue_order = [1,0],
+                        data = df_sub,
+                        palette = ['blue','red'],
+                        ax = ax,
+                        cut = 0,
+                        split = True,
+                        inner = 'quartile',
+                        )
+    ax.set(xticks = [0,1,2],
+           xticklabels = ['Unconscious',
+                          'Glimpse',
+                          'Conscious'],
+           xlabel = '',
+           ylabel = 'Raction Time (sec)',
+           title = f'{sub}'
+           )
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend().remove()
+ax.set(xlabel = 'Conscious State')
+fig.legend(handles,
+           ['Correct','Incorrect'],
+           loc = "center right",
+           borderaxespad = 0.1,
+           )
+fig.savefig(os.path.join(figure_dir,
+                         'Reaction as function of conscious split by correction.jpeg'),
+        dpi = 300,
+        bbox_inches = 'tight')
+
+df.to_csv('score.csv',index = False)
+
+
+from statsmodels.stats.anova import AnovaRM
+res = AnovaRM(data = df, depvar = 'rt',subject = 'sub',
+              within = ['visibility','correct'],
+              aggregate_func = 'mean').fit()
+print(res.anova_table)
+

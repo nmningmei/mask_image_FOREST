@@ -1,0 +1,18 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=18
+#pBS -l ncpus=18
+#PBS -l mem=54gb
+#PBS -l cput=432:00:00
+#PBS -N S1unconsciousRSA
+#PBS -o bash/out_sub1_unconscious.txt
+#PBS -e bash/err_sub1_unconscious.txt
+
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+source activate keras-2.1.6_tensorflow-2.0.0
+pwd
+
+python RSA_unconscious_1.py
+

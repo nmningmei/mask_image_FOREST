@@ -105,7 +105,6 @@ model_names     = ['DenseNet169',           # 1024
                    'InceptionResNetV2',     # 1536
                    'InceptionV3',           # 2048
                    'MobileNetV2',           # 1280
-#                   'NASNetMobile',          # 1024
                    'ResNet50',              # 1536
                    'VGG19',                 # 2048
                    'Xception',              # 1280
@@ -115,7 +114,6 @@ pretrained_models = [applications.DenseNet169,
                      applications.InceptionResNetV2,
                      applications.InceptionV3,
                      applications.MobileNetV2,
-#                     applications.NASNetMobile,
                      applications.ResNet50,
                      applications.VGG19,
                      applications.Xception,
@@ -125,7 +123,6 @@ preprcessing_funcs = [applications.densenet.preprocess_input,
                       applications.inception_resnet_v2.preprocess_input,
                       applications.inception_v3.preprocess_input,
                       applications.mobilenet_v2.preprocess_input,
-#                      applications.nasnet.preprocess_input,
                       applications.resnet50.preprocess_input,
                       applications.vgg19.preprocess_input,
                       applications.xception.preprocess_input,
@@ -180,7 +177,7 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
         layer.trainable = False
     
     # now, adding 2 more layers: CNN --> 300 --> discriminative prediction
-    drop_rate = 0.5
+    drop_rate = 0.5 # no drop out during fine-tuning
     fine_tune_model = model_loaded.output
     fine_tune_model = layers.GlobalAveragePooling2D(name = 'Globalave')(fine_tune_model)
     r = models.Model(model_loaded.inputs,fine_tune_model)
@@ -343,23 +340,23 @@ for model_name,model,preprocess_input in zip(model_names,pretrained_models,prepr
     RDM = distance.squareform(distance.pdist(temp,'cosine'))
     np.fill_diagonal(RDM,np.nan)
     
-    fig,ax = plt.subplots(figsize = (30,30))
-    im = ax.imshow(RDM,
-                   cmap = plt.cm.RdBu_r,
-                   vmin = 0,
-                   origin = 'lower',
-                   alpha = 0.9)
-    ax.set(xticks   = np.arange(96),
-           yticks   = np.arange(96),
-           title    = f'Representational Dissimilarity Matrix\n96 unique items\nimage resize to {image_resize} by {image_resize}, pretrained model: {model_name}')
-    ax.set_xticklabels(labels,rotation = 90)
-    ax.set_yticklabels(labels)
-    ax.axhline(95/2,linestyle='--',alpha=1.,color='black')
-    ax.axvline(95/2,linestyle='--',alpha=1.,color='black')
-    plt.colorbar(im)
-    fig.savefig(os.path.join(figure_dir,f'RDM {model_name}.jpeg'),
-                dpi = 500,
-                bbox_inches = 'tight',)
+#    fig,ax = plt.subplots(figsize = (30,30))
+#    im = ax.imshow(RDM,
+#                   cmap = plt.cm.RdBu_r,
+#                   vmin = 0,
+#                   origin = 'lower',
+#                   alpha = 0.9)
+#    ax.set(xticks   = np.arange(96),
+#           yticks   = np.arange(96),
+#           title    = f'Representational Dissimilarity Matrix\n96 unique items\nimage resize to {image_resize} by {image_resize}, pretrained model: {model_name}')
+#    ax.set_xticklabels(labels,rotation = 90)
+#    ax.set_yticklabels(labels)
+#    ax.axhline(95/2,linestyle='--',alpha=1.,color='black')
+#    ax.axvline(95/2,linestyle='--',alpha=1.,color='black')
+#    plt.colorbar(im)
+#    fig.savefig(os.path.join(figure_dir,f'RDM {model_name}.jpeg'),
+#                dpi = 500,
+#                bbox_inches = 'tight',)
     
     from shutil import copyfile
     copyfile('../../utils.py','utils.py')

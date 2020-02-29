@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=864:00:00
+#PBS -N S1_conscious_R14
+#PBS -o bash/out_1_conscious_14.txt
+#PBS -e bash/err_1_conscious_14.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-inferiorparietal"
+
+python "LPO_conscious_14.py"

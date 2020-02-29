@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=864:00:00
+#PBS -N S1_conscious_R23
+#PBS -o bash/out_1_conscious_23.txt
+#PBS -e bash/err_1_conscious_23.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-superiorparietal"
+
+python "LPO_conscious_23.py"

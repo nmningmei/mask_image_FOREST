@@ -181,8 +181,10 @@ if __name__ == '__main__':
                     y_in = y_valid.copy()
                     
                     torch.manual_seed(12345)
-                    device = "cpu"
+                    if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345);
+                    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                     model = utils_deep.VAE(
+                            device = device,
                             input_dim = X_train.shape[1],
                             output_dim = y_train.shape[1],
                             encode_dims = [],
@@ -192,13 +194,6 @@ if __name__ == '__main__':
                                             ).to(device)
                     loss_function = utils_deep.VEA_loss_function
                     
-                    Bayesian_optimization_params = {
-                            'n_iters':20,
-                            'bounds':np.array([[1,int(1e3)]]),
-                            'patience':6,
-#                            'gp_params':{'random_state':12345},
-                            'x0':np.array([25,50,100]).reshape(3,-1),
-                            }
                     print('fitting ...')
                     model,test_losses = utils_deep.black_box_process(X_train,y_train,
                                                                      X_valid,y_valid,
@@ -212,8 +207,7 @@ if __name__ == '__main__':
                     
                     pred,score,corr = utils_deep.search_for_n_repeats(X_in,y_in,
                                                                       X_test,y_test,
-                                                                      model,
-                                                                      Bayesian_optimization_params = Bayesian_optimization_params,
+                                                                      model.to('cpu'),
                                                                       print_train = False,
                                                                       n_jobs = n_jobs,
                                                                       verbose = verbose,
@@ -234,8 +228,10 @@ if __name__ == '__main__':
                     y_in = y_valid.copy()
                     
                     torch.manual_seed(12345)
-                    device = "cpu"
+                    if torch.cuda.is_available():torch.cuda.empty_cache();torch.cuda.manual_seed(12345);
+                    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                     model = utils_deep.VAE(
+                            device = device,
                             input_dim = X_train.shape[1],
                             output_dim = y_train.shape[1],
                             encode_dims = [],
@@ -258,8 +254,7 @@ if __name__ == '__main__':
                     
                     pred,score,corr = utils_deep.search_for_n_repeats(X_in,y_in,
                                                                       X_test,y_test,
-                                                                      model,
-                                                                      Bayesian_optimization_params = Bayesian_optimization_params,
+                                                                      model.to('cpu'),
                                                                       print_train = False,
                                                                       n_jobs = n_jobs,
                                                                       verbose = verbose,

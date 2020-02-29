@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1152:00:00
+#PBS -N S1SPT20unconscious
+#PBS -o bash/out_1unconscious20.txt
+#PBS -e bash/err_1unconscious20.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-precuneus unconscious"
+
+python "STP_unconscious_20.py"

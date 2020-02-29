@@ -1,0 +1,18 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=18
+#pBS -l ncpus=18
+#PBS -l mem=54gb
+#PBS -l cput=432:00:00
+#PBS -N S4consciousRSA
+#PBS -o bash/out_sub4_conscious.txt
+#PBS -e bash/err_sub4_conscious.txt
+
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+source activate keras-2.1.6_tensorflow-2.0.0
+pwd
+
+python RSA_conscious_4.py
+

@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=864:00:00
+#PBS -N S1LSRO18
+#PBS -o bash/out_118.txt
+#PBS -e bash/err_118.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "rh-parahippocampal"
+
+python "LSRO_18.py"

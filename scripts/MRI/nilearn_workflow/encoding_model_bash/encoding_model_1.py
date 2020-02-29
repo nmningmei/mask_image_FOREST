@@ -42,7 +42,7 @@ def score_func(y, y_pred,):
 custom_scorer      = metrics.make_scorer(score_func,greater_is_better = True)
 if __name__ == '__main__':
     sub                 = 'sub-01'
-    target_folder       = 'encoding_LOO'
+    target_folder       = 'encoding_CP'
     data_folder         = 'BOLD_average' # BOLD_average_prepeak
     stacked_data_dir    = '../../../../data/{}/{}/'.format(data_folder,sub)
     background_dir      = '../../../../data/computer_vision_background'
@@ -56,17 +56,16 @@ if __name__ == '__main__':
     
     label_map           = {'Nonliving_Things':[0,1],
                            'Living_Things':   [1,0]}
-    n_splits            = 1000
+    n_splits            = 300
     n_jobs              = -1
     
-    idx = 0
-    np.random.seed(12345)
+    idx                 = 0
     BOLD_name,df_name   = BOLD_data[idx],event_data[idx]
     BOLD                = np.load(BOLD_name)
     df_event            = pd.read_csv(df_name)
     roi_name            = df_name.split('/')[-1].split('_events')[0]
     
-    
+    np.random.seed(12345)
     for conscious_source in ['unconscious','glimpse','conscious']:
         for conscious_target in ['unconscious','glimpse','conscious']:
             idx_source              = df_event['visibility'] == conscious_source
@@ -164,13 +163,16 @@ if __name__ == '__main__':
                     regs = res['estimator']
                     preds   = [est.predict(features_target[idx_test]) for est,idx_test in zip(regs,idxs_target_test)]
                     scores  = np.array([metrics.r2_score(BOLD_sc_target[idx_test_target],pred,multioutput = 'raw_values') for idx_test_target,pred in zip(idxs_target_test,preds)])
-                    corr    = [np.mean([distance.cdist(a.reshape(1,-1) - a.mean(),b.reshape(1,-1) - b.mean(),'cosine',
-                                                   ).flatten()[0] for a,b in zip(BOLD_norm_target[idx_test],pred)]) for idx_test,pred in zip(idxs_target_test,preds)]
+                    corr    = [np.mean([np.corrcoef(a,b)[0, 1]**2 for a,b in zip(BOLD_norm_target[idx_test],pred)]) for idx_test,pred in zip(idxs_target_test,preds)]
                     results = OrderedDict()
-                    weights = np.array([np.sqrt(np.sum(est.best_estimator_.coef_**2)) for est in regs])
-                    alpha = np.array([list(est.best_params_.values())[0] for est in regs])
-                    results['weight_sum'] = [np.sum(np.abs(est.best_estimator_.coef_)) for est in regs]
-                    results['alphas'] = [list(est.best_params_.values())[0] for est in regs]
+                    try:
+                        weights = [np.sum(np.abs(est.best_estimator_.coef_)) for est in regs]
+                    except:
+                        weights = [np.sum(np.abs(est.best_estimator_.steps[-1][-1].coef_)) for est in regs]
+                    alphas = np.array([list(est.best_params_.values())[0] for est in regs])
+                    results['weight_sum'] = weights
+                    results['alphas'] = alphas
+                    
                     mean_variance,results = fill_results(
                                                          scores,
                                                          results,
@@ -181,7 +183,7 @@ if __name__ == '__main__':
                                                          BOLD_sc_source,
                                                          features_source,
                                                          corr,)
-                    print(f"{roi_name}, on images: {conscious_source} --> {conscious_target},{encoding_model},VE = {np.nanmean(mean_variance):.4f},corr = {np.mean(corr):.4f},||weights|| = {np.mean(weights):1.3e} with alpha = {stats.mode(alpha)[0][0]:1.0e}\n")
+                    print(f"{roi_name}, on images: {conscious_source} --> {conscious_target},{encoding_model},VE = {np.nanmean(mean_variance):.4f},corr = {np.mean(corr):.4f},||weights|| = {np.mean(weights):1.3e} with alpha = {stats.mode(alphas)[0][0]:1.0e},n posive voxels = {np.sum(scores.mean(0) > 0):.0f}/{scores.shape[1]}\n")
                     df_scores = pd.DataFrame(results)
                     df_scores['feature_type'] = 'image'
                     
@@ -197,13 +199,17 @@ if __name__ == '__main__':
                     regs = res['estimator']
                     preds   = [est.predict(features_target[idx_test]) for est,idx_test in zip(regs,idxs_target_test)]
                     scores  = np.array([metrics.r2_score(BOLD_sc_target[idx_test_target],pred,multioutput = 'raw_values') for idx_test_target,pred in zip(idxs_target_test,preds)])
-                    corr    = [np.mean([distance.cdist(a.reshape(1,-1),b.reshape(1,-1),'cosine',
-                                                   ).flatten()[0] for a,b in zip(BOLD_norm_target[idx_test],pred)]) for idx_test,pred in zip(idxs_target_test,preds)]
+                    corr    = [np.mean([np.corrcoef(a,b)[0, 1]**2 for a,b in zip(BOLD_norm_target[idx_test],pred)]) for idx_test,pred in zip(idxs_target_test,preds)]
                     results = OrderedDict()
-                    weights = np.array([np.sqrt(np.sum(est.best_estimator_.coef_**2)) for est in regs])
-                    alpha = np.array([list(est.best_params_.values())[0] for est in regs])
-                    results['weight_sum'] = [np.sum(np.abs(est.best_estimator_.coef_)) for est in regs]
-                    results['alphas'] = [list(est.best_params_.values())[0] for est in regs]
+                    try:
+                        weights = [np.sum(np.abs(est.best_estimator_.coef_)) for est in regs]
+                        n_params = [features_source.shape[1] * BOLD_sc_source.shape[1] for est in regs]
+                    except:
+                        weights = [np.sum(np.abs(est.best_estimator_.steps[-1][-1].coef_)) for est in regs]
+                        n_params = [est.best_estimator_.steps[0][-1].n_components_ * BOLD_sc_source.shape[1] for est in regs]
+                    alphas = np.array([list(est.best_params_.values())[0] for est in regs])
+                    results['weight_sum'] = weights
+                    results['alphas'] = alphas
                     mean_variance,results = fill_results(
                                                          scores,
                                                          results,
@@ -214,7 +220,7 @@ if __name__ == '__main__':
                                                          BOLD_sc_source,
                                                          features_source,
                                                          corr,)
-                    print(f"{roi_name} on background: {conscious_source} --> {conscious_target},{encoding_model},VE = {np.nanmean(mean_variance):.4f},corr = {np.mean(corr):.4f},||weights|| = {np.mean(weights):1.3e} with alpha = {stats.mode(alpha)[0][0]:1.0e}\n")
+                    print(f"{roi_name} on background: {conscious_source} --> {conscious_target},{encoding_model},VE = {np.nanmean(mean_variance):.4f},corr = {np.mean(corr):.4f},||weights|| = {np.mean(weights):1.3e} with alpha = {stats.mode(alphas)[0][0]:1.0e},n posive voxels = {np.sum(scores.mean(0) > 0):.0f}/{scores.shape[1]}\n")
                     df_background = pd.DataFrame(results)
                     df_background['feature_type'] = 'background'
                     

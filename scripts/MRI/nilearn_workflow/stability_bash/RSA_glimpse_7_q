@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=1152:00:00
+#PBS -N S1SPT7glimpse
+#PBS -o bash/out_1glimpse7.txt
+#PBS -e bash/err_1glimpse7.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-pericalcarine glimpse"
+
+python "STP_glimpse_7.py"

@@ -26,6 +26,7 @@ torch.manual_seed(12345)
 
 class VAE(nn.Module):
     def __init__(self,
+                 device,
                  input_dim = 1000,
                  output_dim = 1000,
                  encode_dims = [1280,300,],
@@ -41,28 +42,29 @@ class VAE(nn.Module):
         self.decode_dims = decode_dims
         self.vae_dim = vae_dim
         self.dropout_rate = dropout_rate
+        self.device = device
         
         self.encoding = nn.ModuleList()
         current_dim = self.input_dim
         for hidden_dim in self.encode_dims:
-            self.encoding.append(nn.Linear(current_dim,hidden_dim))
+            self.encoding.append(nn.Linear(current_dim,hidden_dim).to(self.device))
             current_dim = hidden_dim
         self.decoding = nn.ModuleList()
         current_dim = self.vae_dim
         for hidden_dim in self.decode_dims:
-            self.decoding.append(nn.Linear(current_dim,hidden_dim))
+            self.decoding.append(nn.Linear(current_dim,hidden_dim).to(self.device))
             current_dim = hidden_dim
         
         if len(self.encode_dims) > 0:
-            self.hidden_mu = nn.Linear(self.encode_dims[-1],self.vae_dim)
-            self.hidden_var = nn.Linear(self.encode_dims[-1],self.vae_dim)
+            self.hidden_mu = nn.Linear(self.encode_dims[-1],self.vae_dim).to(self.device)
+            self.hidden_var = nn.Linear(self.encode_dims[-1],self.vae_dim).to(self.device)
         else:
-            self.hidden_mu = nn.Linear(self.input_dim,self.vae_dim)
-            self.hidden_var = nn.Linear(self.input_dim,self.vae_dim)
+            self.hidden_mu = nn.Linear(self.input_dim,self.vae_dim).to(self.device)
+            self.hidden_var = nn.Linear(self.input_dim,self.vae_dim).to(self.device)
         if len(self.decode_dims) > 0:
-            self.output_layer = nn.Linear(self.decode_dims[-1],self.output_dim)
+            self.output_layer = nn.Linear(self.decode_dims[-1],self.output_dim).to(self.device)
         
-        self.dropout_layer = nn.AlphaDropout(p = self.dropout_rate)
+        self.dropout_layer = nn.AlphaDropout(p = self.dropout_rate).to(self.device)
         
     def encode(self, x):
         for layer in self.encoding:
@@ -89,7 +91,7 @@ class VAE(nn.Module):
         return self.decode(z), mu, logvar
 
 # Reconstruction + KL divergence losses summed over all elements and batch
-def VEA_loss_function(recon_x, x, mu, logvar,train = False,BATCH_SIZE = 1,):
+def VEA_loss_function(recon_x, x, mu, logvar,device,train = False,BATCH_SIZE = 1,):
     if train:
         BCE = 0
         for recon_x_one,x_one in zip(recon_x,x):
@@ -106,7 +108,7 @@ def VEA_loss_function(recon_x, x, mu, logvar,train = False,BATCH_SIZE = 1,):
     KLD /= x.shape[1] * BATCH_SIZE
     
     # 
-    convolution = nn.Conv1d(1,1,kernel_size = 2,bias = False)
+    convolution = nn.Conv1d(1,1,kernel_size = 2,bias = False).to(device)
     list(convolution.parameters())[0].requires_grad = False
     convolution.weight.copy_(torch.tensor([1.,-1.]))
     dists = convolution(x.view(BATCH_SIZE,1,-1)).view(BATCH_SIZE,-1)
@@ -115,7 +117,10 @@ def VEA_loss_function(recon_x, x, mu, logvar,train = False,BATCH_SIZE = 1,):
     return BCE + KLD + dist_loss
 
 def train(epoch,model,dataloader_train,device,optimizer,loss_function,batch_size,print_train = False):
-    model.train()
+    if device.type == 'cuda':
+        model.cuda().train()
+    else:
+        model.train()
     train_loss = 0
     if print_train:
         iterator = tqdm(enumerate(dataloader_train))
@@ -123,9 +128,10 @@ def train(epoch,model,dataloader_train,device,optimizer,loss_function,batch_size
         iterator = enumerate(dataloader_train)
     for batch_idx, (features_, BOLD_) in iterator:
         features_ = features_.to(device)
+        BOLD_ = BOLD_.to(device)
         optimizer.zero_grad()
         prediction_batch, mu, logvar = model(features_)
-        loss = loss_function(prediction_batch, BOLD_, mu, logvar,train = True,BATCH_SIZE = batch_size)
+        loss = loss_function(prediction_batch, BOLD_, mu, logvar,device,train = True,BATCH_SIZE = batch_size)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -144,7 +150,7 @@ def validation(epoch,model,dataloader_valid,device,loss_function,batch_size,prin
         for i, (features_, BOLD_) in iterator:
             features_ = features_.to(device)
             prediction_batch, mu, logvar = model(features_)
-            validation_loss += loss_function(prediction_batch, BOLD_, mu, logvar,train = False,BATCH_SIZE = batch_size).item()
+            validation_loss += loss_function(prediction_batch, BOLD_, mu, logvar,device,train = False,BATCH_SIZE = batch_size).item()
 
     validation_loss /= len(dataloader_valid.dataset)
     if print_train:
@@ -185,9 +191,9 @@ def fit(model,device,optimizer,dataloader_train,dataloader_valid,loss_function,
             break
     return model,validation_losses
 
-def train_valid_data_loader(X_train,X_valid,y_train,y_valid,batch_size = 1,shuffle = True,drop_last = True):
-    X_train,X_valid = torch.Tensor(X_train),torch.Tensor(X_valid)
-    y_train,y_valid = torch.Tensor(y_train),torch.Tensor(y_valid)
+def train_valid_data_loader(X_train,X_valid,y_train,y_valid,device,batch_size = 1,shuffle = True,drop_last = True):
+    X_train,X_valid = torch.Tensor(X_train).to(device),torch.Tensor(X_valid).to(device)
+    y_train,y_valid = torch.Tensor(y_train).to(device),torch.Tensor(y_valid).to(device)
     dataset_train = TensorDataset(X_train,y_train)
     dataset_valid = TensorDataset(X_valid,y_valid)
     dataloader_train = DataLoader(dataset_train,batch_size = batch_size,shuffle = shuffle,drop_last = drop_last,)
@@ -408,6 +414,7 @@ def black_box_process(X_train,y_train,
                                                                 X_valid,
                                                                 y_train,
                                                                 y_valid,
+                                                                device,
                                                                 batch_size = batch_size,
                                                                 shuffle = True,
                                                                 drop_last = True,
@@ -424,25 +431,34 @@ def black_box_process(X_train,y_train,
                             patience = patience,
                             print_train = print_train,)
     return model,test_losses
+from skopt import forest_minimize,callbacks
+from skopt.space import Real
+from skopt.utils import use_named_args
+
 
 def search_for_n_repeats(X_in,y_in,
                          X_test,y_test,
                          model,
-                         Bayesian_optimization_params = None,
-                         print_train = False,
+                         print_train = 0,
                          n_jobs = -1,
                          verbose = 0,):
-    
+    def small_func(X):
+        with torch.no_grad():
+            model.eval()
+            return model(torch.autograd.Variable(X))[0].detach().cpu().numpy()
     # cross validate one of the hyperparameters
+    space = [Real(1,int(1e3),prior='uniform',name = 'n_repeat'),]
+    @use_named_args(space)
     def sample_loss(n_repeat):
-        predictions = []
-        def small_func(X):
-            with torch.no_grad():
-                model.eval()
-                return model(torch.autograd.Variable(X))[0].detach().cpu().numpy()
         gc.collect()
+#        predictions = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(small_func)(**{
+#                'X':X_in}) for i in range(int(n_repeat)))
+        if print_train:
+            iterator = tqdm(range(int(n_repeat)))
+        else:
+            iterator = range(int(n_repeat))
         predictions = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(small_func)(**{
-                'X':X_in}) for i in range(int(n_repeat)))
+            'X':X_in}) for i in iterator)
         gc.collect()
         predictions = np.array(predictions)
         pred = predictions.mean(0)
@@ -451,27 +467,20 @@ def search_for_n_repeats(X_in,y_in,
         if n_voxels < 1:
             return 0
         else:
-            return score[score>=0].sum()
-    if Bayesian_optimization_params != None:
-        print('customized parameters')
-        xp, yp = bayesian_optimisation(sample_loss = sample_loss,
-                                       print_train = print_train,
-                                       **Bayesian_optimization_params)
-    else:
-        xp, yp = bayesian_optimisation(n_iters = 20, 
-                                       sample_loss = sample_loss, 
-                                       bounds = np.array([[1,int(1e3)]]),
-                                       n_pre_samples = 5,
-                                       gp_params = {'random_state':12345},
-                                       print_train = print_train,)
-    best_n_repeat = xp[yp.argmin()]
+            return score[score>=0].mean() * n_voxels
+    res_gp = forest_minimize(sample_loss, 
+                             space, 
+                             n_calls=int(50), 
+                             random_state=12345,
+                             acq_func = 'EI',
+                             callback = callbacks.DeltaYStopper(delta=1e-3),
+                             kappa = 1e12,
+                             verbose = print_train,
+                             )
+    best_n_repeat = res_gp.x_iters[res_gp.func_vals.argmin()][0]
     print(f'best n = {int(best_n_repeat)}')
     # testing phase
     X_test = torch.Tensor(X_test)
-    def small_func(X):
-        with torch.no_grad():
-            model.eval()
-            return model(torch.autograd.Variable(X))[0].detach().cpu().numpy()
     gc.collect()
     predictions = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(small_func)(**{
             'X':X_test}) for i in range(int(best_n_repeat)))

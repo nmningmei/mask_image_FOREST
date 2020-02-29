@@ -20,10 +20,10 @@ if not os.path.exists(output_dir):
     os.mkdir(output_dir)
     
 sub                 = 'sub-01'
-nodes               = 2
+nodes               = 1
 cores               = 16
 mem                 = int(3.5 * nodes * cores)
-time_               = 16 * nodes * cores
+time_               = 24 * nodes * cores
 stacked_data_dir    = '../../../../data/BOLD_average/{}/'.format(sub)
 BOLD_data           = np.sort(glob(os.path.join(stacked_data_dir,'*BOLD.npy')))
 
@@ -39,7 +39,7 @@ for ii,BOLD_data_file in enumerate(BOLD_data):
             for line in old_file:
                 if "sub                 = 'sub-" in line:
                     line = line.replace('sub-01',f'{sub}')
-                elif "idx = 0" in line:
+                elif "idx                 = " in line:
                     line = line.replace("0","{}".format(ii))
                 new_file.write(line)
             old_file.close()
@@ -59,7 +59,8 @@ for ii,BOLD_data_file in enumerate(BOLD_data):
 #PBS -o bash/out_{sub[-1]}{ii+1}.txt
 #PBS -e bash/err_{sub[-1]}{ii+1}.txt
 cd $PBS_O_WORKDIR
-export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+export PATH="/scratch/ningmei/anaconda3/bin:/scratch/ningmei/anaconda3/condabin:$PATH"
+source activate keras-2.1.6_tensorflow-2.0.0
 pwd
 echo "{mask_name}"
 
@@ -75,11 +76,11 @@ content = '''
 import os
 import time
 '''
-with open(f'{output_dir}/qsub_jobs_encode_LOO.py','w') as f:
+with open(f'{output_dir}/qsub_jobs_encode_CP.py','w') as f:
     f.write(content)
     f.close()
 
-with open(f'{output_dir}/qsub_jobs_encode_LOO.py','a') as f:
+with open(f'{output_dir}/qsub_jobs_encode_CP.py','a') as f:
     for ii, BOLD_data_file in enumerate(BOLD_data):
         bash_file_name = f'encode_{ii+1}_q'
         if ii == 0:
@@ -88,25 +89,3 @@ with open(f'{output_dir}/qsub_jobs_encode_LOO.py','a') as f:
             f.write('time.sleep({})\nos.system("qsub {}")\n'.format(time,bash_file_name))
     f.close()
 
-"""
-#$ -cwd
-#$ -o bash/out_{sub[-1]}{ii+1}.txt
-#$ -e bash/err_{sub[-1]}{ii+1}.txt
-#$ -m be
-#$ -q fsl.q
-#$ -M nmei@bcbl.eu
-#$ -N "S{sub[-1]}R{ii+1}"
-#$ -S /bin/bash
-
-module load rocks-python-3.6
-
-#$ -cwd
-#$ -o bash/out_q.txt
-#$ -e bash/err_q.txt
-#$ -m be
-#$ -M nmei@bcbl.eu
-#$ -N "qsubjobs"
-#$ -S /bin/bash
-
-module load rocks-python-3.6
-"""

@@ -40,7 +40,7 @@ output_dir          = '../../../results/MRI/nilearn/spacenet/{}'.format(sub)
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 masks               = glob(os.path.join(mask_dir,'*.nii.gz'))
-whole_brain_mask    = f'../../../data/MRI/{sub}/func/session-0{first_session}/{sub}_unfeat_run-01/outputs/func/mask.nii.gz'
+whole_brain_mask    = f'../../../data/MRI/{sub}/anat/ROI_BOLD/combine_BOLD.nii.gz'
 label_map           = {'Nonliving_Things':[0,1],'Living_Things':[1,0]}
 average             = True
 n_splits            = 50

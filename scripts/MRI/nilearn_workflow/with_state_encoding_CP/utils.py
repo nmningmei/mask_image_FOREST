@@ -5,9 +5,14 @@ Created on Mon Mar  4 10:09:21 2019
 
 @author: nmei
 """
-
-from autoreject import (AutoReject,get_rejection_threshold)
-import mne
+try:
+    from autoreject import (AutoReject,get_rejection_threshold)
+except Exception as e:
+    print(e)
+try:
+    import mne
+except Exception as e:
+    print(e)
 from glob import glob
 import re
 import os
@@ -618,7 +623,7 @@ def plot_temporal_generalization(scores_gen_,
                         interpolation       = 'hamming', 
                         origin              = 'lower', 
                         cmap                = 'RdBu_r',
-                        extent              = times, 
+                        extent              = times[[0, -1, 0, -1]], 
                         vmin                = vmin, 
                         vmax                = vmax,
                         )
@@ -2568,8 +2573,15 @@ def LOO_partition(df_data,target_column = 'labels'):
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
 
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
-                   n_jobs = 12, verbose = 0):
+def resample_ttest(x,
+                   baseline         = 0.5,
+                   n_ps             = 100,
+                   n_permutation    = 10000,
+                   one_tail         = False,
+                   n_jobs           = 12, 
+                   verbose          = 0,
+                   full_size        = True
+                   ):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
     https://www.tau.ac.il/~saharon/StatisticsSeminar_files/Hypothesis.pdf
@@ -2581,53 +2593,73 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    # t statistics with the original data distribution
-    t_experiment = (np.mean(x) - baseline) / (np.std(x) / np.sqrt(x.shape[0]))
-    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
-    from joblib import Parallel,delayed
     import gc
+    from joblib import Parallel,delayed
+    # statistics with the original data distribution
+    t_experiment    = np.mean(x)
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    
+    if null.shape[0] > int(1e4): # catch for big data
+        full_size   = False
+    if not full_size:
+        size        = int(1e3)
+    else:
+        size = null.shape[0]
+    
+    
     gc.collect()
     def t_statistics(null,size,):
         """
         null: shifted data distribution
         size: tuple of 2 integers (n_for_averaging,n_permutation)
         """
-        null_dist = np.random.choice(null,size = size,replace = True)
-        t_null = (np.mean(null_dist,0) - baseline) / (np.std(null_dist,0) / np.sqrt(null_dist.shape[0]))
+        null_dist   = np.random.choice(null,size = size,replace = True)
+        t_null      = np.mean(null_dist,0)
         if one_tail:
             return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
         else:
             return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
     ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
                     'null':null,
-                    'size':(null.shape[0],int(n_permutation)),}) for i in range(n_ps))
+                    'size':(size,int(n_permutation)),}) for i in range(n_ps))
     
     return np.array(ps)
-def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
-                           one_tail=False,
-                           match_sample_size = True,
-                           n_jobs = 6,
-                           verbose = 0):
+def resample_ttest_2sample(a,b,
+                           n_ps                 = 100,
+                           n_permutation        = 10000,
+                           one_tail             = False,
+                           match_sample_size    = True,
+                           n_jobs               = 6,
+                           verbose              = 0):
+    from joblib import Parallel,delayed
+    import gc
     # when the samples are dependent just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
-        ps          = resample_ttest(difference,baseline=0,
-                                     n_ps=n_ps,n_permutation=n_permutation,
-                                     one_tail=one_tail,
-                                     n_jobs=n_jobs,
-                                     verbose=verbose,)
+        ps          = resample_ttest(difference,
+                                     baseline       = 0,
+                                     n_ps           = n_ps,
+                                     n_permutation  = n_permutation,
+                                     one_tail       = one_tail,
+                                     n_jobs         = n_jobs,
+                                     verbose        = verbose,)
         return ps
     else: # when the samples are independent
-        t_experiment,_ = stats.ttest_ind(a,b,equal_var = False)
+        t_experiment        = np.mean(a) - np.mean(b)
+        if not one_tail:
+            t_experiment    = np.abs(t_experiment)
+            
         def t_statistics(a,b):
-            group = np.random.choice(np.concatenate([a,b]),size = int(len(a) + len(b)),replace = True)
-            new_a = group[:a.shape[0]]
-            new_b = group[a.shape[0]:]
-            t_null,_ = stats.ttest_ind(new_a,new_b,equal_var = False)
+            group           = np.concatenate([a,b])
+            np.random.shuffle(group)
+            new_a           = group[:a.shape[0]]
+            new_b           = group[a.shape[0]:]
+            t_null          = np.mean(new_a) - np.mean(new_b)
+            if not one_tail:
+                t_null      = np.abs(t_null)
             return t_null
-        from joblib import Parallel,delayed
-        import gc
+        
         gc.collect()
         ps = np.zeros(n_ps)
         for ii in range(n_ps):
@@ -3006,6 +3038,15 @@ def get_label_subcategory_mapping():
  'wardrobe': 'Furniture',
  'whale': 'Marine_creatures',
  'zebra': 'Animals'}
+    
+def make_df_axis(df_data):
+    label_category_map = get_label_category_mapping()
+    label_subcategory_map = get_label_subcategory_mapping()
+    df_axis = pd.DataFrame({'labels':pd.unique(df_data['labels'])})
+    df_axis['category'] = df_axis['labels'].map(label_category_map)
+    df_axis['subcategory'] = df_axis['labels'].map(label_subcategory_map)
+    df_axis = df_axis.sort_values(['category','subcategory','labels'])
+    return df_axis
 
 def load_same_same(sub,target_folder = 'decoding',target_file = '*None*csv'):
     working_dir = '../../../../results/MRI/nilearn/{}/{}'.format(sub,target_folder)
@@ -3085,6 +3126,43 @@ def plot_stat_map(stat_map_img,
 
     return display
 
+def make_ridge_model_CV(pca = True,alpha_space = [1,12],custom_scorer = None):
+    from sklearn import linear_model,metrics
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.pipeline import make_pipeline
+    
+    if custom_scorer == None:
+        def score_func(y, y_pred,):
+            temp        = metrics.r2_score(y,y_pred,multioutput = 'raw_values')
+            if np.sum(temp > 0):
+                return temp[temp > 0].mean()
+            else:
+                return 0
+        custom_scorer      = metrics.make_scorer(score_func,greater_is_better = True)
+        
+    pca         = PCA(n_components = .99,random_state = 12345)
+    reg         = linear_model.Ridge(normalize      = True,
+                                     alpha          = 1,
+                                     random_state   = 12345)
+    if pca:
+        reg         = GridSearchCV(make_pipeline(pca,reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 5,
+                                   )
+    else:
+        reg         = GridSearchCV(make_pipeline(reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 5,
+                                   )
+    return reg
+    
 def cross_validation(feature_dir,
                      encoding_model,
                      custom_scorer,
@@ -3096,25 +3174,14 @@ def cross_validation(feature_dir,
     """
     Encoding pipeline
     """
-    from sklearn import linear_model
-    from sklearn.model_selection import GridSearchCV,cross_validate
+    from sklearn.model_selection import cross_validate
     features_source         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_source])
     features_target         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_target])
-    reg         = linear_model.Ridge(normalize      = True,
-                                     alpha          = 1,
-                                     random_state   = 12345)
-    reg         = GridSearchCV(reg,
-                               dict(alpha = np.logspace(1,12,12),
-                                    ),
-                               scoring  = custom_scorer,
-                               n_jobs   = 1,
-                               cv       = 5,
-#                               iid      = False,
-                               )
+    reg = make_ridge_model_CV(custom_scorer = custom_scorer)
     res = cross_validate(reg,
                          features_source,
                          BOLD_sc_source,
@@ -3141,7 +3208,7 @@ def fill_results(scores,
     
     scores_to_save = mean_variance.copy()
     scores_to_save = np.nan_to_num(scores_to_save,)
-    results['mean_variance'] = scores_to_save
+    results['mean_variance'] = scores.mean(1)#scores_to_save
     results['fold'] = np.arange(n_splits) + 1
     results['conscious_source'] = [conscious_source] * n_splits
     results['conscious_target'] = [conscious_target] * n_splits
@@ -3150,7 +3217,7 @@ def fill_results(scores,
     results['n_parameters'] = [BOLD_sc_source.shape[1] * features_source.shape[1]] * n_splits
     results['corr'] = corr
     results['positive_voxel_indices'] = positive_voxel_indices
-    return mean_variance,results
+    return scores.mean(1),results
 ###################################################################################
 ###################################################################################
 import numpy as np

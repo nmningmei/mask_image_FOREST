@@ -3,7 +3,7 @@
 #PBS -q bcbl
 #PBS -l nodes=2:ppn=16
 #pBS -l ncpus=32
-#PBS -l mem=64gb
+#PBS -l mem=96gb
 #PBS -l cput=512:00:00
 #PBS -N S1R17RSA
 #PBS -o bash/out_117.txt

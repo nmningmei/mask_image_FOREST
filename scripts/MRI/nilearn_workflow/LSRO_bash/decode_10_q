@@ -1,0 +1,15 @@
+
+#!/bin/bash
+#PBS -q bcbl
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=64gb
+#PBS -l cput=864:00:00
+#PBS -N S1LSRO10
+#PBS -o bash/out_110.txt
+#PBS -e bash/err_110.txt
+cd $PBS_O_WORKDIR
+export PATH="/scratch/ningmei/anaconda3/bin:$PATH"
+pwd
+echo "lh-superiorfrontal"
+
+python "LSRO_10.py"
