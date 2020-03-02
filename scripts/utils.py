@@ -5,9 +5,14 @@ Created on Mon Mar  4 10:09:21 2019
 
 @author: nmei
 """
-
-from autoreject import (AutoReject,get_rejection_threshold)
-import mne
+try:
+    from autoreject import (AutoReject,get_rejection_threshold)
+except Exception as e:
+    print(e)
+try:
+    import mne
+except Exception as e:
+    print(e)
 from glob import glob
 import re
 import os
@@ -3121,6 +3126,44 @@ def plot_stat_map(stat_map_img,
 
     return display
 
+def make_ridge_model_CV(perform_pca = True,alpha_space = [1,12],custom_scorer = None):
+    from sklearn import linear_model,metrics
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.pipeline import make_pipeline
+    
+    if custom_scorer == None:
+        def score_func(y, y_pred,):
+            temp        = metrics.r2_score(y,y_pred,multioutput = 'raw_values')
+            if np.sum(temp > 0):
+                return temp[temp > 0].mean()
+            else:
+                return 0
+        custom_scorer      = metrics.make_scorer(score_func,greater_is_better = True)
+        
+    pca         = PCA(n_components = .99,random_state = 12345)
+#    scaler      = StandardScaler()
+    reg         = linear_model.Ridge(normalize      = True,
+                                     alpha          = 1,
+                                     random_state   = 12345)
+    if perform_pca:
+        reg         = GridSearchCV(make_pipeline(pca,reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    else:
+        reg         = GridSearchCV(make_pipeline(reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    return reg
+    
 def cross_validation(feature_dir,
                      encoding_model,
                      custom_scorer,
@@ -3132,28 +3175,14 @@ def cross_validation(feature_dir,
     """
     Encoding pipeline
     """
-    from sklearn import linear_model
-    from sklearn.decomposition import PCA
-    from sklearn.model_selection import GridSearchCV,cross_validate
-    from sklearn.pipeline import make_pipeline
+    from sklearn.model_selection import cross_validate
     features_source         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_source])
     features_target         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_target])
-    pca         = PCA(n_components = .99,random_state = 12345)
-    reg         = linear_model.Ridge(normalize      = True,
-                                     alpha          = 1,
-                                     random_state   = 12345)
-    reg         = GridSearchCV(make_pipeline(pca,reg),
-                               dict(ridge__alpha = np.logspace(1,12,12),
-                                    ),
-                               scoring  = custom_scorer,
-                               n_jobs   = 1,
-                               cv       = 5,
-#                               iid      = False,
-                               )
+    reg = make_ridge_model_CV(custom_scorer = custom_scorer)
     res = cross_validate(reg,
                          features_source,
                          BOLD_sc_source,
