@@ -38,7 +38,7 @@ from sklearn.preprocessing                         import (MinMaxScaler,
                                                            StandardScaler)
 
 from sklearn.pipeline                              import make_pipeline
-from sklearn.ensemble.forest                       import _generate_unsampled_indices
+# from sklearn.ensemble.forest                       import _generate_unsampled_indices
 from sklearn.utils                                 import shuffle
 from sklearn.svm                                   import SVC,LinearSVC
 from sklearn.calibration                           import CalibratedClassifierCV
@@ -58,7 +58,7 @@ from sklearn.ensemble                              import RandomForestClassifier
 from sklearn.neural_network                        import MLPClassifier
 from xgboost                                       import XGBClassifier
 from itertools                                     import product,combinations
-from sklearn.base                                  import clone
+# from sklearn.base                                  import clone
 from sklearn.neighbors                             import KNeighborsClassifier
 from sklearn.tree                                  import DecisionTreeClassifier
 from collections                                   import OrderedDict
@@ -847,6 +847,16 @@ def get_frames(directory,new = True,EEG = True):
 #        files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
+    df_stat = dict(
+        conscious_state = [],
+        prob_press_1 = [],
+        prob_press_2 = [],
+        correct = [],
+        frame_mean = [],
+        frame_std = [],
+        RT_mean = [],
+        RT_std = [],
+        )
     empty_temp = ''
     for ii,f in enumerate(files):
         df = pd.read_csv(f).dropna()
@@ -883,6 +893,11 @@ def get_frames(directory,new = True,EEG = True):
         df_press2 = df_sub[df_sub['response.keys_raw'] == 2]
         prob1 = df_press1.shape[0] / df_sub.shape[0]
         prob2 = df_press2.shape[0] / df_sub.shape[0]
+        
+        df_stat['conscious_state'].append(vis)
+        df_stat['prob_press_1'].append(prob1)
+        df_stat['prob_press_2'].append(prob2)
+        
         try:
             print(f"\nvis = {vis},mean frames = {np.median(df_sub['probeFrames_raw']):.5f}")
             print(f"vis = {vis},prob(press 1) = {prob1:.4f}, p(press 2) = {prob2:.4f}")
@@ -944,7 +959,13 @@ def get_frames(directory,new = True,EEG = True):
             print("vis = {},mean frames = {:.2f} +/- {:.2f}".format(
                     vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])))
         results.append([vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])])
-    return results,empty_temp
+        
+        df_stat['frame_mean'].append(np.mean(df_sub['probeFrames']))
+        df_stat['frame_std'].append(np.std(df_sub['probeFrames']))
+        df_stat['correct'].append(corrects)
+        df_stat['RT_mean'].append(np.mean(df_sub['visible.rt_raw']))
+        df_stat['RT_std'].append(np.std(df_sub['visible.rt_raw']))
+    return results,empty_temp,pd.DataFrame(df_stat)
 
 def preprocess_behavioral_file(f):
     df = read_behavorial_file(f)
@@ -2362,15 +2383,25 @@ def load_csv(f,print_ = False):
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
                            remove_invariant = True,
+                           l1 = False,
                            n_jobs = 1):
     np.random.seed(12345)
-    svm = LinearSVC(penalty = 'l2', # default
-                    dual = True, # default
-                    tol = 1e-3, # not default
-                    random_state = 12345, # not default
-                    max_iter = int(1e3), # default
-                    class_weight = class_weight, # not default
-                    )
+    if l1:
+        svm = LinearSVC(penalty = 'l1', # not default
+                        dual = False, # not default
+                        tol = 1e-1, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e3), # default
+                        class_weight = class_weight, # not default
+                        )
+    else:
+        svm = LinearSVC(penalty = 'l2', # default
+                        dual = True, # default
+                        tol = 1e-1, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e3), # default
+                        class_weight = class_weight, # not default
+                        )
     svm = CalibratedClassifierCV(base_estimator = svm,
                                  method = 'sigmoid',
                                  cv = 8)
@@ -2716,11 +2747,14 @@ def resample_ttest(x,
             return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
         else:
             return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
-    ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
-                    'null':null,
-                    'size':(size,int(n_permutation)),}) for i in range(n_ps))
-    
-    return np.array(ps)
+    if n_ps == 1:
+        ps = t_statistics(null, size)
+    else:
+        ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                        'null':null,
+                        'size':(size,int(n_permutation)),}) for i in range(n_ps))
+        ps = np.array(ps)
+    return ps
 def resample_ttest_2sample(a,b,
                            n_ps                 = 100,
                            n_permutation        = 10000,
@@ -2836,6 +2870,25 @@ def define_roi_category():
                 }
     
     return roi_dict
+
+def rename_ROI_for_plotting():
+    name_map = {
+        'fusiform':'Fusiform gyrus',
+        'inferiorparietal':'Inferior parietal lobe',
+        'inferiortemporal':'Inferior temporal lobe',
+        'lateraloccipital':'Lateral occipital cortex',
+        'lingual':'Lingual',
+        'middlefrontal':'Middle frontal gyrus',
+        'rostralmiddlefrontal':'Middle fontal gyrus',
+        'parahippocampal':'Parahippocampal gyrus',
+        'pericalcarine':'Pericalcarine cortex',
+        'precuneus':'Precuneus',
+        'superiorfrontal':'Superior frontal gyrus',
+        'superiorparietal':'Superior parietal gyrus',
+        'ventrolateralPFC':'Inferior frontal gyrus',
+        }
+    return name_map
+
 def stars(x):
     if x < 0.001:
         return '***'
@@ -3177,7 +3230,9 @@ def plot_stat_map(stat_map_img,
                   black_bg                  = 'auto',
                   cmap                      = cm.coolwarm, 
                   symmetric_cbar            = "auto",
-                  dim                       = 'auto', vmin_ = None,vmax=None, 
+                  dim                       = 'auto', 
+                  vmin_                     = None,
+                  vmax                      = None, 
                   resampling_interpolation  = 'continuous',
                   **kwargs):
     
