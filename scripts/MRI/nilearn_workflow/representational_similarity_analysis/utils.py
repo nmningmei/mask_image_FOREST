@@ -38,7 +38,7 @@ from sklearn.preprocessing                         import (MinMaxScaler,
                                                            StandardScaler)
 
 from sklearn.pipeline                              import make_pipeline
-from sklearn.ensemble.forest                       import _generate_unsampled_indices
+# from sklearn.ensemble.forest                       import _generate_unsampled_indices
 from sklearn.utils                                 import shuffle
 from sklearn.svm                                   import SVC,LinearSVC
 from sklearn.calibration                           import CalibratedClassifierCV
@@ -58,7 +58,7 @@ from sklearn.ensemble                              import RandomForestClassifier
 from sklearn.neural_network                        import MLPClassifier
 from xgboost                                       import XGBClassifier
 from itertools                                     import product,combinations
-from sklearn.base                                  import clone
+# from sklearn.base                                  import clone
 from sklearn.neighbors                             import KNeighborsClassifier
 from sklearn.tree                                  import DecisionTreeClassifier
 from collections                                   import OrderedDict
@@ -847,6 +847,16 @@ def get_frames(directory,new = True,EEG = True):
 #        files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
+    df_stat = dict(
+        conscious_state = [],
+        prob_press_1 = [],
+        prob_press_2 = [],
+        correct = [],
+        frame_mean = [],
+        frame_std = [],
+        RT_mean = [],
+        RT_std = [],
+        )
     empty_temp = ''
     for ii,f in enumerate(files):
         df = pd.read_csv(f).dropna()
@@ -883,6 +893,11 @@ def get_frames(directory,new = True,EEG = True):
         df_press2 = df_sub[df_sub['response.keys_raw'] == 2]
         prob1 = df_press1.shape[0] / df_sub.shape[0]
         prob2 = df_press2.shape[0] / df_sub.shape[0]
+        
+        df_stat['conscious_state'].append(vis)
+        df_stat['prob_press_1'].append(prob1)
+        df_stat['prob_press_2'].append(prob2)
+        
         try:
             print(f"\nvis = {vis},mean frames = {np.median(df_sub['probeFrames_raw']):.5f}")
             print(f"vis = {vis},prob(press 1) = {prob1:.4f}, p(press 2) = {prob2:.4f}")
@@ -944,7 +959,13 @@ def get_frames(directory,new = True,EEG = True):
             print("vis = {},mean frames = {:.2f} +/- {:.2f}".format(
                     vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])))
         results.append([vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])])
-    return results,empty_temp
+        
+        df_stat['frame_mean'].append(np.mean(df_sub['probeFrames']))
+        df_stat['frame_std'].append(np.std(df_sub['probeFrames']))
+        df_stat['correct'].append(corrects)
+        df_stat['RT_mean'].append(np.mean(df_sub['visible.rt_raw']))
+        df_stat['RT_std'].append(np.std(df_sub['visible.rt_raw']))
+    return results,empty_temp,pd.DataFrame(df_stat)
 
 def preprocess_behavioral_file(f):
     df = read_behavorial_file(f)
@@ -1999,6 +2020,103 @@ def _create_registration_workflow(anat_brain,
     for cmdline in [plot_example_func2highres,plot_example_func2standard,plot_highres2standard]:
         os.system(cmdline)
 
+def create_simple_highres2standard(roi,
+                             roi_name,
+                             preprocessed_functional_dir,
+                             output_dir):
+    from nipype.interfaces            import fsl
+    from nipype.pipeline              import engine as pe
+    from nipype.interfaces            import utility as util
+    fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
+    
+    simple_workflow         = pe.Workflow(name  = 'highres2standard')
+    
+    inputnode               = pe.Node(interface = util.IdentityInterface(
+                                      fields    = ['flt_in_file',
+                                                   'flt_in_matrix',
+                                                   'flt_reference',
+                                                   'mask']),
+                                      name      = 'inputspec')
+    outputnode              = pe.Node(interface = util.IdentityInterface(
+                                      fields    = ['BODL_mask']),
+                                      name      = 'outputspec')
+    """
+     flirt 
+ -in /export/home/dsoto/dsoto/fmri/$s/sess2/label/$i 
+ -ref /export/home/dsoto/dsoto/fmri/$s/sess2/run1_prepro1.feat/example_func.nii.gz  
+ -applyxfm 
+ -init /export/home/dsoto/dsoto/fmri/$s/sess2/run1_prepro1.feat/reg/highres2example_func.mat 
+ -out  /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i}
+    """
+    flirt_convert           = pe.MapNode(
+                                    interface   = fsl.FLIRT(apply_xfm = True),
+                                    iterfield   = ['in_file',
+                                                   'reference',
+                                                   'in_matrix_file'],
+                                    name        = 'flirt_convert')
+    simple_workflow.connect(inputnode,      'flt_in_file',
+                            flirt_convert,  'in_file')
+    simple_workflow.connect(inputnode,      'flt_reference',
+                            flirt_convert,  'reference')
+    simple_workflow.connect(inputnode,      'flt_in_matrix',
+                            flirt_convert,  'in_matrix_file')
+    
+    """
+     fslmaths /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i} -mul 2 
+     -thr `fslstats /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i} -p 99.6` 
+    -bin /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i}
+    """
+    def getthreshop(thresh):
+        return ['-mul 2 -thr %.10f -bin' % (val) for val in thresh]
+    getthreshold            = pe.MapNode(
+                                    interface   = fsl.ImageStats(op_string='-p 99.6'),
+                                    iterfield   = ['in_file','mask_file'],
+                                    name        = 'getthreshold')
+    simple_workflow.connect(flirt_convert,  'out_file',
+                            getthreshold,   'in_file')
+    simple_workflow.connect(inputnode,      'mask',
+                            getthreshold,   'mask_file')
+    
+    threshold               = pe.MapNode(
+                                    interface   = fsl.ImageMaths(
+                                            suffix      = '_thresh',
+                                            op_string   = '-mul 2 -bin'),
+                                    iterfield   = ['in_file','op_string'],
+                                    name        = 'thresholding')
+    simple_workflow.connect(flirt_convert,  'out_file',
+                            threshold,      'in_file')
+    simple_workflow.connect(getthreshold,   ('out_stat',getthreshop),
+                            threshold,      'op_string')
+#    simple_workflow.connect(threshold,'out_file',outputnode,'BOLD_mask')
+    
+    bound_by_mask           = pe.MapNode(
+                                    interface   = fsl.ImageMaths(
+                                            suffix      = '_mask',
+                                            op_string   = '-mas'),
+                                    iterfield   = ['in_file','in_file2'],
+                                    name        = 'bound_by_mask')
+    simple_workflow.connect(threshold,      'out_file',
+                            bound_by_mask,  'in_file')
+    simple_workflow.connect(inputnode,      'mask',
+                            bound_by_mask,  'in_file2')
+    simple_workflow.connect(bound_by_mask,  'out_file',
+                            outputnode,     'BOLD_mask')
+    
+    # setup inputspecs 
+    simple_workflow.inputs.inputspec.flt_in_file    = roi
+    simple_workflow.inputs.inputspec.flt_in_matrix  = os.path.abspath(os.path.join(preprocessed_functional_dir,
+                                                        'reg',
+                                                        'highres2standard.mat'))
+    simple_workflow.inputs.inputspec.flt_reference  = os.path.abspath(os.path.join(preprocessed_functional_dir,
+                                                        'reg',
+                                                        'MNI152_T1_2mm_brain.nii.gz'))
+    simple_workflow.inputs.inputspec.mask           = os.path.abspath(os.path.join(preprocessed_functional_dir,
+                                                        'reg',
+                                                        'MNI152_T1_2mm_brain_mask_dil.nii.gz'))
+    simple_workflow.inputs.bound_by_mask.out_file   = os.path.abspath(os.path.join(output_dir,
+                                                         roi_name.replace('_fsl.nii.gz',
+                                                                          '_standard.nii.gz')))
+    return simple_workflow
 
 def create_simple_struc2BOLD(roi,
                              roi_name,
@@ -2265,15 +2383,25 @@ def load_csv(f,print_ = False):
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
                            remove_invariant = True,
+                           l1 = False,
                            n_jobs = 1):
     np.random.seed(12345)
-    svm = LinearSVC(penalty = 'l2', # default
-                    dual = True, # default
-                    tol = 1e-3, # not default
-                    random_state = 12345, # not default
-                    max_iter = int(1e3), # default
-                    class_weight = class_weight, # not default
-                    )
+    if l1:
+        svm = LinearSVC(penalty = 'l1', # not default
+                        dual = False, # not default
+                        tol = 1e-1, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e3), # default
+                        class_weight = class_weight, # not default
+                        )
+    else:
+        svm = LinearSVC(penalty = 'l2', # default
+                        dual = True, # default
+                        tol = 1e-1, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e3), # default
+                        class_weight = class_weight, # not default
+                        )
     svm = CalibratedClassifierCV(base_estimator = svm,
                                  method = 'sigmoid',
                                  cv = 8)
@@ -2619,11 +2747,14 @@ def resample_ttest(x,
             return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
         else:
             return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
-    ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
-                    'null':null,
-                    'size':(size,int(n_permutation)),}) for i in range(n_ps))
-    
-    return np.array(ps)
+    if n_ps == 1:
+        ps = t_statistics(null, size)
+    else:
+        ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                        'null':null,
+                        'size':(size,int(n_permutation)),}) for i in range(n_ps))
+        ps = np.array(ps)
+    return ps
 def resample_ttest_2sample(a,b,
                            n_ps                 = 100,
                            n_permutation        = 10000,
@@ -2739,6 +2870,25 @@ def define_roi_category():
                 }
     
     return roi_dict
+
+def rename_ROI_for_plotting():
+    name_map = {
+        'fusiform':'Fusiform gyrus',
+        'inferiorparietal':'Inferior parietal lobe',
+        'inferiortemporal':'Inferior temporal lobe',
+        'lateraloccipital':'Lateral occipital cortex',
+        'lingual':'Lingual',
+        'middlefrontal':'Middle frontal gyrus',
+        'rostralmiddlefrontal':'Middle fontal gyrus',
+        'parahippocampal':'Parahippocampal gyrus',
+        'pericalcarine':'Pericalcarine cortex',
+        'precuneus':'Precuneus',
+        'superiorfrontal':'Superior frontal gyrus',
+        'superiorparietal':'Superior parietal gyrus',
+        'ventrolateralPFC':'Inferior frontal gyrus',
+        }
+    return name_map
+
 def stars(x):
     if x < 0.001:
         return '***'
@@ -3126,6 +3276,44 @@ def plot_stat_map(stat_map_img,
 
     return display
 
+def make_ridge_model_CV(perform_pca = True,alpha_space = [1,12],custom_scorer = None):
+    from sklearn import linear_model,metrics
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.pipeline import make_pipeline
+    
+    if custom_scorer == None:
+        def score_func(y, y_pred,):
+            temp        = metrics.r2_score(y,y_pred,multioutput = 'raw_values')
+            if np.sum(temp > 0):
+                return temp[temp > 0].mean()
+            else:
+                return 0
+        custom_scorer      = metrics.make_scorer(score_func,greater_is_better = True)
+        
+    pca         = PCA(n_components = .99,random_state = 12345)
+#    scaler      = StandardScaler()
+    reg         = linear_model.Ridge(normalize      = True,
+                                     alpha          = 1,
+                                     random_state   = 12345)
+    if perform_pca:
+        reg         = GridSearchCV(make_pipeline(pca,reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    else:
+        reg         = GridSearchCV(make_pipeline(reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    return reg
+    
 def cross_validation(feature_dir,
                      encoding_model,
                      custom_scorer,
@@ -3137,28 +3325,14 @@ def cross_validation(feature_dir,
     """
     Encoding pipeline
     """
-    from sklearn import linear_model
-    from sklearn.decomposition import PCA
-    from sklearn.model_selection import GridSearchCV,cross_validate
-    from sklearn.pipeline import make_pipeline
+    from sklearn.model_selection import cross_validate
     features_source         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_source])
     features_target         = np.array([np.load(os.path.join(feature_dir,
                                                             encoding_model,
                                                             item)) for item in image_target])
-    pca         = PCA(n_components = .99,random_state = 12345)
-    reg         = linear_model.Ridge(normalize      = True,
-                                     alpha          = 1,
-                                     random_state   = 12345)
-    reg         = GridSearchCV(make_pipeline(pca,reg),
-                               dict(ridge__alpha = np.logspace(1,12,12),
-                                    ),
-                               scoring  = custom_scorer,
-                               n_jobs   = 1,
-                               cv       = 5,
-#                               iid      = False,
-                               )
+    reg = make_ridge_model_CV(custom_scorer = custom_scorer)
     res = cross_validate(reg,
                          features_source,
                          BOLD_sc_source,

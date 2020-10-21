@@ -9,7 +9,7 @@ Created on Thu Feb 27 12:04:11 2020
 import os
 import gc
 import warnings
-warnings.filterwarnings('ignore') 
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas  as pd
 import numpy   as np
 import seaborn as sns
@@ -18,8 +18,11 @@ from glob                      import glob
 from tqdm                      import tqdm
 from copy                      import copy
 from sklearn.utils             import shuffle
-from shutil                    import copyfile
-copyfile('../../../utils.py','utils.py')
+try:
+    from shutil                    import copyfile
+    copyfile('../../../utils.py','utils.py')
+except:
+    pass
 from utils                     import (LOO_partition,
                                        get_label_category_mapping,
                                        get_label_subcategory_mapping,
@@ -32,7 +35,7 @@ from sklearn.utils.testing     import ignore_warnings
 from collections               import OrderedDict
 from matplotlib                import pyplot as plt
 from scipy.spatial             import distance
-from scipy.stats               import spearmanr
+from scipy.stats               import kendalltau,spearmanr
 from joblib                    import Parallel,delayed
 from nibabel                   import load as load_fmri
 from nilearn.image             import new_img_like
@@ -54,29 +57,34 @@ def sfn(l, msk, myrad, bcast_var):
     """
     X = l[0][msk,:].T.copy()
     y = bcast_var.copy()
-    RDM_X = distance.pdist(normalize(X,axis = 1),'cosine')
-    RDM_y = distance.pdist(normalize(y,axis = 1),'cosine')
-    corr,p = spearmanr(RDM_X,RDM_y)
-    return corr
+    # pearson correlation
+    RDM_X   = distance.pdist(X,'correlation')
+    RDM_y   = distance.pdist(y,'correlation')
+    D,p     = spearmanr(RDM_X,RDM_y)
+    return D
 if __name__ == "__main__":
 
     sub                 = 'sub-01'
-    first_session       = 2
+    radius              = 6
     stacked_data_dir    = '../../../../data/BOLD_whole_brain_averaged/{}/'.format(sub)
     mask_dir            = '../../../../data/MRI/{}/anat/ROI_BOLD'.format(sub)
-    output_dir          = '../../../../results/MRI/nilearn/RSA_searchlight/{}'.format(sub)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    
     masks               = glob(os.path.join(mask_dir,'*.nii.gz'))
     whole_brain_mask    = f'../../../../data/MRI/{sub}/anat/ROI_BOLD/combine_BOLD.nii.gz'
     func_brain          = f'../../../../data/MRI/{sub}/func/example_func.nii.gz'
-    feature_dir         = '../../../../data/computer_vision_features'
+    feature_dir         = '../../../../data/computer_vision_features_no_background'
+    model_name          = 'VGG19'
     label_map           = {'Nonliving_Things':[0,1],'Living_Things':[1,0]}
     average             = True
     n_splits            = 1000
-    n_jobs              = 20
+    n_jobs              = -1
+    output_dir          = '../../../../results/MRI/nilearn/RSA_searchlight/{}/{}'.format(
+                        model_name,sub)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    conscious_state = 'unconscious'
+    conscious_state     = 'unconscious'
+    np.random.seed(12345)
     if True:
         df_data         = pd.read_csv(os.path.join(stacked_data_dir,
                                                    f'whole_brain_{conscious_state}.csv'))
@@ -88,7 +96,7 @@ if __name__ == "__main__":
         targets         = np.array([label_map[item] for item in df_data['targets']])[:,-1]
         images          = df_data['paths'].apply(lambda x: x.split('.')[0] + '.npy').values
         CNN_feature     = np.array([np.load(os.path.join(feature_dir,
-                                                         'DenseNet169',
+                                                         model_name,
                                                          item)) for item in images])
         groups          = df_data['labels'].values
         
@@ -97,14 +105,15 @@ if __name__ == "__main__":
             df_picked = df_picked.sort_values(['targets','subcategory','labels'])
             idx_test    = df_picked['level_1'].values
             return idx_test
+        print(f'partitioning data for {n_splits} folds')
         idxs_test = Parallel(n_jobs = -1, verbose = 1)(delayed(_proc)(**{
                     'df_data':df_data,}) for _ in range(n_splits))
         idxs_train = copy(idxs_test)
         gc.collect()
         
         def _searchligh_RSA(idx_train,
-                            sl_rad = 6, 
-                            max_blk_edge = 5, 
+                            sl_rad = radius, 
+                            max_blk_edge = radius - 1, 
                             shape = Ball,
                             min_active_voxels_proportion = 0,
                             ):
@@ -113,16 +122,20 @@ if __name__ == "__main__":
                              shape = shape,
                              min_active_voxels_proportion = min_active_voxels_proportion,
                              )
-            sl.distribute([BOLD_image.get_data()[:,:,:,idx_train]], load_fmri(whole_brain_mask).get_data() == 1)
+            sl.distribute([np.asanyarray(BOLD_image.dataobj)[:,:,:,idx_train]], 
+                           np.asanyarray(load_fmri(whole_brain_mask).dataobj) == 1)
             sl.broadcast(CNN_feature[idx_train])
             # run searchlight algorithm
             global_outputs = sl.run_searchlight(sfn,pool_size = 1)
             return global_outputs
+        for _ in range(10):
+            gc.collect()
+        
         
         print(f'working on {conscious_state}')
         res = Parallel(n_jobs = -1,verbose = 1,)(delayed(_searchligh_RSA)(**{
                 'idx_train':idx_train}) for idx_train in idxs_train)
-        
+        gc.collect()
         results_to_save = np.zeros(np.concatenate([BOLD_image.shape[:3],[n_splits]]))
         for ii,item in enumerate(res):
             results_to_save[:,:,:,ii] = np.array(item, dtype=np.float)
