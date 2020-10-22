@@ -138,6 +138,8 @@ def preprocessing_conscious(raw,
     1. if necessary, perform ICA
     """
     if perform_ICA:
+        epochs_for_ICA = epochs.copy()
+        epochs_for_ICA.filter(1,lowpass)
         picks       = mne.pick_types(epochs.info,
                                eeg          = True, # YES EEG
                                eog          = False # NO EOG
@@ -145,8 +147,8 @@ def preprocessing_conscious(raw,
         if interpolate_bad_channels:
             interpolation_list = faster_bad_channels(epochs,picks=picks)
             for ch_name in interpolation_list:
-                epochs.info['bads'].append(ch_name)
-            epochs = epochs.interpolate_bads()
+                epochs_for_ICA.info['bads'].append(ch_name)
+            epochs_for_ICA = epochs_for_ICA.interpolate_bads()
 #        ar          = AutoReject(
 #                        picks               = picks,
 #                        random_state        = 12345,
@@ -154,7 +156,7 @@ def preprocessing_conscious(raw,
 #        ar.fit(epochs)
 #        _,reject_log = ar.transform(epochs,return_log=True)
         # calculate the noise covariance of the epochs
-        noise_cov   = mne.compute_covariance(epochs,#[~reject_log.bad_epochs],
+        noise_cov   = mne.compute_covariance(epochs_for_ICA,#[~reject_log.bad_epochs],
                                              tmin                   = baseline[0],
                                              tmax                   = baseline[1],
                                              method                 = 'empirical',
@@ -167,11 +169,11 @@ def preprocessing_conscious(raw,
                                             max_iter                = int(3e3),
                                             noise_cov               = noise_cov,
                                             random_state            = 12345,)
-        picks       = mne.pick_types(epochs.info,
+        picks       = mne.pick_types(epochs_for_ICA.info,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
-        ica.fit(epochs,#[~reject_log.bad_epochs],
+        ica.fit(epochs_for_ICA,#[~reject_log.bad_epochs],
                 picks   = picks,
                 start   = tmin,
                 stop    = tmax,
@@ -180,14 +182,14 @@ def preprocessing_conscious(raw,
                 )
         # search for artificial ICAs automatically
         # most of these hyperparameters were used in a unrelated published study
-        ica.detect_artifacts(epochs,#[~reject_log.bad_epochs],
+        ica.detect_artifacts(epochs_for_ICA,#[~reject_log.bad_epochs],
                              eog_ch         = ['FT9','FT10','TP9','TP10'],
                              eog_criterion  = 0.4, # arbitary choice
                              skew_criterion = 1,   # arbitary choice
                              kurt_criterion = 1,   # arbitary choice
                              var_criterion  = 1,   # arbitary choice
                              )
-        picks       = mne.pick_types(epochs.info,
+        picks       = mne.pick_types(epochs_for_ICA.info,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
