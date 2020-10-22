@@ -148,7 +148,9 @@ def preprocessing_conscious(raw,
             interpolation_list = faster_bad_channels(epochs,picks=picks)
             for ch_name in interpolation_list:
                 epochs_for_ICA.info['bads'].append(ch_name)
+                epochs.info['bads'].append(ch_name)
             epochs_for_ICA = epochs_for_ICA.interpolate_bads()
+            epochs = epochs.interpolate_bads()
 #        ar          = AutoReject(
 #                        picks               = picks,
 #                        random_state        = 12345,
