@@ -88,9 +88,46 @@ except:
     pass#print('pymvpa is not installed')
 try:
 #    from tqdm import tqdm_notebook as tqdm
-    from tqdm.auto import tqdm
+    from tqdm import tqdm
 except:
     print('why is tqdm not installed?')
+
+def find_outliers(X, threshold=3.0, max_iter=2):
+    """Find outliers based on iterated Z-scoring.
+ 
+    This procedure compares the absolute z-score against the threshold.
+    After excluding local outliers, the comparison is repeated until no
+    local outlier is present any more.
+    
+    ########ATTENTION ATTENTION ATTENTION#####
+    # This function if removed from MNE-python code base
+
+    Parameters
+    ----------
+    X : np.ndarray of float, shape (n_elemenets,)
+        The scores for which to find outliers.
+    threshold : float
+        The value above which a feature is classified as outlier.
+    max_iter : int
+        The maximum number of iterations.
+ 
+    Returns
+    -------
+    bad_idx : np.ndarray of int, shape (n_features)
+        The outlier indices.
+    """
+    from scipy.stats import zscore
+    my_mask = np.zeros(len(X), dtype=np.bool)
+    for _ in range(max_iter):
+        X = np.ma.masked_array(X, my_mask)
+        this_z = np.abs(zscore(X))
+        local_bad = this_z > threshold
+        my_mask = np.max([my_mask, local_bad], 0)
+        if not np.any(local_bad):
+            break
+ 
+    bad_idx = np.where(my_mask)[0]
+    return bad_idx
 
 def preprocessing_conscious(raw,
                             events,
@@ -840,9 +877,29 @@ def str2int(x):
         return float(re.findall(r'\d+',x)[0])
     else:
         return x
+def compute_A(h,f):
+    if (.5 >= f) and (h >= .5):
+        a = .75 + (h - f) / 4 - f * (1 - h)
+    elif (h >= f) and (.5 >= h):
+        a = .75 + (h - f) / 4 - f / (4 * h)
+    else:
+        a = .75 + (h - f) / 4 - (1 - h) / (4 * (1 - f))
+    return a
+
+def check_nan(temp):
+    if np.isnan(temp[1]):
+        return 0
+    else:
+        return temp[1]
 def simple_load(f,idx):
-    df = pd.read_csv(f)
-    df['run'] = idx
+    temp = f.split('/')
+    sub = temp[-3]
+    session = temp[-2]
+    run = temp[-1].split('_')[-1].split('.')[0]
+    df = pd.read_csv(f).dropna()
+    df['sub'] = sub
+    df['run'] = run
+    df['session'] = session
     return df
 def get_frames(directory,new = True,EEG = True):
     if EEG:
@@ -913,8 +970,8 @@ def get_frames(directory,new = True,EEG = True):
             print(f"vis = {vis},prob(press 1) = {prob1:.4f}, p(press 2) = {prob2:.4f}")
     if new:
         df = []
-        for f in files:
-            temp = pd.read_csv(f).dropna()
+        for kk,f in enumerate(files):
+            temp = simple_load(f,kk).dropna()
             try:
                 temp[['probeFrames_raw','visible.keys_raw']]
             except:
@@ -969,7 +1026,18 @@ def get_frames(directory,new = True,EEG = True):
         df_stat['correct'].append(corrects)
         df_stat['RT_mean'].append(np.mean(df_sub['visible.rt_raw']))
         df_stat['RT_std'].append(np.std(df_sub['visible.rt_raw']))
-    return results,empty_temp,pd.DataFrame(df_stat)
+    return results,empty_temp,pd.DataFrame(df_stat),df
+
+def subj_map():
+    temp = {'sub-01':'sub-01',
+            'sub-03':'sub-02',
+            'sub-04':'sub-03',
+            'sub-05':'sub-04',
+            'sub-02':'sub-05',
+            'sub-06':'sub-06',
+            'sub-07':'sub-07',}
+    return temp
+
 
 def preprocess_behavioral_file(f):
     df = read_behavorial_file(f)
@@ -2109,13 +2177,13 @@ def create_simple_highres2standard(roi,
     # setup inputspecs 
     simple_workflow.inputs.inputspec.flt_in_file    = roi
     simple_workflow.inputs.inputspec.flt_in_matrix  = os.path.abspath(os.path.join(preprocessed_functional_dir,
-                                                        'reg',
+#                                                        'reg',
                                                         'highres2standard.mat'))
     simple_workflow.inputs.inputspec.flt_reference  = os.path.abspath(os.path.join(preprocessed_functional_dir,
-                                                        'reg',
+#                                                        'reg',
                                                         'MNI152_T1_2mm_brain.nii.gz'))
     simple_workflow.inputs.inputspec.mask           = os.path.abspath(os.path.join(preprocessed_functional_dir,
-                                                        'reg',
+#                                                        'reg',
                                                         'MNI152_T1_2mm_brain_mask_dil.nii.gz'))
     simple_workflow.inputs.bound_by_mask.out_file   = os.path.abspath(os.path.join(output_dir,
                                                          roi_name.replace('_fsl.nii.gz',
@@ -2372,7 +2440,7 @@ def create_highpass_filter_workflow(workflow_name   = 'highpassfiler',
     
     return highpass_workflow
 
-def load_csv(f,print_ = False):
+def load_csv(f,print_ = False,sub = None):
     temp = re.findall(r'\d+',f)
     n_session = int(temp[-2])
     n_run = int(temp[-1])
@@ -2382,29 +2450,35 @@ def load_csv(f,print_ = False):
     df['session'] = n_session
     df['run'] = n_run
     df['id'] = df['session'] * 1000 + df['run'] * 100 + df['trials']
+    if sub is not None:
+        df['sub'] = sub
     return df
 
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
                            remove_invariant = True,
                            l1 = False,
-                           n_jobs = 1):
+                           n_jobs = 1,
+                           C = 1,
+                           tol = 1e-2):
     np.random.seed(12345)
     if l1:
         svm = LinearSVC(penalty = 'l1', # not default
                         dual = False, # not default
-                        tol = 1e-1, # not default
+                        tol = tol, # not default
                         random_state = 12345, # not default
-                        max_iter = int(1e3), # default
+                        max_iter = int(1e4), # default
                         class_weight = class_weight, # not default
+                        C = C,
                         )
     else:
         svm = LinearSVC(penalty = 'l2', # default
                         dual = True, # default
-                        tol = 1e-1, # not default
+                        tol = tol, # not default
                         random_state = 12345, # not default
-                        max_iter = int(1e3), # default
+                        max_iter = int(1e4), # default
                         class_weight = class_weight, # not default
+                        C = C,
                         )
     svm = CalibratedClassifierCV(base_estimator = svm,
                                  method = 'sigmoid',
@@ -2685,6 +2759,30 @@ def check_train_balance(df,idx_train,keys):
     else:
         return idx_train
 
+def load_roi_array_data(df_event,
+                        conscious_state,
+                        BOLD,
+                        label_map,
+                        feature_dir,
+                        model_name,
+                        scaling_func = None,
+                        ):
+    idx_unconscious  = df_event['visibility'] == conscious_state
+    data             = BOLD[idx_unconscious]
+    df_data          = df_event[idx_unconscious].reset_index(drop=True)
+    df_data['id']    = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
+    targets          = np.array([label_map[item] for item in df_data['targets'].values])#[:,-1]
+    if scaling_func is not None:
+        scaler       = scaling_func.fit(data)
+        data         = scaler.transform(data)
+    else:
+        scaler       = None
+    images           = df_data['paths'].apply(lambda x: x.split('.')[0] + '.npy').values
+    CNN_feature      = np.array([np.load(os.path.join(feature_dir,
+                                                     model_name,
+                                                     item)) for item in images])
+    groups           = df_data['labels'].values
+    return data,df_data,targets,scaler,CNN_feature,groups
 
 def LOO_partition(df_data,target_column = 'labels'):
     temp = {'targets':[],target_column:[]}
@@ -2704,6 +2802,38 @@ def LOO_partition(df_data,target_column = 'labels'):
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
+
+def check_LOO_cv(idxs_test_target,df_data_target,df_data_source):
+    from tqdm import tqdm
+    cv_warning                  = False
+    idxs_train_source           = []
+    idxs_test_source            = []
+    for idx_test_target in tqdm(idxs_test_target):
+        df_data_target_sub      = df_data_target.iloc[idx_test_target]
+        unique_subcategories    = pd.unique(df_data_target_sub['labels'])
+        # category check:
+        # print(Counter(df_data_target_sub['targets']))
+        idx_train_source        = []
+        idx_test_source         = []
+        for subcategory,df_data_source_sub in df_data_source.groupby(['labels']):
+            if subcategory not in unique_subcategories:
+                idx_train_source.append(list(df_data_source_sub.index))
+            else:
+                idx_test_source.append(list(df_data_source_sub.index))
+        idx_train_source        = np.concatenate(idx_train_source)
+        idx_test_source         = idx_train_source.copy()
+        
+        # check if the training and testing have subcategory overlapping
+        target_set              = set(pd.unique(df_data_target.iloc[idx_test_target]['labels']))
+        source_set              = set(pd.unique(df_data_source.iloc[idx_train_source]['labels']))
+        overlapping             = target_set.intersection(source_set)
+        # print(f'overlapped subcategories: {overlapping}')
+        if len(overlapping) > 0:
+            cv_warning          = True
+        idxs_train_source.append(idx_train_source)
+        # the testing set for the source does NOT matter since we don't care its performance
+        idxs_test_source.append(idx_test_source)
+    return cv_warning,idxs_train_source,idxs_test_source
 
 def resample_ttest(x,
                    baseline         = 0.5,
@@ -3282,6 +3412,13 @@ def plot_stat_map(stat_map_img,
 
     return display
 
+def load_whole_brain_data_with_mask(BOLD_file,csv_file,masker):
+    masker.fit()
+    df = pd.read_csv(csv_file)
+    masker.sessions = df['session'].values
+    BOLD = masker.transform(BOLD_file)
+    return BOLD
+
 def make_ridge_model_CV(perform_pca = True,alpha_space = [1,12],custom_scorer = None):
     from sklearn import linear_model,metrics
     from sklearn.decomposition import PCA
@@ -3375,12 +3512,60 @@ def fill_results(scores,
     results['corr'] = corr
     results['positive_voxel_indices'] = positive_voxel_indices
     return scores.mean(1),results
+
+def get_array_from_dataframe(df,column_name):
+    return np.array([item for item in df[column_name].values[0].replace('[',
+                     '').replace(']',
+                        '').replace('\n',
+                          '').replace('  ',
+                            ' ').replace(',',' ').split(' ') if len(item) > 0],
+                    dtype = 'float32')
+
+def load_BOLD_csv_preprocessing(BOLD_file_name,csv_file_name,conscious_state,
+                                label_map = {'Nonliving_Things': [0, 1], 'Living_Things': [1, 0]},
+                                preprocessing_steps = ['scale_data','clustering','permute_voxels'],kernel_size = None):
+    import gc
+    import numpy as np
+    import pandas as pd
+    
+    from sklearn import cluster
+    from sklearn.feature_selection import VarianceThreshold
+    from sklearn.preprocessing import MinMaxScaler
+    
+    BOLD             = np.load(BOLD_file_name)
+    event            = pd.read_csv(csv_file_name)
+    roi_name         = csv_file_name.split('/')[-1].split('_events')[0]
+    idx_unconscious  = event['visibility'] == conscious_state
+    data             = BOLD[idx_unconscious]
+    df_data          = event[idx_unconscious].reset_index(drop=True)
+    df_data['id']    = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
+    targets          = np.array([label_map[item] for item in df_data['targets'].values])
+    if 'scale_data' in preprocessing_steps:
+        scaler = make_pipeline(VarianceThreshold(),MinMaxScaler((-1,1)))
+        scaler.fit_transform(data)
+    if 'clustering' in preprocessing_steps:
+        gc.collect()
+        if kernel_size == None:
+            kernel_size = 8
+        CLUSTER = cluster.DBSCAN(min_samples = kernel_size,
+                                 metric = 'correlation',
+                                 n_jobs = -1,)
+        CLUSTER.fit(data.T)
+        idx = np.argsort(CLUSTER.labels_)
+        data = data[:,idx]
+    if ('permute_voxels' in preprocessing_steps) and ('clustering' not in preprocessing_steps):
+        np.random.seed(12345)
+        data         = np.random.shuffle(data.T).T
+    return data,df_data,targets,scaler,roi_name
 ###################################################################################
 ###################################################################################
 import numpy as np
 import scipy.signal
 from scipy.stats import kurtosis
-from mne.preprocessing import find_outliers
+try:
+    from mne.preprocessing import find_outliers
+except:
+    pass
 from numpy import nanmean
 from mne.utils import logger
 #from mne.preprocessing.eog import _get_eog_channel_index
