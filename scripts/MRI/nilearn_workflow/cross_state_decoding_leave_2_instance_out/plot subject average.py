@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 sns.set_style('whitegrid')
-sns.set_context('poster')
+sns.set_context('poster',font_scale = 1.5)
 
 working_dir = "../../../../results/MRI/nilearn/"
 figure_dir = "../../../../figures/MRI/nilearn/cross-subjects"
@@ -41,6 +41,8 @@ for idx_sub in range(7):
     results = pd.read_csv(os.path.join(f'../../../../results/MRI/nilearn/sub-0{idx_sub+1}/LOO_stats','LOO 4 models.csv'))
     results_trim = results[results['ps_corrected'] < 0.05]
     
+    df
+    
     g = sns.catplot(x = 'roi_name',
                     y = 'roc_auc',
                     hue = 'Side',
@@ -62,10 +64,12 @@ for idx_sub in range(7):
             xtick_label = text_obj.get_text()
             rows = results[results['conscious_state'] == conscious_state]
             rows = rows[rows['roi_name'] == xtick_label]
-            for (ii,temp_row),adjustment in zip(rows.iterrows(),[-0.3,0.1]):
+            for (ii,temp_row),adjustment in zip(rows.iterrows(),[-0.2,0.2]):
                 if '*' in temp_row['stars']:
                     ax.annotate(temp_row['stars'],
-                                xy = (position[0] + adjustment,0.9))
+                                xy = (position[0] + adjustment,0.9),
+                                ha = 'center',
+                                fontsize = 16,)
     (g.set_axis_labels("ROIs","ROC AUC")
       .set_titles("{row_name}")
       .set(ylim = (0.05,0.95))
@@ -76,11 +80,12 @@ estimator = Linear-SVM
 Boferroni corrected within conscious state
 *: <0.05, **: <0.01, ***: <0.001
 '''
-    g.fig.suptitle(title,y = 1.15)
+    # g.fig.suptitle(title,y = 1.15)
     g.savefig(os.path.join(f'../../../../figures/MRI/nilearn/sub-0{idx_sub+1}/LOO',
                            'decoding (Linear-SVM) as a function of roi, conscious state.png'),
             dpi = 450,
             bbox_inches = 'tight')
+
     g.savefig(os.path.join(f'../../../../figures/MRI/nilearn/sub-0{idx_sub+1}/LOO',
                            'decoding (Linear-SVM) as a function of roi, conscious state (light).png'),
 #            dpi = 450,
@@ -95,7 +100,7 @@ df['Comparison'] = df['model'].apply(lambda x:"Chance" if "Dummy" in x else "Emp
 temp = np.array([item.split('-') for item in df['roi'].values])
 df['roi_name'] = temp[:,1]
 df['Side'] = temp[:,0]
-
+"""
 g = sns.catplot(x = 'roi_name',
                 y = 'roc_auc',
                 hue = 'Side',
@@ -143,7 +148,7 @@ g.fig.savefig(os.path.join(figure_dir,
                            ),
 #                dpi = 450,
                 bbox_inches = 'tight')
-
+"""
 
 
 

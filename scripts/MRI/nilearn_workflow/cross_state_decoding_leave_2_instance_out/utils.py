@@ -5,9 +5,14 @@ Created on Mon Mar  4 10:09:21 2019
 
 @author: nmei
 """
-
-from autoreject import (AutoReject,get_rejection_threshold)
-import mne
+try:
+    from autoreject import (AutoReject,get_rejection_threshold)
+except Exception as e:
+    print(e)
+try:
+    import mne
+except Exception as e:
+    print(e)
 from glob import glob
 import re
 import os
@@ -15,6 +20,7 @@ import os
 import numpy as np
 import pandas as pd
 import pickle
+#import faster # https://gist.github.com/wmvanvliet/d883c3fe1402c7ced6fc
 
 from sklearn.metrics                               import roc_auc_score,roc_curve
 from sklearn.metrics                               import (
@@ -32,7 +38,7 @@ from sklearn.preprocessing                         import (MinMaxScaler,
                                                            StandardScaler)
 
 from sklearn.pipeline                              import make_pipeline
-from sklearn.ensemble.forest                       import _generate_unsampled_indices
+# from sklearn.ensemble.forest                       import _generate_unsampled_indices
 from sklearn.utils                                 import shuffle
 from sklearn.svm                                   import SVC,LinearSVC
 from sklearn.calibration                           import CalibratedClassifierCV
@@ -52,7 +58,7 @@ from sklearn.ensemble                              import RandomForestClassifier
 from sklearn.neural_network                        import MLPClassifier
 from xgboost                                       import XGBClassifier
 from itertools                                     import product,combinations
-from sklearn.base                                  import clone
+# from sklearn.base                                  import clone
 from sklearn.neighbors                             import KNeighborsClassifier
 from sklearn.tree                                  import DecisionTreeClassifier
 from collections                                   import OrderedDict
@@ -60,7 +66,13 @@ from collections                                   import OrderedDict
 from scipy                                         import stats
 from collections                                   import Counter
 from mpl_toolkits.axes_grid1                       import make_axes_locatable
-import matplotlib.pyplot  as plt
+from matplotlib                                    import pyplot as plt
+from matplotlib.pyplot                             import cm
+from nilearn.plotting.img_plotting                 import (_load_anat,
+                                                           _utils,
+                                                           _plot_img_with_bg,
+                                                           _get_colorbar_and_data_ranges,
+                                                           _safe_get_data)
 import matplotlib.patches as patches
 
 
@@ -76,9 +88,46 @@ except:
     pass#print('pymvpa is not installed')
 try:
 #    from tqdm import tqdm_notebook as tqdm
-    from tqdm.auto import tqdm
+    from tqdm import tqdm
 except:
     print('why is tqdm not installed?')
+
+def find_outliers(X, threshold=3.0, max_iter=2):
+    """Find outliers based on iterated Z-scoring.
+ 
+    This procedure compares the absolute z-score against the threshold.
+    After excluding local outliers, the comparison is repeated until no
+    local outlier is present any more.
+    
+    ########ATTENTION ATTENTION ATTENTION#####
+    # This function if removed from MNE-python code base
+
+    Parameters
+    ----------
+    X : np.ndarray of float, shape (n_elemenets,)
+        The scores for which to find outliers.
+    threshold : float
+        The value above which a feature is classified as outlier.
+    max_iter : int
+        The maximum number of iterations.
+ 
+    Returns
+    -------
+    bad_idx : np.ndarray of int, shape (n_features)
+        The outlier indices.
+    """
+    from scipy.stats import zscore
+    my_mask = np.zeros(len(X), dtype=np.bool)
+    for _ in range(max_iter):
+        X = np.ma.masked_array(X, my_mask)
+        this_z = np.abs(zscore(X))
+        local_bad = this_z > threshold
+        my_mask = np.max([my_mask, local_bad], 0)
+        if not np.any(local_bad):
+            break
+ 
+    bad_idx = np.where(my_mask)[0]
+    return bad_idx
 
 def preprocessing_conscious(raw,
                             events,
@@ -88,7 +137,9 @@ def preprocessing_conscious(raw,
                             notch_filter = 50,
                             event_id = {'living':1,'nonliving':2},
                             baseline = (None,None),
-                            perform_ICA = False,):
+                            perform_ICA = False,
+                            lowpass = None,
+                            interpolate_bad_channels = True,):
     """
     0. re-reference - explicitly
     """
@@ -102,12 +153,14 @@ def preprocessing_conscious(raw,
     picks = mne.pick_types(raw_ref.info,
                            meg = False, # No MEG
                            eeg = True,  # YES EEG
-                           eog = True,  # YES EOG
+                           eog = perform_ICA,  # depends on ICA
                            )
     # regardless the bandpass filtering later, we should always filter
     # for wire artifacts and their oscillations
     raw_ref.notch_filter(np.arange(notch_filter,241,notch_filter),
                          picks = picks)
+    if lowpass is not None:
+        raw_ref.filter(None,lowpass,)
     epochs      = mne.Epochs(raw_ref,
                              events,    # numpy array
                              event_id,  # dictionary
@@ -122,35 +175,44 @@ def preprocessing_conscious(raw,
     1. if necessary, perform ICA
     """
     if perform_ICA:
+        epochs_for_ICA = epochs.copy()
+        epochs_for_ICA.filter(1,lowpass)
         picks       = mne.pick_types(epochs.info,
                                eeg          = True, # YES EEG
                                eog          = False # NO EOG
                                )
-        ar          = AutoReject(
-                        picks               = picks,
-                        random_state        = 12345,
-                        )
-        ar.fit(epochs)
-        _,reject_log = ar.transform(epochs,return_log=True)
+        if interpolate_bad_channels:
+            interpolation_list = faster_bad_channels(epochs,picks=picks)
+            for ch_name in interpolation_list:
+                epochs_for_ICA.info['bads'].append(ch_name)
+                epochs.info['bads'].append(ch_name)
+            epochs_for_ICA = epochs_for_ICA.interpolate_bads()
+            epochs = epochs.interpolate_bads()
+#        ar          = AutoReject(
+#                        picks               = picks,
+#                        random_state        = 12345,
+#                        )
+#        ar.fit(epochs)
+#        _,reject_log = ar.transform(epochs,return_log=True)
         # calculate the noise covariance of the epochs
-        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
-                                             tmin                   = tmin,
-                                             tmax                   = 0,
+        noise_cov   = mne.compute_covariance(epochs_for_ICA,#[~reject_log.bad_epochs],
+                                             tmin                   = baseline[0],
+                                             tmax                   = baseline[1],
                                              method                 = 'empirical',
                                              rank                   = None,)
         # define an ica function
         ica         = mne.preprocessing.ICA(n_components            = .99,
                                             n_pca_components        = .99,
                                             max_pca_components      = None,
-                                            method                  = 'extended-infomax',
+                                            method                  = 'infomax',
                                             max_iter                = int(3e3),
                                             noise_cov               = noise_cov,
                                             random_state            = 12345,)
-        picks       = mne.pick_types(epochs.info,
+        picks       = mne.pick_types(epochs_for_ICA.info,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
-        ica.fit(epochs[~reject_log.bad_epochs],
+        ica.fit(epochs_for_ICA,#[~reject_log.bad_epochs],
                 picks   = picks,
                 start   = tmin,
                 stop    = tmax,
@@ -159,14 +221,14 @@ def preprocessing_conscious(raw,
                 )
         # search for artificial ICAs automatically
         # most of these hyperparameters were used in a unrelated published study
-        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+        ica.detect_artifacts(epochs_for_ICA,#[~reject_log.bad_epochs],
                              eog_ch         = ['FT9','FT10','TP9','TP10'],
                              eog_criterion  = 0.4, # arbitary choice
-                             skew_criterion = 2,   # arbitary choice
-                             kurt_criterion = 2,   # arbitary choice
-                             var_criterion  = 2,   # arbitary choice
+                             skew_criterion = 1,   # arbitary choice
+                             kurt_criterion = 1,   # arbitary choice
+                             var_criterion  = 1,   # arbitary choice
                              )
-        picks       = mne.pick_types(epochs.info,
+        picks       = mne.pick_types(epochs_for_ICA.info,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
@@ -174,6 +236,16 @@ def preprocessing_conscious(raw,
                                 exclude    = ica.exclude,
                                 )
         epochs = epochs_ica.copy()
+    else:
+        picks       = mne.pick_types(epochs.info,
+                               eeg          = True, # YES EEG
+                               eog          = False # NO EOG
+                               )
+        if interpolate_bad_channels:
+            interpolation_list = faster_bad_channels(epochs,picks=picks)
+            for ch_name in interpolation_list:
+                epochs.info['bads'].append(ch_name)
+            epochs = epochs.interpolate_bads()
     # pick the EEG channels for later use
     clean_epochs = epochs.pick_types(eeg = True, eog = False)
     
@@ -210,8 +282,10 @@ def preprocessing_unconscious(raw,
     # filter EOG and ECG channels
     picks = mne.pick_types(raw.info,
                            meg = False,
-                           eeg = True)
-    raw.filter(1,80,picks = picks,)
+                           eeg = False,
+                           eog = True,
+                           ecg = True,)
+    raw.filter(1,12,picks = picks,)
     # epoch the data
     picks = mne.pick_types(raw.info,
                            meg = True,
@@ -238,14 +312,14 @@ def preprocessing_unconscious(raw,
                                eog          = False, # NO EOG
                                ecg          = False, # NO ECG
                                )
-        ar          = AutoReject(
-                        picks               = picks,
-                        random_state        = 12345,
-                        )
-        ar.fit(epochs)
-        _,reject_log = ar.transform(epochs,return_log=True)
+#        ar          = AutoReject(
+#                        picks               = picks,
+#                        random_state        = 12345,
+#                        )
+#        ar.fit(epochs)
+#        _,reject_log = ar.transform(epochs,return_log=True)
         # calculate the noise covariance of the epochs
-        noise_cov   = mne.compute_covariance(epochs[~reject_log.bad_epochs],
+        noise_cov   = mne.compute_covariance(epochs,#[~reject_log.bad_epochs],
                                              tmin                   = tmin,
                                              tmax                   = 0,
                                              method                 = 'empirical',
@@ -262,7 +336,7 @@ def preprocessing_unconscious(raw,
                                      eeg = True, # YES EEG
                                      eog = False # NO EOG
                                      ) 
-        ica.fit(epochs[~reject_log.bad_epochs],
+        ica.fit(epochs,#[~reject_log.bad_epochs],
                 picks   = picks,
                 start   = tmin,
                 stop    = tmax,
@@ -271,25 +345,21 @@ def preprocessing_unconscious(raw,
                 )
         # search for artificial ICAs automatically
         # most of these hyperparameters were used in a unrelated published study
-        ica.detect_artifacts(epochs[~reject_log.bad_epochs],
+        ica.detect_artifacts(epochs,#[~reject_log.bad_epochs],
                              eog_ch         = eog_chs,
-                             ecg_ch         = ecg_chs,
+                             ecg_ch         = ecg_chs[0],
                              eog_criterion  = 0.4, # arbitary choice
                              ecg_criterion  = 0.1, # arbitary choice
                              skew_criterion = 1,   # arbitary choice
                              kurt_criterion = 1,   # arbitary choice
                              var_criterion  = 1,   # arbitary choice
                              )
-        picks       = mne.pick_types(epochs.info,
-                                     eeg = True, # YES EEG
-                                     eog = False # NO EOG
-                                     ) 
         epochs_ica  = ica.apply(epochs,#,[~reject_log.bad_epochs],
                                 exclude    = ica.exclude,
                                 )
         epochs = epochs_ica.copy()
     # pick the EEG channels for later use
-    clean_epochs = epochs.pick_types(eeg = True, eog = False)
+    clean_epochs = epochs.pick_types(meg = True, eeg = True, eog = False)
     
     return clean_epochs
 def _preprocessing_conscious(
@@ -580,19 +650,21 @@ def plot_temporal_decoding(times,
     ax.legend()
     return fig,ax
 def plot_temporal_generalization(scores_gen_,
-                                 epochs,
+                                 times,
                                  ii,
                                  conscious_state,
                                  frames,
                                  vmin = 0.4,
                                  vmax = 0.6):
     fig, ax = plt.subplots(figsize = (10,10))
+    if len(scores_gen_.shape) > 2:
+        scores_gen_ = scores_gen_.mean(0)
     im      = ax.imshow(
                         scores_gen_, 
-                        interpolation       = 'lanczos', 
+                        interpolation       = 'hamming', 
                         origin              = 'lower', 
                         cmap                = 'RdBu_r',
-                        extent              = epochs.times[[0, -1, 0, -1]], 
+                        extent              = times[[0, -1, 0, -1]], 
                         vmin                = vmin, 
                         vmax                = vmax,
                         )
@@ -801,13 +873,33 @@ def plot_EEG_autoreject_log(autoreject_object,):
     plt.colorbar(im)
     return fig
 def str2int(x):
-    try:
+    if type(x) is str:
         return float(re.findall(r'\d+',x)[0])
-    except:
-        return 999
+    else:
+        return x
+def compute_A(h,f):
+    if (.5 >= f) and (h >= .5):
+        a = .75 + (h - f) / 4 - f * (1 - h)
+    elif (h >= f) and (.5 >= h):
+        a = .75 + (h - f) / 4 - f / (4 * h)
+    else:
+        a = .75 + (h - f) / 4 - (1 - h) / (4 * (1 - f))
+    return a
+
+def check_nan(temp):
+    if np.isnan(temp[1]):
+        return 0
+    else:
+        return temp[1]
 def simple_load(f,idx):
-    df = pd.read_csv(f)
-    df['run'] = idx
+    temp = f.split('/')
+    sub = temp[-3]
+    session = temp[-2]
+    run = temp[-1].split('_')[-1].split('.')[0]
+    df = pd.read_csv(f).dropna()
+    df['sub'] = sub
+    df['run'] = run
+    df['session'] = session
     return df
 def get_frames(directory,new = True,EEG = True):
     if EEG:
@@ -816,6 +908,16 @@ def get_frames(directory,new = True,EEG = True):
 #        files = glob(os.path.join(directory,'*trials.csv'))
     else:
         files = glob(os.path.join(directory,'*','*.csv'))
+    df_stat = dict(
+        conscious_state = [],
+        prob_press_1 = [],
+        prob_press_2 = [],
+        correct = [],
+        frame_mean = [],
+        frame_std = [],
+        RT_mean = [],
+        RT_std = [],
+        )
     empty_temp = ''
     for ii,f in enumerate(files):
         df = pd.read_csv(f).dropna()
@@ -852,6 +954,11 @@ def get_frames(directory,new = True,EEG = True):
         df_press2 = df_sub[df_sub['response.keys_raw'] == 2]
         prob1 = df_press1.shape[0] / df_sub.shape[0]
         prob2 = df_press2.shape[0] / df_sub.shape[0]
+        
+        df_stat['conscious_state'].append(vis)
+        df_stat['prob_press_1'].append(prob1)
+        df_stat['prob_press_2'].append(prob2)
+        
         try:
             print(f"\nvis = {vis},mean frames = {np.median(df_sub['probeFrames_raw']):.5f}")
             print(f"vis = {vis},prob(press 1) = {prob1:.4f}, p(press 2) = {prob2:.4f}")
@@ -863,8 +970,8 @@ def get_frames(directory,new = True,EEG = True):
             print(f"vis = {vis},prob(press 1) = {prob1:.4f}, p(press 2) = {prob2:.4f}")
     if new:
         df = []
-        for f in files:
-            temp = pd.read_csv(f).dropna()
+        for kk,f in enumerate(files):
+            temp = simple_load(f,kk).dropna()
             try:
                 temp[['probeFrames_raw','visible.keys_raw']]
             except:
@@ -913,7 +1020,24 @@ def get_frames(directory,new = True,EEG = True):
             print("vis = {},mean frames = {:.2f} +/- {:.2f}".format(
                     vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])))
         results.append([vis,np.mean(df_sub['probeFrames']),np.std(df_sub['probeFrames'])])
-    return results,empty_temp
+        
+        df_stat['frame_mean'].append(np.mean(df_sub['probeFrames']))
+        df_stat['frame_std'].append(np.std(df_sub['probeFrames']))
+        df_stat['correct'].append(corrects)
+        df_stat['RT_mean'].append(np.mean(df_sub['visible.rt_raw']))
+        df_stat['RT_std'].append(np.std(df_sub['visible.rt_raw']))
+    return results,empty_temp,pd.DataFrame(df_stat),df
+
+def subj_map():
+    temp = {'sub-01':'sub-01',
+            'sub-03':'sub-02',
+            'sub-04':'sub-03',
+            'sub-05':'sub-04',
+            'sub-02':'sub-05',
+            'sub-06':'sub-06',
+            'sub-07':'sub-07',}
+    return temp
+
 
 def preprocess_behavioral_file(f):
     df = read_behavorial_file(f)
@@ -1968,6 +2092,103 @@ def _create_registration_workflow(anat_brain,
     for cmdline in [plot_example_func2highres,plot_example_func2standard,plot_highres2standard]:
         os.system(cmdline)
 
+def create_simple_highres2standard(roi,
+                             roi_name,
+                             preprocessed_functional_dir,
+                             output_dir):
+    from nipype.interfaces            import fsl
+    from nipype.pipeline              import engine as pe
+    from nipype.interfaces            import utility as util
+    fsl.FSLCommand.set_default_output_type('NIFTI_GZ')
+    
+    simple_workflow         = pe.Workflow(name  = 'highres2standard')
+    
+    inputnode               = pe.Node(interface = util.IdentityInterface(
+                                      fields    = ['flt_in_file',
+                                                   'flt_in_matrix',
+                                                   'flt_reference',
+                                                   'mask']),
+                                      name      = 'inputspec')
+    outputnode              = pe.Node(interface = util.IdentityInterface(
+                                      fields    = ['BODL_mask']),
+                                      name      = 'outputspec')
+    """
+     flirt 
+ -in /export/home/dsoto/dsoto/fmri/$s/sess2/label/$i 
+ -ref /export/home/dsoto/dsoto/fmri/$s/sess2/run1_prepro1.feat/example_func.nii.gz  
+ -applyxfm 
+ -init /export/home/dsoto/dsoto/fmri/$s/sess2/run1_prepro1.feat/reg/highres2example_func.mat 
+ -out  /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i}
+    """
+    flirt_convert           = pe.MapNode(
+                                    interface   = fsl.FLIRT(apply_xfm = True),
+                                    iterfield   = ['in_file',
+                                                   'reference',
+                                                   'in_matrix_file'],
+                                    name        = 'flirt_convert')
+    simple_workflow.connect(inputnode,      'flt_in_file',
+                            flirt_convert,  'in_file')
+    simple_workflow.connect(inputnode,      'flt_reference',
+                            flirt_convert,  'reference')
+    simple_workflow.connect(inputnode,      'flt_in_matrix',
+                            flirt_convert,  'in_matrix_file')
+    
+    """
+     fslmaths /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i} -mul 2 
+     -thr `fslstats /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i} -p 99.6` 
+    -bin /export/home/dsoto/dsoto/fmri/$s/label/BOLD${i}
+    """
+    def getthreshop(thresh):
+        return ['-mul 2 -thr %.10f -bin' % (val) for val in thresh]
+    getthreshold            = pe.MapNode(
+                                    interface   = fsl.ImageStats(op_string='-p 99.6'),
+                                    iterfield   = ['in_file','mask_file'],
+                                    name        = 'getthreshold')
+    simple_workflow.connect(flirt_convert,  'out_file',
+                            getthreshold,   'in_file')
+    simple_workflow.connect(inputnode,      'mask',
+                            getthreshold,   'mask_file')
+    
+    threshold               = pe.MapNode(
+                                    interface   = fsl.ImageMaths(
+                                            suffix      = '_thresh',
+                                            op_string   = '-mul 2 -bin'),
+                                    iterfield   = ['in_file','op_string'],
+                                    name        = 'thresholding')
+    simple_workflow.connect(flirt_convert,  'out_file',
+                            threshold,      'in_file')
+    simple_workflow.connect(getthreshold,   ('out_stat',getthreshop),
+                            threshold,      'op_string')
+#    simple_workflow.connect(threshold,'out_file',outputnode,'BOLD_mask')
+    
+    bound_by_mask           = pe.MapNode(
+                                    interface   = fsl.ImageMaths(
+                                            suffix      = '_mask',
+                                            op_string   = '-mas'),
+                                    iterfield   = ['in_file','in_file2'],
+                                    name        = 'bound_by_mask')
+    simple_workflow.connect(threshold,      'out_file',
+                            bound_by_mask,  'in_file')
+    simple_workflow.connect(inputnode,      'mask',
+                            bound_by_mask,  'in_file2')
+    simple_workflow.connect(bound_by_mask,  'out_file',
+                            outputnode,     'BOLD_mask')
+    
+    # setup inputspecs 
+    simple_workflow.inputs.inputspec.flt_in_file    = roi
+    simple_workflow.inputs.inputspec.flt_in_matrix  = os.path.abspath(os.path.join(preprocessed_functional_dir,
+#                                                        'reg',
+                                                        'highres2standard.mat'))
+    simple_workflow.inputs.inputspec.flt_reference  = os.path.abspath(os.path.join(preprocessed_functional_dir,
+#                                                        'reg',
+                                                        'MNI152_T1_2mm_brain.nii.gz'))
+    simple_workflow.inputs.inputspec.mask           = os.path.abspath(os.path.join(preprocessed_functional_dir,
+#                                                        'reg',
+                                                        'MNI152_T1_2mm_brain_mask_dil.nii.gz'))
+    simple_workflow.inputs.bound_by_mask.out_file   = os.path.abspath(os.path.join(output_dir,
+                                                         roi_name.replace('_fsl.nii.gz',
+                                                                          '_standard.nii.gz')))
+    return simple_workflow
 
 def create_simple_struc2BOLD(roi,
                              roi_name,
@@ -2219,7 +2440,7 @@ def create_highpass_filter_workflow(workflow_name   = 'highpassfiler',
     
     return highpass_workflow
 
-def load_csv(f,print_ = False):
+def load_csv(f,print_ = False,sub = None):
     temp = re.findall(r'\d+',f)
     n_session = int(temp[-2])
     n_run = int(temp[-1])
@@ -2229,20 +2450,37 @@ def load_csv(f,print_ = False):
     df['session'] = n_session
     df['run'] = n_run
     df['id'] = df['session'] * 1000 + df['run'] * 100 + df['trials']
+    if sub is not None:
+        df['sub'] = sub
     return df
 
 def build_model_dictionary(print_train = False,
                            class_weight = 'balanced',
                            remove_invariant = True,
-                           n_jobs = 1):
+                           l1 = False,
+                           n_jobs = 1,
+                           C = 1,
+                           tol = 1e-2,
+                           ):
     np.random.seed(12345)
-    svm = LinearSVC(penalty = 'l2', # default
-                    dual = True, # default
-                    tol = 1e-3, # not default
-                    random_state = 12345, # not default
-                    max_iter = int(1e3), # default
-                    class_weight = class_weight, # not default
-                    )
+    if l1:
+        svm = LinearSVC(penalty = 'l1', # not default
+                        dual = False, # not default
+                        tol = tol, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e4), # default
+                        class_weight = class_weight, # not default
+                        C = C,
+                        )
+    else:
+        svm = LinearSVC(penalty = 'l2', # default
+                        dual = True, # default
+                        tol = tol, # not default
+                        random_state = 12345, # not default
+                        max_iter = int(1e4), # default
+                        class_weight = class_weight, # not default
+                        C = C,
+                        )
     svm = CalibratedClassifierCV(base_estimator = svm,
                                  method = 'sigmoid',
                                  cv = 8)
@@ -2482,68 +2720,123 @@ def check_train_test_splits(idxs_test):
                     temp.append(len(set(sample1).intersection(set(sample2))) == len(sample1))
     temp = np.array(temp)
     return any(temp)
-def check_train_balance(df,idx_train,keys):
+def check_train_balance(df,idx_train,keys = ['Living_Things','Nonliving_Things'],tol = 20):
     """
     check the balance of the training set.
-    if only one of the classes has more 2 instances than the other
+    if only one of the classes has more {tol} instances than the other
     we will randomly take out those 'extra instances' from the major
     class
     """
-    Counts = dict(Counter(df.iloc[idx_train]['targets'].values))
-    if np.abs(Counts[keys[0]] - Counts[keys[1]]) > 2:
+    np.random.seed(12345)
+    from sklearn.utils import shuffle as sk_shuffle
+    
+    df = df.copy().iloc[idx_train]
+    Counts = dict(Counter(df['targets'].values))
+    if np.abs(Counts[keys[0]] - Counts[keys[1]]) > tol:
         if Counts[keys[0]] > Counts[keys[1]]:
             key_major = keys[0]
             key_minor = keys[1]
         else:
             key_major = keys[1]
             key_minor = keys[0]
-            
-        ids_major = df.iloc[idx_train]['id'][df.iloc[idx_train]['targets'] == key_major]
+        idx_train_minor = idx_train[df['targets'] == key_minor]
+        idx_train_major = idx_train[df['targets'] == key_major]
+        idx_train_major_picked = np.random.choice(idx_train_major,size = idx_train_minor.shape,replace = False)
         
-        idx_train_new = idx_train.copy()
-        for n in range(len(idx_train_new)):
-            random_pick = np.random.choice(np.unique(ids_major),size = 1)[0]
-            # print(random_pick,np.unique(ids_major))
-            idx_train_new = np.array([item for item,id_temp in zip(idx_train_new,df.iloc[idx_train_new]['id']) if (id_temp != random_pick)])
-            ids_major = np.array([item for item in ids_major if (item != random_pick)])
-            new_counts = dict(Counter(df.iloc[idx_train_new]['targets']))
-            if np.abs(new_counts[keys[0]] - new_counts[keys[1]]) > 3:
-                if new_counts[keys[0]] > new_counts[keys[1]]:
-                    key_major = keys[0]
-                    key_minor = keys[1]
-                else:
-                    key_major = keys[1]
-                    key_minor = keys[0]
-                
-                ids_major = df.iloc[idx_train_new]['id'][df.iloc[idx_train_new]['targets'] == key_major]
-            elif np.abs(new_counts[keys[0]] - new_counts[keys[1]]) < 3:
-                break
+        idx_train_new = sk_shuffle(np.concatenate([idx_train_major_picked,
+                                                   idx_train_minor]))
         return idx_train_new
     else:
         return idx_train
 
+def load_roi_array_data(df_event,
+                        conscious_state,
+                        BOLD,
+                        label_map,
+                        feature_dir,
+                        model_name,
+                        scaling_func = None,
+                        ):
+    idx_unconscious  = df_event['visibility'] == conscious_state
+    data             = BOLD[idx_unconscious]
+    df_data          = df_event[idx_unconscious].reset_index(drop=True)
+    df_data['id']    = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
+    targets          = np.array([label_map[item] for item in df_data['targets'].values])#[:,-1]
+    if scaling_func is not None:
+        scaler       = scaling_func.fit(data)
+        data         = scaler.transform(data)
+    else:
+        scaler       = None
+    images           = df_data['paths'].apply(lambda x: x.split('.')[0] + '.npy').values
+    CNN_feature      = np.array([np.load(os.path.join(feature_dir,
+                                                     model_name,
+                                                     item)) for item in images])
+    groups           = df_data['labels'].values
+    return data,df_data,targets,scaler,CNN_feature,groups
 
-def LOO_partition(df_data):
-    temp = {'targets':[],'labels':[]}
-    for (targets,labels),df_sub in df_data.groupby(['targets','labels']):
+def LOO_partition(df_data,target_column = 'labels'):
+    temp = {'targets':[],target_column:[]}
+    for (targets,labels),df_sub in df_data.groupby(['targets',target_column]):
         temp['targets'].append(targets)
-        temp['labels'].append(labels)
+        temp[target_column].append(labels)
     temp = pd.DataFrame(temp)
-    temp = temp.sort_values(['targets','labels'])
-    living = temp[temp['targets'] == 'Living_Things']['labels'].values
-    nonliving = temp[temp['targets'] == 'Nonliving_Things']['labels'].values
+    temp = temp.sort_values(['targets',target_column])
+    living = temp[temp['targets'] == 'Living_Things'][target_column].values
+    nonliving = temp[temp['targets'] == 'Nonliving_Things'][target_column].values
     test_pairs = [[a,b] for a in living for b in nonliving]
     idxs_train,idxs_test = [],[]
     for test_pair in test_pairs:
-        idx_test = np.logical_or(df_data['labels'] == test_pair[0],
-                                 df_data['labels'] == test_pair[1])
+        idx_test = np.logical_or(df_data[target_column] == test_pair[0],
+                                 df_data[target_column] == test_pair[1])
         idx_train = np.invert(idx_test)
         idxs_train.append(np.where(idx_train == True)[0])
         idxs_test.append(np.where(idx_test == True)[0])
     return idxs_train,idxs_test
 
-def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = False,
-                   n_jobs = 12, verbose = 0):
+def check_LOO_cv(idxs_test_target,df_data_target,df_data_source):
+    from tqdm import tqdm
+    cv_warning                  = False
+    idxs_train_source           = []
+    idxs_test_source            = []
+    for idx_test_target in tqdm(idxs_test_target):
+        df_data_target_sub      = df_data_target.iloc[idx_test_target]
+        unique_subcategories    = pd.unique(df_data_target_sub['labels'])
+        # category check:
+        # print(Counter(df_data_target_sub['targets']))
+        idx_train_source        = []
+        idx_test_source         = []
+        for subcategory,df_data_source_sub in df_data_source.groupby(['labels']):
+            if subcategory not in unique_subcategories:
+                idx_train_source.append(list(df_data_source_sub.index))
+            else:
+                idx_test_source.append(list(df_data_source_sub.index))
+        idx_train_source        = np.concatenate(idx_train_source)
+        if len(idx_test_source) > 0:
+            idx_test_source     = np.concatenate(idx_test_source)
+        else:
+            idx_test_source     = idx_train_source.copy()
+        
+        # check if the training and testing have subcategory overlapping
+        target_set              = set(pd.unique(df_data_target.iloc[idx_test_target]['labels']))
+        source_set              = set(pd.unique(df_data_source.iloc[idx_train_source]['labels']))
+        overlapping             = target_set.intersection(source_set)
+        # print(f'overlapped subcategories: {overlapping}')
+        if len(overlapping) > 0:
+            cv_warning          = True
+        idxs_train_source.append(idx_train_source)
+        # the testing set for the source does NOT matter since we don't care its performance
+        idxs_test_source.append(idx_test_source)
+    return cv_warning,idxs_train_source,idxs_test_source
+
+def resample_ttest(x,
+                   baseline         = 0.5,
+                   n_ps             = 100,
+                   n_permutation    = 10000,
+                   one_tail         = False,
+                   n_jobs           = 12, 
+                   verbose          = 0,
+                   full_size        = True
+                   ):
     """
     http://www.stat.ucla.edu/~rgould/110as02/bshypothesis.pdf
     https://www.tau.ac.il/~saharon/StatisticsSeminar_files/Hypothesis.pdf
@@ -2555,53 +2848,76 @@ def resample_ttest(x,baseline = 0.5,n_ps = 100,n_permutation = 10000,one_tail = 
     one_tail: whether to perform one-tailed comparison
     """
     import numpy as np
-    # t statistics with the original data distribution
-    t_experiment = (np.mean(x) - baseline) / (np.std(x) / np.sqrt(x.shape[0]))
-    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
-    from joblib import Parallel,delayed
     import gc
+    from joblib import Parallel,delayed
+    # statistics with the original data distribution
+    t_experiment    = np.mean(x)
+    null            = x - np.mean(x) + baseline # shift the mean to the baseline but keep the distribution
+    
+    if null.shape[0] > int(1e4): # catch for big data
+        full_size   = False
+    if not full_size:
+        size        = int(1e3)
+    else:
+        size = null.shape[0]
+    
+    
     gc.collect()
     def t_statistics(null,size,):
         """
         null: shifted data distribution
         size: tuple of 2 integers (n_for_averaging,n_permutation)
         """
-        null_dist = np.random.choice(null,size = size,replace = True)
-        t_null = (np.mean(null_dist,0) - baseline) / (np.std(null_dist,0) / np.sqrt(null_dist.shape[0]))
+        null_dist   = np.random.choice(null,size = size,replace = True)
+        t_null      = np.mean(null_dist,0)
         if one_tail:
             return ((np.sum(t_null >= t_experiment)) + 1) / (size[1] + 1)
         else:
             return ((np.sum(np.abs(t_null) >= np.abs(t_experiment))) + 1) / (size[1] + 1) /2
-    ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
-                    'null':null,
-                    'size':(null.shape[0],int(n_permutation)),}) for i in range(n_ps))
-    
-    return np.array(ps)
-def resample_ttest_2sample(a,b,n_ps=100,n_permutation = 10000,
-                           one_tail=False,
-                           match_sample_size = True,
-                           n_jobs = 6,
-                           verbose = 0):
+    if n_ps == 1:
+        ps = t_statistics(null, size)
+    else:
+        ps = Parallel(n_jobs = n_jobs,verbose = verbose)(delayed(t_statistics)(**{
+                        'null':null,
+                        'size':(size,int(n_permutation)),}) for i in range(n_ps))
+        ps = np.array(ps)
+    return ps
+def resample_ttest_2sample(a,b,
+                           n_ps                 = 100,
+                           n_permutation        = 10000,
+                           one_tail             = False,
+                           match_sample_size    = True,
+                           n_jobs               = 6,
+                           verbose              = 0):
+    from joblib import Parallel,delayed
+    import gc
     # when the samples are dependent just simply test the pairwise difference against 0
     # which is a one sample comparison problem
     if match_sample_size:
         difference  = a - b
-        ps          = resample_ttest(difference,baseline=0,
-                                     n_ps=n_ps,n_permutation=n_permutation,
-                                     one_tail=one_tail,
-                                     n_jobs=n_jobs,
-                                     verbose=verbose,)
+        ps          = resample_ttest(difference,
+                                     baseline       = 0,
+                                     n_ps           = n_ps,
+                                     n_permutation  = n_permutation,
+                                     one_tail       = one_tail,
+                                     n_jobs         = n_jobs,
+                                     verbose        = verbose,)
         return ps
     else: # when the samples are independent
-        t_experiment,_ = stats.ttest_ind(a,b,equal_var = False)
+        t_experiment        = np.mean(a) - np.mean(b)
+        if not one_tail:
+            t_experiment    = np.abs(t_experiment)
+            
         def t_statistics(a,b):
-            group = np.random.choice(np.concatenate([a,b]),size = int(len(a) + len(b)),replace = True)
-            new_a = group[:a.shape[0]]
-            new_b = group[a.shape[0]:]
-            t_null,_ = stats.ttest_ind(new_a,new_b,equal_var = False)
+            group           = np.concatenate([a,b])
+            np.random.shuffle(group)
+            new_a           = group[:a.shape[0]]
+            new_b           = group[a.shape[0]:]
+            t_null          = np.mean(new_a) - np.mean(new_b)
+            if not one_tail:
+                t_null      = np.abs(t_null)
             return t_null
-        from joblib import Parallel,delayed
-        import gc
+        
         gc.collect()
         ps = np.zeros(n_ps)
         for ii in range(n_ps):
@@ -2640,14 +2956,14 @@ class MCPConverter(object):
         methods = ["bonferroni", "holm", "bh", "lfdr"]
          (local FDR method needs 'statsmodels' package)
         """
-        if method is "bonferroni":
+        if method == "bonferroni":
             return [np.min([1, i]) for i in self.sorted_pvals * self.len]
-        elif method is "holm":
+        elif method == "holm":
             return [np.min([1, i]) for i in (self.sorted_pvals * (self.len - np.arange(1, self.len+1) + 1))]
-        elif method is "bh":
+        elif method == "bh":
             p_times_m_i = self.sorted_pvals * self.len / np.arange(1, self.len+1)
             return [np.min([p, p_times_m_i[i+1]]) if i < self.len-1 else p for i, p in enumerate(p_times_m_i)]
-        elif method is "lfdr":
+        elif method == "lfdr":
             if self.zscores is None:
                 raise ValueError("Z-scores were not provided.")
             return sms.stats.multitest.local_fdr(abs(self.sorted_zscores))
@@ -2662,7 +2978,7 @@ class MCPConverter(object):
         else:
             df = pd.DataFrame(self.sorted_pvals, columns=["p_values"])
             for method in methods:
-                if method is not "lfdr":
+                if method != "lfdr":
                     df[method] = self.adjust(method)
         return df
 def define_roi_category():
@@ -2681,6 +2997,25 @@ def define_roi_category():
                 }
     
     return roi_dict
+
+def rename_ROI_for_plotting():
+    name_map = {
+        'fusiform':'Fusiform gyrus',
+        'inferiorparietal':'Inferior parietal lobe',
+        'inferiortemporal':'Inferior temporal lobe',
+        'lateraloccipital':'Lateral occipital cortex',
+        'lingual':'Lingual',
+        'middlefrontal':'Middle frontal gyrus',
+        'rostralmiddlefrontal':'Middle fontal gyrus',
+        'parahippocampal':'Parahippocampal gyrus',
+        'pericalcarine':'Pericalcarine cortex',
+        'precuneus':'Precuneus',
+        'superiorfrontal':'Superior frontal gyrus',
+        'superiorparietal':'Superior parietal gyrus',
+        'ventrolateralPFC':'Inferior frontal gyrus',
+        }
+    return name_map
+
 def stars(x):
     if x < 0.001:
         return '***'
@@ -2980,10 +3315,17 @@ def get_label_subcategory_mapping():
  'wardrobe': 'Furniture',
  'whale': 'Marine_creatures',
  'zebra': 'Animals'}
+    
+def make_df_axis(df_data):
+    label_category_map = get_label_category_mapping()
+    label_subcategory_map = get_label_subcategory_mapping()
+    df_axis = pd.DataFrame({'labels':pd.unique(df_data['labels'])})
+    df_axis['category'] = df_axis['labels'].map(label_category_map)
+    df_axis['subcategory'] = df_axis['labels'].map(label_subcategory_map)
+    df_axis = df_axis.sort_values(['category','subcategory','labels'])
+    return df_axis
 
-def load_same_same(sub):
-    target_folder = 'decoding'
-    target_file = '*None*csv'
+def load_same_same(sub,target_folder = 'decoding',target_file = '*None*csv'):
     working_dir = '../../../../results/MRI/nilearn/{}/{}'.format(sub,target_folder)
     working_data = glob(os.path.join(working_dir,target_file))
     
@@ -3000,9 +3342,616 @@ def load_same_same(sub):
     df['side'] = temp[:,0]
     return df
 
+def plot_stat_map(stat_map_img, 
+                  bg_img                    = '', 
+                  cut_coords                = None,
+                  output_file               = None, 
+                  display_mode              = 'ortho', 
+                  colorbar                  = True,
+                  figure                    = None, 
+                  axes                      = None, 
+                  title                     = None, 
+                  threshold                 = 1e-6,
+                  annotate                  = True, 
+                  draw_cross                = True, 
+                  black_bg                  = 'auto',
+                  cmap                      = cm.coolwarm, 
+                  symmetric_cbar            = "auto",
+                  dim                       = 'auto', 
+                  vmin_                     = None,
+                  vmax                      = None, 
+                  resampling_interpolation  = 'continuous',
+                  **kwargs):
+    
+    bg_img, black_bg, bg_vmin, bg_vmax      = _load_anat(
+                  bg_img, 
+                  dim                       = dim,
+                  black_bg                  = black_bg)
+
+    stat_map_img                            = _utils.check_niimg_3d(
+                  stat_map_img, 
+                  dtype                     = 'auto')
+
+    cbar_vmin, cbar_vmax, vmin, vmax        = _get_colorbar_and_data_ranges(
+                  _safe_get_data(
+                          stat_map_img, 
+                          ensure_finite     = True),
+                          vmax,
+                          symmetric_cbar,
+                          kwargs)
+    display                                 = _plot_img_with_bg(
+                  img                       = stat_map_img, 
+                  bg_img                    = bg_img, 
+                  cut_coords                = cut_coords,
+                  output_file               = output_file, 
+                  display_mode              = display_mode,
+                  figure                    = figure, 
+                  axes                      = axes, 
+                  title                     = title, 
+                  annotate                  = annotate,
+                  draw_cross                = draw_cross, 
+                  black_bg                  = black_bg, 
+                  threshold                 = threshold,
+                  bg_vmin                   = bg_vmin, 
+                  bg_vmax                   = bg_vmax, 
+                  cmap                      = cmap, 
+                  vmin                      = vmin_, 
+                  vmax                      = vmax,
+                  colorbar                  = colorbar, 
+                  cbar_vmin                 = vmin_, 
+                  cbar_vmax                 = cbar_vmax,
+                  resampling_interpolation  = resampling_interpolation, 
+                  **kwargs)
+
+    return display
+
+def load_whole_brain_data_with_mask(BOLD_file,csv_file,masker):
+    masker.fit()
+    df = pd.read_csv(csv_file)
+    masker.sessions = df['session'].values
+    BOLD = masker.transform(BOLD_file)
+    return BOLD
+
+def make_ridge_model_CV(perform_pca = True,alpha_space = [1,12],custom_scorer = None):
+    from sklearn import linear_model,metrics
+    from sklearn.decomposition import PCA
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.pipeline import make_pipeline
+    
+    if custom_scorer == None:
+        def score_func(y, y_pred,):
+            temp        = metrics.r2_score(y,y_pred,multioutput = 'raw_values')
+            if np.sum(temp > 0):
+                return temp[temp > 0].mean()
+            else:
+                return 0
+        custom_scorer      = metrics.make_scorer(score_func,greater_is_better = True)
+        
+    pca         = PCA(n_components = .99,random_state = 12345)
+#    scaler      = StandardScaler()
+    reg         = linear_model.Ridge(normalize      = True,
+                                     alpha          = 1,
+                                     random_state   = 12345)
+    if perform_pca:
+        reg         = GridSearchCV(make_pipeline(pca,reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    else:
+        reg         = GridSearchCV(make_pipeline(reg),
+                                   dict(ridge__alpha = np.logspace(alpha_space[0],alpha_space[1],alpha_space[1] - alpha_space[0] + 1),
+                                        ),
+                                   scoring  = custom_scorer,
+                                   n_jobs   = 1,
+                                   cv       = 10,
+                                   )
+    return reg
+    
+def cross_validation(feature_dir,
+                     encoding_model,
+                     custom_scorer,
+                     BOLD_sc_source,
+                     idxs_train_source,
+                     idxs_test_source,
+                     image_source,
+                     image_target,):
+    """
+    Encoding pipeline
+    """
+    from sklearn.model_selection import cross_validate
+    features_source         = np.array([np.load(os.path.join(feature_dir,
+                                                            encoding_model,
+                                                            item)) for item in image_source])
+    features_target         = np.array([np.load(os.path.join(feature_dir,
+                                                            encoding_model,
+                                                            item)) for item in image_target])
+    reg = make_ridge_model_CV(custom_scorer = custom_scorer)
+    res = cross_validate(reg,
+                         features_source,
+                         BOLD_sc_source,
+                         scoring  = 'r2',
+                         cv = zip(idxs_train_source,idxs_test_source),
+                         return_estimator = True,
+                         n_jobs = -1,
+                         verbose = 1,)
+    return res,features_target,features_source
+
+def fill_results(scores,
+                 results,
+                 n_splits,
+                 conscious_source,
+                 conscious_target,
+                 roi_name,
+                 BOLD_sc_source,
+                 features_source,
+                 corr,):
+    mean_variance = scores.copy()
+    mean_variance = np.array([item[item > 0].mean() for item in mean_variance])
+    positive_voxels = np.array([np.sum(temp > 0) for temp in scores])
+    positive_voxel_indices = [','.join(str(item) for item in np.where(row > 0.)[0]) for row in scores]
+    
+    scores_to_save = mean_variance.copy()
+    scores_to_save = np.nan_to_num(scores_to_save,)
+    results['mean_variance'] = scores.mean(1)#scores_to_save
+    results['fold'] = np.arange(n_splits) + 1
+    results['conscious_source'] = [conscious_source] * n_splits
+    results['conscious_target'] = [conscious_target] * n_splits
+    results['roi_name'] = [roi_name] * n_splits
+    results['positive voxels'  ]= positive_voxels
+    results['n_parameters'] = [BOLD_sc_source.shape[1] * features_source.shape[1]] * n_splits
+    results['corr'] = corr
+    results['positive_voxel_indices'] = positive_voxel_indices
+    return scores.mean(1),results
+
+def get_array_from_dataframe(df,column_name):
+    return np.array([item for item in df[column_name].values[0].replace('[',
+                     '').replace(']',
+                        '').replace('\n',
+                          '').replace('  ',
+                            ' ').replace(',',' ').split(' ') if len(item) > 0],
+                    dtype = 'float32')
+
+def load_whole_brain_BOLD_csv_preprocessing(BOLD_file_name,csv_file_name,masker,
+                                label_map = {'Nonliving_Things': [0, 1], 'Living_Things': [1, 0]},
+                                preprocessing_steps = ['scale_data','clustering','permute_voxels'],
+                                kernel_size = None,
+                                scaler = None):
+    import gc
+    import numpy as np
+    import pandas as pd
+    
+    from sklearn import cluster
+    from sklearn.utils import shuffle
+    from sklearn.preprocessing import MinMaxScaler
+    
+#    from nilearn.input_data import NiftiMasker
+    
+#    masker           = NiftiMasker(whole_brain_mask).fit()
+    data             = masker.transform(BOLD_file_name)
+    df_data          = pd.read_csv(csv_file_name)
+    df_data['id']    = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
+    targets          = np.array([label_map[item] for item in df_data['targets'].values])
+    if scaler is None:
+        scaler       = MinMaxScaler((-1,1))
+    if 'scale_data' in preprocessing_steps:
+        print('scaling')
+        data         = scaler.fit_transform(data)
+    if 'clustering' in preprocessing_steps:
+        print('clustering')
+        gc.collect()
+        if kernel_size == None:
+            kernel_size = 8
+        CLUSTER      = cluster.DBSCAN(min_samples   = kernel_size,
+                                      metric        = 'correlation',
+                                      n_jobs        = -1,)
+        CLUSTER.fit(data.T)
+        idx          = np.argsort(CLUSTER.labels_)
+        data         = data[:,idx]
+    else:
+        print('no clustering')
+    if ('permute_voxels' in preprocessing_steps) and ('clustering' not in preprocessing_steps):
+        np.random.seed(12345)
+        print('shuffling')
+        data         = np.stack([shuffle(item.copy()) for item in data])
+    else:
+        print('not shuffled')
+    return data,df_data,targets,scaler
+
+def load_BOLD_csv_preprocessing(BOLD_file_name,csv_file_name,conscious_state,
+                                label_map = {'Nonliving_Things': [0, 1], 'Living_Things': [1, 0]},
+                                preprocessing_steps = ['scale_data','clustering','permute_voxels'],
+                                kernel_size = None):
+    import gc
+    import numpy as np
+    import pandas as pd
+    
+    from sklearn import cluster
+    from sklearn.feature_selection import VarianceThreshold
+    from sklearn.preprocessing import MinMaxScaler
+    
+    BOLD             = np.load(BOLD_file_name)
+    event            = pd.read_csv(csv_file_name)
+    roi_name         = csv_file_name.split('/')[-1].split('_events')[0]
+    idx_unconscious  = event['visibility'] == conscious_state
+    data             = BOLD[idx_unconscious]
+    df_data          = event[idx_unconscious].reset_index(drop=True)
+    df_data['id']    = df_data['session'] * 1000 + df_data['run'] * 100 + df_data['trials']
+    targets          = np.array([label_map[item] for item in df_data['targets'].values])
+    scaler           = make_pipeline(VarianceThreshold(),MinMaxScaler((-1,1)))
+    if 'scale_data' in preprocessing_steps:
+        data = scaler.fit_transform(data)
+    if 'clustering' in preprocessing_steps:
+        gc.collect()
+        if kernel_size == None:
+            kernel_size = 8
+        CLUSTER = cluster.DBSCAN(min_samples = kernel_size,
+                                 metric = 'correlation',
+                                 n_jobs = -1,)
+        CLUSTER.fit(data.T)
+        idx = np.argsort(CLUSTER.labels_)
+        data = data[:,idx]
+    if ('permute_voxels' in preprocessing_steps) and ('clustering' not in preprocessing_steps):
+        np.random.seed(12345)
+        data         = np.stack([shuffle(item.copy()) for item in data])
+    return data,df_data,targets,scaler,roi_name
+###################################################################################
+###################################################################################
+import numpy as np
+import scipy.signal
+from scipy.stats import kurtosis
+try:
+    from mne.preprocessing import find_outliers
+except:
+    pass
+from numpy import nanmean
+from mne.utils import logger
+#from mne.preprocessing.eog import _get_eog_channel_index
 
 
+def hurst(x):
+    """Estimate Hurst exponent on a timeseries.
 
+    The estimation is based on the second order discrete derivative.
+
+    Parameters
+    ----------
+    x : 1D numpy array
+        The timeseries to estimate the Hurst exponent for.
+
+    Returns
+    -------
+    h : float
+        The estimation of the Hurst exponent for the given timeseries.
+    """
+    y = np.cumsum(np.diff(x, axis=1), axis=1)
+
+    b1 = [1, -2, 1]
+    b2 = [1,  0, -2, 0, 1]
+
+    # second order derivative
+    y1 = scipy.signal.lfilter(b1, 1, y, axis=1)
+    y1 = y1[:, len(b1) - 1:-1]  # first values contain filter artifacts
+
+    # wider second order derivative
+    y2 = scipy.signal.lfilter(b2, 1, y, axis=1)
+    y2 = y2[:, len(b2) - 1:-1]  # first values contain filter artifacts
+
+    s1 = np.mean(y1 ** 2, axis=1)
+    s2 = np.mean(y2 ** 2, axis=1)
+
+    return 0.5 * np.log2(s2 / s1)
+
+def _freqs_power(data, sfreq, freqs):
+    fs, ps = scipy.signal.welch(data, sfreq,
+                                nperseg=2 ** int(np.log2(10 * sfreq) + 1),
+                                noverlap=0,
+                                axis=-1)
+    return np.sum([ps[..., np.searchsorted(fs, f)] for f in freqs], axis=0)
+
+def faster_bad_channels(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the first step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad EEG channels by performing
+    outlier detection. It operated on epoched data, to make sure only relevant
+    data is analyzed.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs for which bad channels need to be marked
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. A channel
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'variance', 'correlation', 'hurst', 'kurtosis', 'line_noise'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of str
+        The names of the bad EEG channels.
+    """
+    metrics = {
+        'variance':    lambda x: np.var(x, axis=1),
+        'correlation': lambda x: nanmean(
+                           np.ma.masked_array(
+                               np.corrcoef(x),
+                               np.identity(len(x), dtype=bool)
+                           ),
+                           axis=0),
+        'hurst':       lambda x: hurst(x),
+        'kurtosis':    lambda x: kurtosis(x, axis=1),
+        'line_noise':  lambda x: _freqs_power(x, epochs.info['sfreq'],
+                                              [50, 60]),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True, exclude=[])
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    # Concatenate epochs in time
+    data = epochs.get_data()
+    data = data.transpose(1, 0, 2).reshape(data.shape[1], -1)
+    data = data[picks]
+
+    # Find bad channels
+    bads = []
+    for m in use_metrics:
+        s = metrics[m](data)
+        b = [epochs.ch_names[picks[i]] for i in find_outliers(s, thres)]
+        logger.info('Bad by %s:\n\t%s' % (m, b))
+        bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def _deviation(data):
+    """Computes the deviation from mean for each channel in a set of epochs.
+
+    This is not implemented as a lambda function, because the channel means
+    should be cached during the computation.
+    
+    Parameters
+    ----------
+    data : 3D numpy array
+        The epochs (#epochs x #channels x #samples).
+
+    Returns
+    -------
+    dev : 1D numpy array
+        For each epoch, the mean deviation of the channels.
+    """
+    ch_mean = np.mean(data, axis=2)
+    return ch_mean - np.mean(ch_mean, axis=0)
+
+def faster_bad_epochs(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the second step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad epochs by performing
+    outlier detection.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs to analyze.
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. An epoch
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'amplitude', 'variance', 'deviation'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of int
+        The indices of the bad epochs.
+    """
+
+    metrics = {
+        'amplitude': lambda x: np.mean(np.ptp(x, axis=2), axis=1),
+        'deviation': lambda x: np.mean(_deviation(x), axis=1),
+        'variance':  lambda x: np.mean(np.var(x, axis=2), axis=1),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True,
+                               exclude='bads')
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    data = epochs.get_data()[:, picks, :]
+
+    bads = []
+    for m in use_metrics:
+        s = metrics[m](data)
+        b = find_outliers(s, thres)
+        logger.info('Bad by %s:\n\t%s' % (m, b))
+        bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def _power_gradient(ica, source_data):
+    # Compute power spectrum
+    f, Ps = scipy.signal.welch(source_data, ica.info['sfreq'])
+
+    # Limit power spectrum to upper frequencies
+    Ps = Ps[:, np.searchsorted(f, 25):np.searchsorted(f, 45)]
+
+    # Compute mean gradients
+    return np.mean(np.diff(Ps), axis=1)
+
+
+def faster_bad_components(ica, epochs, thres=3, use_metrics=None):
+    """Implements the third step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad ICA components by
+    performing outlier detection.
+
+    Parameters
+    ----------
+    ica : Instance of ICA
+        The ICA operator, already fitted to the supplied Epochs object.
+    epochs : Instance of Epochs
+        The untransformed epochs to analyze.
+    thres : float
+        The threshold value, in standard deviations, to apply. A component
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'eog_correlation', 'kurtosis', 'power_gradient', 'hurst',
+            'median_gradient'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of int
+        The indices of the bad components.
+
+    See also
+    --------
+    ICA.find_bads_ecg
+    ICA.find_bads_eog
+    """
+    source_data = ica.get_sources(epochs).get_data().transpose(1,0,2)
+    source_data = source_data.reshape(source_data.shape[0], -1)
+
+    metrics = {
+        'eog_correlation': lambda x: x.find_bads_eog(epochs)[1],
+        'kurtosis':        lambda x: kurtosis(
+                               np.dot(
+                                   x.mixing_matrix_.T,
+                                   x.pca_components_[:x.n_components_]),
+                               axis=1),
+        'power_gradient':  lambda x: _power_gradient(x, source_data),
+        'hurst':           lambda x: hurst(source_data),
+        'median_gradient': lambda x: np.median(np.abs(np.diff(source_data)),
+                                               axis=1),
+        'line_noise':  lambda x: _freqs_power(source_data,
+                                              epochs.info['sfreq'], [50, 60]),
+    }
+
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    bads = []
+    for m in use_metrics:
+        scores = np.atleast_2d(metrics[m](ica))
+        for s in scores:
+            b = find_outliers(s, thres)
+            logger.info('Bad by %s:\n\t%s' % (m, b))
+            bads.append(b)
+
+    return np.unique(np.concatenate(bads)).tolist()
+
+def faster_bad_channels_in_epochs(epochs, picks=None, thres=3, use_metrics=None):
+    """Implements the fourth step of the FASTER algorithm.
+    
+    This function attempts to automatically mark bad channels in each epochs by
+    performing outlier detection.
+
+    Parameters
+    ----------
+    epochs : Instance of Epochs
+        The epochs to analyze.
+    picks : list of int | None
+        Channels to operate on. Defaults to EEG channels.
+    thres : float
+        The threshold value, in standard deviations, to apply. An epoch
+        crossing this threshold value is marked as bad. Defaults to 3.
+    use_metrics : list of str
+        List of metrics to use. Can be any combination of:
+            'amplitude', 'variance', 'deviation', 'median_gradient'
+        Defaults to all of them.
+
+    Returns
+    -------
+    bads : list of lists of int
+        For each epoch, the indices of the bad channels.
+    """
+
+    metrics = {
+        'amplitude':       lambda x: np.ptp(x, axis=2),
+        'deviation':       lambda x: _deviation(x),
+        'variance':        lambda x: np.var(x, axis=2),
+        'median_gradient': lambda x: np.median(np.abs(np.diff(x)), axis=2),
+        'line_noise':      lambda x: _freqs_power(x, epochs.info['sfreq'],
+                                                  [50, 60]),
+    }
+
+    if picks is None:
+        picks = mne.pick_types(epochs.info, meg=False, eeg=True,
+                               exclude='bads')
+    if use_metrics is None:
+        use_metrics = metrics.keys()
+
+    
+    data = epochs.get_data()[:, picks, :]
+
+    bads = [[] for i in range(len(epochs))]
+    for m in use_metrics:
+        s_epochs = metrics[m](data)
+        for i, s in enumerate(s_epochs):
+            b = [epochs.ch_names[picks[j]] for j in find_outliers(s, thres)]
+            logger.info('Epoch %d, Bad by %s:\n\t%s' % (i, m, b))
+            bads[i].append(b)
+
+    for i, b in enumerate(bads):
+        if len(b) > 0:
+            bads[i] = np.unique(np.concatenate(b)).tolist()
+
+    return bads
+
+def run_faster(epochs, thres=3, copy=True):
+    """Run the entire FASTER pipeline on the data.
+    """
+    if copy:
+        epochs = epochs.copy()
+
+    # Step one
+    logger.info('Step 1: mark bad channels')
+    epochs.info['bads'] += faster_bad_channels(epochs, thres=5)
+
+    # Step two
+    logger.info('Step 2: mark bad epochs')
+    bad_epochs = faster_bad_epochs(epochs, thres=thres)
+    good_epochs = list(set(range(len(epochs))).difference(set(bad_epochs)))
+    epochs = epochs[good_epochs]
+
+    # Step three (using the build-in MNE functionality for this)
+    logger.info('Step 3: mark bad ICA components')
+    picks = mne.pick_types(epochs.info, meg=False, eeg=True, eog=True, exclude='bads')
+    ica = mne.preprocessing.run_ica(epochs, len(picks), picks=picks, eog_ch=['vEOG', 'hEOG'])
+    print(ica.exclude)
+    ica.apply(epochs)
+
+    # Step four
+    logger.info('Step 4: mark bad channels for each epoch')
+    bad_channels_per_epoch = faster_bad_channels_in_epochs(epochs, thres=thres)
+    for i, b in enumerate(bad_channels_per_epoch):
+        if len(b) > 0:
+            epoch = epochs[i]
+            epoch.info['bads'] += b
+            epoch.interpolate_bads_eeg()
+            epochs._data[i, :, :] = epoch._data[0, :, :]
+
+    # Now that the data is clean, apply average reference
+    epochs.info['custom_ref_applied'] = False
+    epochs, _ = mne.io.set_eeg_reference(epochs)
+    epochs.apply_proj()
+
+    # That's all for now
+    return epochs
+######################################################################################
+######################################################################################
 
 
 
