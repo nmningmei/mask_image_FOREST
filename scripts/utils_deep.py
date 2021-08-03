@@ -21,19 +21,34 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics         import roc_auc_score
 from sklearn.utils           import shuffle as sk_shuffle
+from sklearn.preprocessing   import MinMaxScaler
+
+
 
 def candidate_pretrained_CNNs(model_name = 'alexnet',pretrained = True):
     picked_models = dict(
-            resnet18        = models.resnet18(pretrained            = pretrained),
-            alexnet         = models.alexnet(pretrained             = pretrained),
-            squeezenet      = models.squeezenet1_1(pretrained       = pretrained),
-            vgg19_bn        = models.vgg19_bn(pretrained            = pretrained),
-            densenet169     = models.densenet169(pretrained         = pretrained),
-            inception       = models.inception_v3(pretrained        = pretrained),
-            googlenet       = models.googlenet(pretrained           = pretrained),
-            shufflenet      = models.shufflenet_v2_x0_5(pretrained  = pretrained),
-            mobilenet       = models.mobilenet_v2(pretrained        = pretrained),
-            resnext50_32x4d = models.resnext50_32x4d(pretrained     = pretrained),
+            resnet18        = models.resnet18(pretrained            = pretrained,
+                                              progress              = False,),
+            alexnet         = models.alexnet(pretrained             = pretrained,
+                                             progress               = False,),
+            squeezenet      = models.squeezenet1_1(pretrained       = pretrained,
+                                                   progress         = False,),
+            vgg19_bn        = models.vgg19_bn(pretrained            = pretrained,
+                                              progress              = False,),
+            densenet169     = models.densenet169(pretrained         = pretrained,
+                                                 progress           = False,),
+            inception       = models.inception_v3(pretrained        = pretrained,
+                                                  progress          = False,),
+            googlenet       = models.googlenet(pretrained           = pretrained,
+                                               progress             = False,),
+            shufflenet      = models.shufflenet_v2_x0_5(pretrained  = pretrained,
+                                                        progress    = False,),
+            mobilenet       = models.mobilenet_v2(pretrained        = pretrained,
+                                                  progress          = False,),
+            resnext50_32x4d = models.resnext50_32x4d(pretrained     = pretrained,
+                                                     progress       = False,),
+            resnet50        = models.resnet50(pretrained            = pretrained,
+                                              progress              = False,),
             )
     return picked_models[model_name]
 
@@ -45,13 +60,19 @@ def define_type(model_name):
             inception   = 'inception',
             mobilenet   = 'simple',
             resnet18    = 'resnet',
+            resnet50    = 'resnet',
             )
     return model_type[model_name]
 
 class CustomImageLoader(Dataset):
-    def __init__(self,df_data,data,image_folder,transform = None):
+    def __init__(self,
+                 df_data,
+                 data, # this is a tuple
+                 image_folder,
+                 transform = None):
         self.df_data        = df_data
-        self.data           = data
+        self.data1          = data[0]
+        self.data2          = data[1]
         self.image_folder   = image_folder
         self.transform      = transform
     def __len__(self):
@@ -62,30 +83,54 @@ class CustomImageLoader(Dataset):
                                 self.df_data.loc[index,'subcategory'],
                                 self.df_data.loc[index,'paths'].split('.')[0] + '.jpg')
         image   = Image.open(filename).convert('RGB')
-        BOLD    = torch.from_numpy(self.data[index])
+        BOLD1   = torch.from_numpy(self.data1[index])
+        BOLD2   = torch.from_numpy(self.data2[index])
         if self.transform is None:
             self.transform = transforms.Compose([
                     transforms.Resize((128,128)),
                     transforms.ToTensor(),
                     transforms.Normalize(
-                         mean=[0.485],
-                         std=[0.229])])
+                         [0.485, 0.456, 0.406],[0.229, 0.224, 0.225])])
         image = self.transform(image)
-        return image,BOLD
+        return image,BOLD1,BOLD2,index
 
-def simple_image_augmentation():
+def simple_image_augmentation(target_size = 128):
     transform = transforms.Compose([
 # transforms.Grayscale(num_output_channels=1),
- transforms.Resize((128,128)),
+ transforms.Resize((target_size,target_size)),
  transforms.RandomRotation(45),
  transforms.RandomHorizontalFlip(),
  transforms.RandomVerticalFlip(),
  transforms.ToTensor(),
- transforms.Normalize(
-                         mean=[0.485],
-                         std=[0.229]
- )])
+ transforms.Lambda(lambda x:x/255.),
+ # transforms.Normalize(
+ #                         mean=[0.485, 0.456, 0.406],
+ #                         std=[0.229, 0.224, 0.225])
+ ])
     return transform
+
+def loader_wraper(_CustomLoader,
+                  batch_size = 8,
+                  shuffle = True,
+                  num_workers = 1,
+                  drop_last = True, 
+                  multiprocessing_context = 'fork',):
+    """just a pytorch data loader wrapper"""
+    Loader = DataLoader(_CustomLoader,
+                         batch_size                 = batch_size,
+                         shuffle                    = shuffle,
+                         num_workers                = num_workers,
+                         drop_last                  = drop_last,
+                         multiprocessing_context    = multiprocessing_context,
+                         )
+    return Loader
+
+def linear_block(input_size,output_size,activation_func = nn.ReLU):
+    return nn.Sequential(
+            nn.Linear(input_size,output_size,bias = True),
+            nn.BatchNorm1d(output_size),
+            activation_func(),
+            )
 
 def conv2d_block(in_channels,
                  out_channels,
@@ -109,9 +154,29 @@ def conv2d_block(in_channels,
                       bias          = True,
                       ),
             nn.BatchNorm2d(out_channels),
-            nn.MaxPool2d(kernel_size    = kernel_size,
+            nn.MaxPool2d(kernel_size    = 2,
                          stride         = 1,),
             nn.ReLU(),
+            )
+
+def TransConv2d_block(in_channels,
+                      out_channels,
+                      kernel_size = (3,3,),
+                      scale_factor = 2,
+                      align_corners = 'bilinear',
+                      *args,**kwargs):
+    return nn.Sequential(
+            nn.Upsample(scale_factor = scale_factor,
+                        mode = align_corners,
+                        align_corners = True,),
+            nn.ConvTranspose1d(in_channels = in_channels,
+                               out_channels = out_channels,
+                               kernel_size = kernel_size,
+                               stride = 1,
+                               padding = 0,
+                               padding_mode = 'zeros',
+                               bias = True,
+                               ),
             )
 
 def conv1d_block(in_channels,
@@ -134,8 +199,346 @@ def conv1d_block(in_channels,
                           padding_mode  = 'zeros',
                           bias          = True,),
                 nn.BatchNorm1d(out_channels),
-                nn.MaxPool1d(kernel_size    = kernel_size),
+                nn.MaxPool1d(kernel_size    = int(kernel_size)),
+                nn.SELU(),
                 )
+
+class image_encoder(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 model_name             = 'alexnet',
+                 pretrained             = True,
+                 latent_size            = 128,
+                 ):
+        super(image_encoder,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.model_name             = model_name
+        self.pretrained             = pretrained
+        self.latent_size            = latent_size
+        torch.manual_seed(12345)
+        self.pretrain_model         = candidate_pretrained_CNNs(model_name = self.model_name,
+                                                                pretrained = self.pretrained,)
+        if define_type(self.model_name) == 'simple':
+            self.pretrained_model = self.pretrain_model.features
+            self.avgpool = nn.AdaptiveAvgPool2d((1,1))
+            self.in_features = 512#self.pretrain_model.classifier[0].in_features
+        elif define_type(self.model_name) == 'resnet':
+            self.pretrained_model = torch.nn.Sequential(*list(self.pretrain_model.children())[:-2])
+            self.in_features = self.pretrain_model.fc.in_features
+        self.latent_mu = linear_block(self.in_features,self.latent_size,nn.SELU)
+        self.latent_sigma = linear_block(self.in_features,self.latent_size,nn.SELU)
+    def forward(self,x):
+        if self.pretrained:
+            for params in self.pretrained_model:
+                params.requires_grad = False
+        features = self.pretrained_model(x)
+        pooling = torch.squeeze(torch.squeeze(self.avgpool(features),dim = 3),dim = 2)
+        mu = self.latent_mu(pooling)
+        var = self.latent_sigma(pooling)
+        return mu,var
+
+class image_decoder(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 image_size             = 128,
+                 latent_size            = 128,
+                 out_channels           = [128,64,32,16,8,4,3],
+                 kernel_size            = (2,2)
+                 ):
+        super(image_decoder,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.image_size             = image_size
+        self.latent_size            = latent_size
+        self.out_channels           = out_channels
+        self.kernel_size            = kernel_size
+        torch.manual_seed(12345)
+        
+        self.transpose_conv_layers = []
+        for in_channel,out_channel in zip(self.out_channels[:-1],self.out_channels[1:]):
+            self.transpose_conv_layers.append(TransConv2d_block(in_channel,out_channel,kernel_size = self.kernel_size))
+        self.transpose_conv_layers = nn.Sequential(*self.transpose_conv_layers)
+        self.transposeConv2D = nn.ConvTranspose2d(3, 3, self.kernel_size)
+        self.output_activation = nn.Sigmoid()
+    
+    def forward(self,x):
+        out = torch.unsqueeze(x,2)
+        out = torch.unsqueeze(out,3)
+        out = self.transpose_conv_layers(out)
+        out = self.output_activation(self.transposeConv2D(out))
+        return out
+
+class IMAGE_VAE(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 model_name             = 'alexnet',
+                 pretrained             = True,
+                 latent_size            = 128,
+                 image_size             = 128,
+                 out_channels           = [128,64,32,16,8,4,3],
+                 kernel_size            = (2,2),
+                 sampling_method        = 'distribution',
+                 ):
+        super(IMAGE_VAE,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.model_name             = model_name
+        self.pretrained             = pretrained
+        self.latent_size            = latent_size
+        self.out_channels           = out_channels
+        self.kernel_size            = kernel_size
+        self.sampling_method        = sampling_method
+        
+        self.encoder                = image_encoder(
+            batch_size             = self.batch_size,
+            device                 = self.device,
+            model_name             = self.model_name,
+            pretrained             = self.pretrained,
+            latent_size            = self.latent_size,)
+        self.decoder                = image_decoder(
+            batch_size             = self.batch_size,
+            device                 = self.device,
+            out_channels           = self.out_channels,
+            kernel_size            = self.kernel_size,
+            latent_size            = self.latent_size,)
+        self.log_scale              = nn.Parameter(torch.Tensor([0.0]))
+        self.latent_activation      = nn.Tanh
+    
+    def reparameterize(self,):
+        mu = self.mu
+        log_var = self.log_var
+        std = torch.exp(torch.mul(log_var,0.5))
+        if self.sampling_method == 'old':
+            eps = torch.rand_like(std)
+            sample = mu + (eps * std)
+        elif self.sampling_method == 'distribution':
+            q = torch.distributions.Normal(mu,std)
+            sample = q.rsample() # only rsample allows gradient track
+            return sample
+        elif self.sampling_method == 'sampling_for_decoder':
+            q = torch.distributions.Normal(mu,std)
+            sample = q.sample()
+        if self.latent_activation is not None:
+            sample = self.latent_activation(sample)
+        return sample
+    
+    # strange behavior: nonzero loss of identical input and output
+    def gaussian_likelihood(self,y_true,y_pred,logscale = None):
+        if logscale is None:
+            logscale = nn.Parameter(torch.Tensor([0.0]))
+        scale = torch.exp(logscale)
+        # how huch y_pred could have been distributed using the current state as center
+        dist = torch.distributions.Normal(y_pred,scale)
+        
+        # measure prob of seeing image under p(x|z)
+        log_pxz = dist.log_prob(y_true)
+        
+        return log_pxz.mean(dim = (1,2,3))
+    
+    #https://towardsdatascience.com/variational-autoencoder-demystified-with-pytorch-implementation-3a06bee395ed
+    def kl_divergence(self,z,mu,std):
+        # --------------------------
+        # Monte carlo KL divergence
+        # --------------------------
+        # 1. define the first 2 probabilities
+        p = torch.distributions.Normal(torch.zeros_like(mu),torch.ones_like(std))
+        q = torch.distributions.Normal(mu,std)
+        
+        # 2. get the probability from the equation
+        log_qzx = q.log_prob(z)
+        log_pz = p.log_prob(z)
+        
+        # kl
+        kl = (log_qzx - log_pz)
+        kl = kl.mean(-1)
+        return kl
+    
+    def forward(self,data_tuple):
+        inputs,outputs = data_tuple
+        # encoding
+        self.mu,self.log_var = self.encoder(inputs)
+        latent_sample = self.reparameterize()
+        # decoding
+        outputs_hat = self.decoder(latent_sample)
+        # reconstruction loss
+        recon_loss = self.gaussian_likelihood(outputs_hat,self.log_scale,outputs) # is this always negative?
+        # recon_loss = nn.MSELoss()(outputs_hat,outputs)
+        kl_loss = self.kl_divergence(latent_sample,self.mu,torch.exp(self.log_var / 2))
+        
+        return outputs_hat,latent_sample,kl_loss - recon_loss
+
+class BOLD_encoder(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 input_size             = 40000,
+                 layers                 = [],
+                 latent_size            = 128,
+                 ):
+        super(BOLD_encoder,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.input_size             = input_size
+        self.layers                 = layers
+        self.latent_size            = latent_size
+        if len(self.layers) > 0:
+            self.intermedian_layers = nn.ModuleList()
+            self.intermedian_layers.append(linear_block(self.input_size,self.layers[0],nn.SELU))
+            for in_fe,out_fe in zip(self.layers[:-1],self.layers[1:]):
+                self.intermedian_layers.append(linear_block(in_fe,out_fe, nn.SELU))
+            self.intermedian_layers = nn.Sequential(self.intermedian_layers)
+            self.latent_mu = linear_block(self.layers[-1],self.latent_size,nn.SELU)
+            self.latent_sigma = linear_block(self.layers[-1],self.latent_size,nn.SELU)
+        else:
+            self.intermedian_layers = None
+            self.latent_mu = linear_block(self.input_size,self.latent_size,nn.SELU)
+            self.latent_sigma = linear_block(self.input_size,self.latent_size,nn.SELU)
+    def forward(self,x):
+        if self.intermedian_layers is not None:
+            out = self.intermedian_layers(x)
+            mu = self.latent_mu(out)
+            var = self.latent_sigma(out)
+        else:
+            mu = self.latent_mu(x)
+            var = self.latent_sigma(x)
+        return mu,var
+
+class BOLD_decoder(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 output_size            = 40000,
+                 layers                 = [],
+                 latent_size            = 128,
+                 ):
+        super(BOLD_decoder,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.output_size            = output_size
+        self.layers                 = layers
+        self.latent_size            = latent_size
+        if len(self.layers) > 0:
+            self.intermedian_layers = nn.ModuleList()
+            self.intermedian_layers.append(linear_block(self.latent_size,self.layers[0],nn.SELU))
+            for in_fe,out_fe in zip(self.layers[:-1],self.layers[1:]):
+                self.intermedian_layers.append(linear_block(in_fe,out_fe, nn.SELU))
+            self.intermedian_layers = nn.Sequential(self.intermedian_layers)
+            self.linear_out = linear_block(self.layers[-1],self.output_size,nn.Tanh)
+        else:
+            self.intermedian_layers = None
+            self.linear_out = linear_block(self.latent_size,self.output_size,nn.Tanh)
+        
+    def forward(self,x):
+        if self.intermedian_layers is not None:
+            x = self.intermedian_layers(x)
+        out = self.linear_out(x)
+        
+        return out
+
+class BOLD_VAE(nn.Module):
+    def __init__(self,
+                 batch_size             = 8,
+                 device                 = 'cpu',
+                 input_size             = 40000, # whole brain
+                 output_size            = 3000, # reconstruct ROI
+                 encode_layers          = [],
+                 decode_layers          = [],
+                 latent_size            = 128,
+                 sampling_method        = 'distribution',
+                 ):
+        super(BOLD_VAE,self).__init__()
+        torch.manual_seed(12345)
+        self.batch_size             = batch_size
+        self.device                 = device
+        self.input_size             = input_size
+        self.output_size            = output_size
+        self.encode_layers          = encode_layers
+        self.decode_layers          = decode_layers
+        self.latent_size            = latent_size
+        self.sampling_method        = sampling_method
+        
+        self.encoder                = BOLD_encoder(
+            batch_size             = self.batch_size,
+            device                 = self.device,
+            input_size             = self.input_size,
+            layers                 = self.encode_layers,
+            latent_size            = self.latent_size,)
+        self.decoder                = BOLD_decoder(
+            batch_size             = self.batch_size,
+            device                 = self.device,
+            output_size            = self.output_size,
+            layers                 = self.decode_layers,
+            latent_size            = self.latent_size,)
+        self.log_scale              = nn.Parameter(torch.Tensor([0.0]))
+        self.latent_activation      = nn.Tanh
+    
+    def reparameterize(self,):
+        mu = self.mu
+        log_var = self.log_var
+        std = torch.exp(torch.mul(log_var,0.5))
+        if self.sampling_method == 'old':
+            eps = torch.rand_like(std)
+            sample = mu + (eps * std)
+        elif self.sampling_method == 'distribution':
+            q = torch.distributions.Normal(mu,std)
+            sample = q.rsample() # only rsample allows gradient track
+            return sample
+        elif self.sampling_method == 'sampling_for_decoder':
+            q = torch.distributions.Normal(mu,std)
+            sample = q.sample()
+        if self.latent_activation is not None:
+            sample = self.latent_activation(sample)
+        return sample
+    
+    def gaussian_likelihood(self,y_true,y_pred,logscale = None):
+        if logscale is None:
+            logscale = nn.Parameter(torch.Tensor([0.0]))
+        scale = torch.exp(logscale)
+        # how huch y_pred could have been distributed using the current state as center
+        dist = torch.distributions.Normal(y_pred,scale)
+        
+        # measure prob of seeing image under p(x|z)
+        log_pxz = dist.log_prob(y_true)
+        
+        return log_pxz.mean(-1)
+    
+    def kl_divergence(self,z,mu,std):
+        # 1. define the first 2 probabilities
+        p = torch.distributions.Normal(torch.zeros_like(mu),torch.ones_like(std))
+        q = torch.distributions.Normal(mu,std)
+        
+        # 2. get the probability from the equation
+        log_qzx = q.log_prob(z)
+        log_pz = p.log_prob(z)
+        
+        # kl
+        kl = (log_qzx - log_pz)
+        kl = kl.mean(-1)
+        return kl
+    
+    def forward(self,data_tuple):
+        inputs,outputs = data_tuple
+        # encoding
+        self.mu,self.log_var = self.encoder(inputs)
+        latent_sample = self.reparameterize()
+        print(latent_sample)
+        # decoding
+        outputs_hat = self.decoder(latent_sample)
+        
+        recon_loss = self.gaussian_likelihood(outputs_hat,self.log_scale,outputs) # is this always negative?
+        # recon_loss -= nn.MSELoss()(outputs_hat,outputs)
+        kl_loss = self.kl_divergence(latent_sample,self.mu,torch.exp(self.log_var / 2))
+        
+        return outputs_hat,latent_sample,kl_loss - recon_loss
 
 class Conv1D_model(nn.Module):
     def __init__(self,
@@ -178,17 +581,23 @@ def conv1dmodel_train_loop(classifier,
                            targets_train,
                            idx_train,
                            ii_epoch,
-                           activation_func = nn.Softmax(dim = -1),
-                           device = 'cpu',
-                           batch_size = 8,
-                           shuffle = True,
-                           print_train = True,
+                           activation_func  = nn.Softmax(dim = -1),
+                           device           = 'cpu',
+                           batch_size       = 8,
+                           shuffle          = True,
+                           print_train      = True,
+                           valid_size       = 0.1,
                            ):
     torch.manual_seed(12345)
     features,labels = data_train[idx_train],targets_train[idx_train]
     features,labels = sk_shuffle(features,labels)
-    X_train,X_valid,y_train,y_valid = train_test_split(features,labels,test_size = 0.1,random_state = 12345,shuffle = True)
-    
+    X_train,X_valid,y_train,y_valid = train_test_split(features,
+                                                       labels,
+                                                       test_size = valid_size,
+                                                       random_state = 12345,
+                                                       shuffle = True,
+                                                       )
+    # initialize
     train_losses = 0.
     valid_losses = 0.
     
@@ -197,20 +606,22 @@ def conv1dmodel_train_loop(classifier,
                                   torch.from_numpy(y_train).float(),
                                   )
     dataloader_train = DataLoader(dataset_train,
-                                  batch_size = batch_size,
-                                  shuffle = shuffle,
-                                  num_workers = 1,
-                                  drop_last = True,
-                                  multiprocessing_context='fork',)
+                                  batch_size                = batch_size,
+                                  shuffle                   = shuffle,
+                                  num_workers               = 1,
+                                  drop_last                 = True,
+                                  multiprocessing_context   ='fork',#
+                                  )
     dataset_valid = TensorDataset(torch.from_numpy(X_valid),
                                   torch.from_numpy(y_valid).float(),
                                   )
     dataloader_valid = DataLoader(dataset_valid,
-                                  batch_size = batch_size,
-                                  shuffle = shuffle,
-                                  num_workers = 1,
-                                  drop_last = True,
-                                  multiprocessing_context='fork',)
+                                  batch_size                = batch_size,
+                                  shuffle                   = shuffle,
+                                  num_workers               = 1,
+                                  drop_last                 = True,
+                                  multiprocessing_context   ='fork',#
+                                  )
     ############################# train #############################
     classifier.train()
     torch.set_grad_enabled(True)
@@ -222,8 +633,8 @@ def conv1dmodel_train_loop(classifier,
         # reset the gradients in the optimizer
         optimizer.zero_grad()
         
-        batch_features = Variable(batch_features).to(device)
-        batch_labels = Variable(batch_labels).to(device)
+        batch_features  = Variable(batch_features).to(device)
+        batch_labels    = Variable(batch_labels).to(device)
         
         batch_predictions = classifier(batch_features)
         
@@ -244,11 +655,11 @@ def conv1dmodel_train_loop(classifier,
         else:
             t = enumerate(dataloader_valid)
         for jj,(batch_features,batch_labels) in t:
-            batch_features = Variable(batch_features).to(device)
-            batch_labels = Variable(batch_labels).to(device)
-            batch_predictions = classifier(batch_features)
-            loss = loss_func(activation_func(batch_predictions),batch_labels,)
-            valid_losses += loss.data
+            batch_features      = Variable(batch_features).to(device)
+            batch_labels        = Variable(batch_labels).to(device)
+            batch_predictions   = classifier(batch_features)
+            loss                = loss_func(activation_func(batch_predictions),batch_labels,)
+            valid_losses        += loss.data
             if print_train:
                 t.set_description(f'epoch {ii_epoch + 1:3d}, valid loss = {valid_losses/(jj+1):.6f}')
     return train_losses / (ii + 1),valid_losses / (jj + 1)
@@ -260,26 +671,27 @@ def conv1d_model_full_cycle(
                 targets_source,
                 data_target,
                 targets_target,
-                current_fold = 0,
-                batch_size = 8,
-                device = 'cpu',
-                out_channels = [1,2,3,4,5],
-                kernel_size = 5,
-                learning_rate = 1e-4,
-                momentum = 0.,
-                weight_decay = 0.,
-                max_epochs = int(1e3),
-                patience = 5,
-                tol = 1e-4,
-                model_name = 'temp',
-                print_train = True,
-                extra_data = None,
+                current_fold    = 0,
+                batch_size      = 8,
+                device          = 'cpu',
+                out_channels    = [1,2,3,4,5],
+                kernel_size     = 5,
+                learning_rate   = 1e-4,
+                momentum        = 0.,
+                weight_decay    = 0.,
+                max_epochs      = int(1e3),
+                patience        = 5,
+                tol             = 1e-4,
+                model_name      = 'temp',
+                print_train     = True,
+                extra_data      = None,
                 ):
     # initialize the classifier
     classifier          = Conv1D_model(batch_size   = batch_size,
                                        device       = device,
                                        out_channels = out_channels,
                                        kernel_size  = kernel_size,)
+    # print(classifier)
     # define optimizer and loss function
     optimizer           = torch.optim.SGD(classifier.parameters(), 
                                           lr            = learning_rate,
@@ -288,8 +700,8 @@ def conv1d_model_full_cycle(
                                           )
     loss_func           = torch.nn.BCELoss()
     
-    best_valid_loss                 = np.inf
-    count                           = 0
+    best_valid_loss     = np.inf
+    count               = 0
     for ii,ii_epoch in enumerate(range(max_epochs)):
         train_loss,valid_loss = conv1dmodel_train_loop(
                                         classifier,
@@ -395,7 +807,6 @@ def conv1d_model_full_cycle(
     
     score = roc_auc_score(y_true,y_pred)
     return score
-
 
 class _Conv2D_model(nn.Module):
     def __init__(self,
@@ -645,12 +1056,7 @@ class rnn_classifier(nn.Module):
         out = self.out_activation(out)
         return out,hidden
 
-def linear_block(input_size,output_size,activation_func = nn.ReLU):
-    return nn.Sequential(
-            nn.Linear(input_size,output_size,bias = True),
-            nn.BatchNorm1d(output_size),
-            activation_func(),
-            )
+
 
 class simple_encoder(nn.Module):
     def __init__(self,
